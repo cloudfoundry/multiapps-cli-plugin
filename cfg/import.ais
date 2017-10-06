@@ -1,0 +1,5 @@
+imports dslVersion:"1.2", {
+    targetRootDir id: "default", {
+            artifactFile "org.golang.download.go:go:tar.gz:1.8"
+	  }
+}

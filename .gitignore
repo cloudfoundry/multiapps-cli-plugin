@@ -1,0 +1,9 @@
+tmp/
+out/
+cf-cli-plugin
+mta-op-*/
+.DS_Store
+*/.DS_Store
+mta_plugin_darwin_amd64
+mta_plugin_linux_amd64
+mta_plugin_windows_amd64.exe
