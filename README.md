@@ -9,7 +9,7 @@ This is a Cloud Foundry CLI plugin for performing operations on [multi-target ap
 # Requirements
 
 - Installed CloudFoundry CLI - ensure that CloudFoundry CLI is installed and working. For more information about installation of CloudFoundry CLI, please visit the official CloudFoundry [documentation](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html).
-- Working CF deploy-service - this a CF plugin for the deploy-service application. Thus, a working deploy-service must be available on the CF landscape
+- Working [CF deploy-service](https://github.com/SAP/cf-mta-deploy-service) - this a CF plugin for the deploy-service application. Thus, a working deploy-service must be available on the CF landscape
 
 # Download and Installation
 
