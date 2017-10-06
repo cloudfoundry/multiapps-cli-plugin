@@ -20,11 +20,11 @@ fi
 echo -e "Formatting packages..."
 go fmt ./...
 
-echo -e "Vetting packages for potential issues..."
-for file in $(find {clients,commands,log,testutil,ui,util} \( -name "*.go" -not -iname "*test.go" \))
-do
-  go tool vet -all $file
-done
+#echo -e "Vetting packages for potential issues..."
+#for file in $(find {clients,commands,log,testutil,ui,util} \( -name "*.go" -not -iname "*test.go" \))
+#do
+#  go tool vet -all $file
+#done
 
 echo -e "Testing packages..."
 ginkgo -r $@
