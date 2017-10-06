@@ -47,6 +47,7 @@ Command Name | Command Description
 `download-mta-op-logs` / `dmol` | Download logs of multi-target app operation
 `bg-deploy` | Deploy a multi-target app using blue-green deployment
 `purge-mta-config` | Purge stale configuration entries
+
 For more information, see the command help output available via `cf [command] --help` or `cf help [command]`.
 
 Here is an example deployment of the open-sourced com.sap.openSAP.hana5.example:
@@ -56,12 +57,10 @@ build it
 cf deploy assembly/target/hana-shine-xsa.mtar
 ```
 
-# Configuration
-
-The plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via the `DEPLOY_SERVICE_URL` environment variable.
-
-## Environment Variables
-   `DEBUG=1` - Prints in standart output HTTP requests, which are from CLI client to CF deploy service backend.
+# Configuration     
+The configuration of the CF MTA plugin is done via env variables. The following are supported:
+   `DEBUG=1` - prints in standart output HTTP requests, which are from CLI client to CF deploy service backend.
+   `DEPLOY_SERVICE_URL=<deploy-service-app-url>` - thehe plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via this env variable.
 
 # How to obtain support
 
