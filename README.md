@@ -52,9 +52,9 @@ For more information, see the command help output available via `cf [command] --
 
 Here is an example deployment of the open-sourced com.sap.openSAP.hana5.example:
 ```
-git clone https://github.com/SAP/hana-shine-xsa.git
-build it
-cf deploy assembly/target/hana-shine-xsa.mtar
+$ git clone https://github.com/SAP/hana-shine-xsa.git
+// build it TODO: verify that or provide another sample
+$ cf deploy assembly/target/hana-shine-xsa.mtar
 ```
 
 # Configuration     
