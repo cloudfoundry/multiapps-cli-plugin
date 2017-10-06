@@ -94,5 +94,5 @@ For more information about the godep tool, please refer to: [godep](https://gith
 
 # License
 
-This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file.
+This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](https://github.com/SAP/cf-mta-plugin/blob/master/LICENSE) file.
 
