@@ -1,4 +1,4 @@
-# MTA CF CLI Plugin
+# CF MTA Plugin
 
 [![Build Status](TODO: put a link to the original link to the https://travis-ci.com/)
 
@@ -33,11 +33,9 @@ cf install-plugin <path-to-the-downloaded-plugin> -f
 
 :rotating_light: Check whether you have a previous version installed, using the command: `cf plugins`. If the MtaPlugin is already installed, you need to uninstall it first and then to install the new version. You can uninstall the plugin using command `cf uninstall-plugin MtaPlugin`.
 
-# Configuration
+## Usage
 
-The plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via the `DEPLOY_SERVICE_URL` environment variable.
-
-The MTA CF CLI Plugin supports the following commands:
+The CF MTA plugin supports the following commands:
 
 Command Name | Command Description
 --- | ---
@@ -49,21 +47,21 @@ Command Name | Command Description
 `download-mta-op-logs` / `dmol` | Download logs of multi-target app operation
 `bg-deploy` | Deploy a multi-target app using blue-green deployment
 `purge-mta-config` | Purge stale configuration entries
-
 For more information, see the command help output available via `cf [command] --help` or `cf help [command]`.
 
-## Environment Variables
-   `DEBUG=1` - Prints in standart output HTTP requests, which are from CLI client to CF deploy service backend.
-
-## Usage
-
-You need to have the MTA CF CLI Plugin installed on your machine.
 Here is an example deployment of the open-sourced com.sap.openSAP.hana5.example:
 ```
 git clone https://github.com/SAP/hana-shine-xsa.git
 build it
-cf deploy assembly/target/hello-world-java-assembly-0.1.0-SNAPSHOT.mtar
+cf deploy assembly/target/hana-shine-xsa.mtar
 ```
+
+# Configuration
+
+The plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via the `DEPLOY_SERVICE_URL` environment variable.
+
+## Environment Variables
+   `DEBUG=1` - Prints in standart output HTTP requests, which are from CLI client to CF deploy service backend.
 
 # How to obtain support
 
