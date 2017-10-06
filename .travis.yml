@@ -1,0 +1,11 @@
+language: go
+go:
+  - 1.8
+install:
+  - chmod +x bin/test.sh
+  - chmod +x bin/build.sh
+  - go get -t -v ./...
+script:  bin/test.sh
+branches:
+  only:
+  - master
