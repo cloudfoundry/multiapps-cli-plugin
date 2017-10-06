@@ -1,6 +1,7 @@
 # CF MTA Plugin
 
-[![Build Status](TODO: put a link to the original link to the https://travis-ci.com/)
+[![Build Status](https://travis-ci.org/SAP/cf-mta-plugin.svg?branch=master)](https://travis-ci.org/SAP/cf-mta-plugin)
+
 
 # Description
 
