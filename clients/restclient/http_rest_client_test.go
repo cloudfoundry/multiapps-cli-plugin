@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/restclient/operations"
 	"github.com/SAP/cf-mta-plugin/clients/testutil"
+	"github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
 )
 
 const xmlHeader = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
@@ -239,7 +239,7 @@ func TestGetMta(t *testing.T) {
 
 func newClient(server *httptest.Server, rt http.RoundTripper) *Rest {
 	hu, _ := url.Parse(server.URL)
-	runtime := client.New(hu.Host, "/", []string{"http"})
+	runtime := client.New(hu.Host, "/", "/", []string{"http"})
 	if rt != nil {
 		runtime.Transport = rt
 	}

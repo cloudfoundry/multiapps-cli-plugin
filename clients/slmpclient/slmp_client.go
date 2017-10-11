@@ -20,7 +20,7 @@ type SlmpClient struct {
 
 // NewSlmpClient creates a new SLMP client
 func NewSlmpClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) SlmpClientOperations {
-	t := baseclient.NewHTTPTransport(host, getSlmpURL(org, space), rt, jar)
+	t := baseclient.NewHTTPTransport(host, getSlmpURL(org, space), getSlmpURL(baseclient.EncodeArg(org), baseclient.EncodeArg(org)), rt, jar)
 	client := New(t, strfmt.Default)
 	return SlmpClient{baseclient.BaseClient{TokenFactory: tokenFactory}, client}
 }

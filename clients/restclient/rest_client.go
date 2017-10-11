@@ -19,7 +19,7 @@ type RestClient struct {
 
 // NewRestClient creates a new Rest client
 func NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
-	t := baseclient.NewHTTPTransport(host, getRestURL(org, space), rt, jar)
+	t := baseclient.NewHTTPTransport(host, getRestURL(org, space), getRestURL(baseclient.EncodeArg(org), baseclient.EncodeArg(space)), rt, jar)
 	client := New(t, strfmt.Default)
 	return RestClient{baseclient.BaseClient{tokenFactory}, client}
 }

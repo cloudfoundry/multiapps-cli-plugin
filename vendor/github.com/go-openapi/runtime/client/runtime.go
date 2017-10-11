@@ -48,6 +48,7 @@ type Runtime struct {
 	//Spec      *spec.Document
 	Host     string
 	BasePath string
+	RawBasePath string
 	Formats  strfmt.Registry
 	Debug    bool
 	Context  context.Context
@@ -59,7 +60,7 @@ type Runtime struct {
 }
 
 // New creates a new default runtime for a swagger api runtime.Client
-func New(host, basePath string, schemes []string) *Runtime {
+func New(host, basePath, rawBasePath string, schemes []string) *Runtime {
 	var rt Runtime
 	rt.DefaultMediaType = runtime.JSONMime
 
@@ -80,6 +81,7 @@ func New(host, basePath string, schemes []string) *Runtime {
 	rt.Jar = nil
 	rt.Host = host
 	rt.BasePath = basePath
+	rt.RawBasePath = rawBasePath
 	rt.Context = context.Background()
 	rt.clientOnce = new(sync.Once)
 	if !strings.HasPrefix(rt.BasePath, "/") {
@@ -94,8 +96,8 @@ func New(host, basePath string, schemes []string) *Runtime {
 }
 
 // NewWithClient allows you to create a new transport with a configured http.Client
-func NewWithClient(host, basePath string, schemes []string, client *http.Client) *Runtime {
-	rt := New(host, basePath, schemes)
+func NewWithClient(host, basePath, rawBasePath string, schemes []string, client *http.Client) *Runtime {
+	rt := New(host, basePath, rawBasePath, schemes)
 	if client != nil {
 		rt.clientOnce.Do(func() {
 			rt.client = client
@@ -174,8 +176,20 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	if req.URL.Path != "" && req.URL.Path != "/" && req.URL.Path[len(req.URL.Path)-1] == '/' {
 		reinstateSlash = true
 	}
+	
+	if r.RawBasePath != "" {
+		if r.RawBasePath[0] != '/' {
+			req.URL.RawPath = path.Join("/", r.RawBasePath, req.URL.Path)
+		} else {
+			req.URL.RawPath = path.Join(r.RawBasePath, req.URL.Path)
+		}
+	}
 	req.URL.Path = path.Join(r.BasePath, req.URL.Path)
+
 	if reinstateSlash {
+		if r.RawBasePath != "" {
+			req.URL.RawPath = req.URL.RawPath + "/"
+		}
 		req.URL.Path = req.URL.Path + "/"
 	}
 
