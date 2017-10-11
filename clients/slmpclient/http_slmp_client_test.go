@@ -10,13 +10,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
 	"github.com/SAP/cf-mta-plugin/clients/csrf"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/slmpclient/operations"
 	testutil "github.com/SAP/cf-mta-plugin/clients/testutil"
+	"github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
 )
 
 const xmlHeader = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
@@ -480,7 +480,7 @@ func TestGetProcessService(t *testing.T) {
 
 func newClient(server *httptest.Server, rt http.RoundTripper) *Slmp {
 	hu, _ := url.Parse(server.URL)
-	slmp := client.New(hu.Host, "/", []string{"http"})
+	slmp := client.New(hu.Host, "/", "/", []string{"http"})
 	if rt != nil {
 		slmp.Transport = rt
 	}

@@ -1,7 +1,9 @@
 package baseclient
 
 import (
+	"net/url"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -34,4 +36,8 @@ func shouldRetry(err error) bool {
 		}
 	}
 	return false
+}
+
+func EncodeArg(arg string) string {
+	return strings.Replace(url.QueryEscape(arg), "+", "%20", -1)
 }

@@ -20,7 +20,7 @@ type SlppClient struct {
 
 // NewSlppClient creates a new SLPP client
 func NewSlppClient(host, org, space, serviceID, processID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) SlppClientOperations {
-	t := baseclient.NewHTTPTransport(host, getSlppURL(org, space, serviceID, processID), rt, jar)
+	t := baseclient.NewHTTPTransport(host, getSlppURL(org, space, serviceID, processID), getSlppURL(baseclient.EncodeArg(org), baseclient.EncodeArg(space), serviceID, processID), rt, jar)
 	client := New(t, strfmt.Default)
 	return SlppClient{baseclient.BaseClient{TokenFactory: tokenFactory}, client, serviceID}
 

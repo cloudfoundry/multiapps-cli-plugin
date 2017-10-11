@@ -20,7 +20,7 @@ func NewHTTPClient(formats strfmt.Registry) *Slmp {
 	if formats == nil {
 		formats = strfmt.Default
 	}
-	transport := httptransport.New("example.com", "/slprot/slmp/", []string{"http", "https"})
+	transport := httptransport.New("example.com", "/slprot/slmp/", "/slprot/slmp/", []string{"http", "https"})
 	return New(transport, formats)
 }
 

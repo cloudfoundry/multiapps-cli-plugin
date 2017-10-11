@@ -32,8 +32,8 @@ func NewBaseClient(tokenFactory TokenFactory) *BaseClient {
 }
 
 // NewHTTPTransport creates a new HTTP transport
-func NewHTTPTransport(host, url string, rt http.RoundTripper, jar http.CookieJar) *client.Runtime {
-	transport := client.New(host, url, schemes)
+func NewHTTPTransport(host, url, encodedUrl string, rt http.RoundTripper, jar http.CookieJar) *client.Runtime {
+	transport := client.New(host, url, encodedUrl, schemes)
 	transport.Consumers["text/html"] = runtime.TextConsumer()
 	transport.DefaultMediaType = "application/xml"
 	transport.Transport = rt
