@@ -88,6 +88,10 @@ This will produce `mta_plugin_linux_amd64`, `mta_plugin_darwin_amd64` and `mta_p
 
 For more information about the godep tool, please refer to: [godep](https://github.com/tools/godep)
 
+# Further reading
+Presentations, documents, and tutorials:
+[Managing Distributed Cloud Native Applications Made Easy (CF Summit EU 2017 slides)](https://www.slideshare.net/NikolayValchev/managing-distributedcloudapps-80697059)
+
 # License
 
 This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](https://github.com/SAP/cf-mta-plugin/blob/master/LICENSE) file.
