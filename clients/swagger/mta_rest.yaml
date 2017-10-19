@@ -1,0 +1,366 @@
+---
+swagger: "2.0"
+info:
+  description: "This is an API for the deploy-service(MTA) application"
+  version: "1.0.0"
+  title: "MTA REST API"
+  contact:
+    email: "DL_563CD7577BCF844DBD000037@exchange.sap.corp"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "deploy-service.bosh-lite.com"
+basePath: "/spaces/{space_guid}"
+schemes:
+- "https"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /mtas:
+    get:
+      description: "Retrieves all Multi-Target Applications in a space\n"
+      operationId: "GetMtas"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Mta"
+  /mtas/{mta_id}:
+    get:
+      description: "Retrieves Multi-Target Application in a space\n"
+      operationId: "GetMta"
+      parameters:
+      - name: "mta_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Mta"
+  /files:
+    get:
+      description: "Retrieves all Multi-Target Application files\n"
+      operationId: "GetMtaFiles"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/File"
+    post:
+      description: "Uploads an Multi Target Application file\n"
+      operationId: "UploadMtaFile"
+      consumes:
+      - "multipart/form-data"
+      parameters:
+      - name: "files"
+        in: "formData"
+        required: true
+        type: "file"
+      responses:
+        201:
+          description: "Created"
+          schema:
+            $ref: "#/definitions/File"
+  /operations:
+    get:
+      description: "Retrieves Multi-Target Application operations\n"
+      operationId: "GetMtaOperations"
+      parameters:
+      - name: "last"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "status"
+        in: "query"
+        required: false
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "multi"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Operation"
+    post:
+      description: "Starts execution of a Multi-Target Application operation\n"
+      operationId: "StartMtaOperation"
+      parameters:
+      - in: "body"
+        name: "operation"
+        required: true
+        schema:
+          $ref: "#/definitions/Operation"
+      responses:
+        202:
+          description: "Accepted"
+          headers:
+            Location:
+              type: "string"
+              format: "uri"
+  /operations/{operationId}:
+    get:
+      description: "Retrieves Multi-Target Application operation\n"
+      operationId: "GetMtaOperation"
+      parameters:
+      - name: "operationId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "embed"
+        in: "query"
+        description: "Adds the specified property in the response body\n"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Operation"
+    post:
+      description: "Executes a particular action over Multi-Target Application operation\n"
+      operationId: "ExecuteOperationAction"
+      parameters:
+      - name: "operationId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "actionId"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        202:
+          description: "Accepted"
+          headers:
+            Location:
+              type: "string"
+              format: "uri"
+  /operations/{operationId}/actions:
+    get:
+      description: "Retrieves available actions for Multi-Target Application operation\n"
+      operationId: "GetOperationActions"
+      parameters:
+      - name: "operationId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/inline_response_200"
+  /operations/{operationId}/logs:
+    get:
+      description: "Retrieves the logs Multi-Target Application operation\n"
+      operationId: "GetMtaOperationLogs"
+      parameters:
+      - name: "operationId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Log"
+definitions:
+  File:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      name:
+        type: "string"
+      size:
+        type: "number"
+      digest:
+        type: "string"
+      digestAlgorithm:
+        type: "string"
+      space:
+        type: "string"
+  Mta:
+    type: "object"
+    properties:
+      metadata:
+        $ref: "#/definitions/Metadata"
+      modules:
+        type: "array"
+        items:
+          $ref: "#/definitions/Module"
+      services:
+        type: "array"
+        uniqueItems: true
+        items:
+          type: "string"
+  Metadata:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      version:
+        type: "string"
+  Module:
+    type: "object"
+    properties:
+      moduleName:
+        type: "string"
+      appName:
+        type: "string"
+      createdOn:
+        type: "string"
+        format: "date"
+      updatedOn:
+        type: "string"
+        format: "date"
+      providedDendencyNames:
+        type: "array"
+        items:
+          type: "string"
+      services:
+        type: "array"
+        items:
+          type: "string"
+      uris:
+        type: "array"
+        items:
+          type: "string"
+      deployAttributes:
+        type: "object"
+        additionalProperties:
+          type: "object"
+          properties: {}
+  Operation:
+    type: "object"
+    properties:
+      processId:
+        type: "string"
+      processType:
+        type: "string"
+      startedAt:
+        type: "string"
+        format: "date"
+      spaceId:
+        type: "string"
+      mtaId:
+        type: "string"
+      user:
+        type: "string"
+      acquiredLock:
+        type: "boolean"
+      state:
+        type: "string"
+      messages:
+        type: "array"
+        items:
+          $ref: "#/definitions/Message"
+      parameters:
+        type: "object"
+        additionalProperties:
+          type: "object"
+          properties: {}
+  Message:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      message:
+        type: "string"
+      type:
+        $ref: "#/definitions/message_type"
+  Log:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      lastModified:
+        type: "string"
+        format: "date-time"
+      content:
+        type: "string"
+        format: "uri"
+      size:
+        type: "integer"
+        format: "int64"
+      displayName:
+        type: "string"
+      description:
+        type: "string"
+      externalInfo:
+        type: "string"
+        format: "uri"
+  message_type:
+    type: "string"
+    enum:
+    - "INFO"
+    - "ERROR"
+    - "WARNING"
+    - "EXT"
+    - "TASK_STARTUP"
+  inline_response_200:
+    properties:
+      actionIds:
+        type: "array"
+        items:
+          type: "string"
+parameters:
+  space_guid:
+    name: "space_guid"
+    in: "path"
+    required: true
+    type: "string"
+  files:
+    name: "files"
+    in: "formData"
+    required: true
+    type: "file"
+  last:
+    name: "last"
+    in: "query"
+    required: false
+    type: "string"
+  status:
+    name: "status"
+    in: "query"
+    required: false
+    type: "array"
+    items:
+      type: "string"
+    collectionFormat: "multi"
+  operation:
+    in: "body"
+    name: "operation"
+    required: true
+    schema:
+      $ref: "#/definitions/Operation"
+  operationId:
+    name: "operationId"
+    in: "path"
+    required: true
+    type: "string"
+  actionId:
+    name: "actionId"
+    in: "query"
+    required: true
+    type: "string"
+  embed:
+    name: "embed"
+    in: "query"
+    description: "Adds the specified property in the response body\n"
+    required: false
+    type: "string"
