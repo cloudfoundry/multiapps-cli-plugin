@@ -5,12 +5,12 @@ import (
 	"io"
 	"os"
 
+	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"github.com/SAP/cf-mta-plugin/clients/models"
 )
 
-const xmlns string = "http://www.sap.com/lmsl/slp"
+const xmlns string = "http://www.SAP.com/lmsl/slp"
 
 const Version = "1.2.0"
 const ServiceID = "xs2-undeploy"

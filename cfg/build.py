@@ -113,5 +113,5 @@ class build(spi.BuildPlugin):
 
   #set groupID and artifacts names which is used by export.ads
   def deploy_variables(self):
-    return {'groupId'       : "com.sap.golang", 'artifactId'    : "cf-cli-mta-plugin"}
+    return {'groupId'       : "com.SAP.golang", 'artifactId'    : "cf-cli-mta-plugin"}
 ####
