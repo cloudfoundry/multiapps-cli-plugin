@@ -35,7 +35,7 @@ func NewBaseClient(tokenFactory TokenFactory) *BaseClient {
 func NewHTTPTransport(host, url, encodedUrl string, rt http.RoundTripper, jar http.CookieJar) *client.Runtime {
 	transport := client.New(host, url, encodedUrl, schemes)
 	transport.Consumers["text/html"] = runtime.TextConsumer()
-	transport.DefaultMediaType = "application/xml"
+	transport.DefaultMediaType = "application/json" //TODO support XML for the config registry
 	transport.Transport = rt
 	transport.Jar = jar
 	return transport

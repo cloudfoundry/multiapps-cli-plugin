@@ -20,10 +20,10 @@ import (
 )
 
 const xmlHeader = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
-const xmlns = "http://www.sap.com/lmsl/slp"
+const xmlns = "http://www.SAP.com/lmsl/slp"
 
 const metadataPayload = xmlHeader + `
-<Metadata xmlns="http://www.sap.com/lmsl/slp">
+<Metadata xmlns="http://www.SAP.com/lmsl/slp">
   <slmpversion>1.2.0</slmpversion>
 </Metadata>`
 
@@ -33,14 +33,14 @@ var metadataResult = models.Metadata{
 }
 
 const servicesPayload = xmlHeader + `
-<services xmlns="http://www.sap.com/lmsl/slp">` +
+<services xmlns="http://www.SAP.com/lmsl/slp">` +
 	serviceElement + `
 </services>`
 
 const servicePayload = xmlHeader + serviceElement
 
 const serviceElement = `
-<Service xmlns="http://www.sap.com/lmsl/slp">
+<Service xmlns="http://www.SAP.com/lmsl/slp">
   <id>xs2-undeploy</id>
   <processes>services/xs2-undeploy/processes</processes>
 	<parameters>` +
@@ -73,14 +73,14 @@ var serviceResult = models.Service{
 }
 
 const processesPayload = xmlHeader + `
-<processes xmlns="http://www.sap.com/lmsl/slp">` +
+<processes xmlns="http://www.SAP.com/lmsl/slp">` +
 	processElement + `
 </processes>`
 
 const processPayload = xmlHeader + processElement
 
 const processElement = `
-<Process xmlns="http://www.sap.com/lmsl/slp">
+<Process xmlns="http://www.SAP.com/lmsl/slp">
   <id>1</id>
   <service>xs2-deploy</service>
   <status>slp.process.state.ACTIVE</status>
@@ -124,7 +124,7 @@ var processResult = models.Process{
 }
 
 const versionsPayload = xmlHeader + `
-<versions xmlns="http://www.sap.com/lmsl/slp">
+<versions xmlns="http://www.SAP.com/lmsl/slp">
   <ComponentVersion>
     <id>xs2-deploy_VERSIONS_1.0</id>
     <component>xs2-deploy</component>
@@ -145,14 +145,14 @@ var versionsResult = models.Versions{
 }
 
 const parametersPayload = xmlHeader + `
-<parameters xmlns="http://www.sap.com/lmsl/slp">` +
+<parameters xmlns="http://www.SAP.com/lmsl/slp">` +
 	parameterElement + `
 </parameters>`
 
 const parameterPayload = xmlHeader + parameterElement
 
 const parameterElement = `
-<Parameter xmlns="http://www.sap.com/lmsl/slp">
+<Parameter xmlns="http://www.SAP.com/lmsl/slp">
 	<id>mtaId</id>
 	<type>slp.parameter.type.SCALAR</type>
 	<required>true</required>
@@ -171,14 +171,14 @@ var parameterResult = models.Parameter{
 }
 
 const filesPayload = xmlHeader + `
-<files xmlns="http://www.sap.com/lmsl/slp">` +
+<files xmlns="http://www.SAP.com/lmsl/slp">` +
 	fileElement + `
 </files>`
 
 const filePayload = xmlHeader + fileElement
 
 const fileElement = `
-<File xmlns="http://www.sap.com/lmsl/slp">
+<File xmlns="http://www.SAP.com/lmsl/slp">
   <id>d204bf6a-5a56-4c91-952e-1e8dce81fca2</id>
   <filePath>xs2-deploy</filePath>
   <fileSize>5</fileSize>
