@@ -62,7 +62,7 @@ paths:
       consumes:
       - "multipart/form-data"
       parameters:
-      - name: "files"
+      - name: "file"
         in: "formData"
         required: true
         type: "file"
@@ -161,7 +161,9 @@ paths:
         200:
           description: "OK"
           schema:
-            $ref: "#/definitions/inline_response_200"
+            type: "array"
+            items:
+              type: "string"
   /operations/{operationId}/logs:
     get:
       description: "Retrieves the logs Multi-Target Application operation\n"
@@ -312,20 +314,14 @@ definitions:
     - "WARNING"
     - "EXT"
     - "TASK_STARTUP"
-  inline_response_200:
-    properties:
-      actionIds:
-        type: "array"
-        items:
-          type: "string"
 parameters:
   space_guid:
     name: "space_guid"
     in: "path"
     required: true
     type: "string"
-  files:
-    name: "files"
+  file:
+    name: "file"
     in: "formData"
     required: true
     type: "file"
