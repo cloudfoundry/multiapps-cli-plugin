@@ -15,7 +15,10 @@
 package client
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"mime"
 	"net/http"
 	"net/http/httputil"
@@ -31,6 +34,76 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 )
+
+// TLSClientOptions to configure client authentication with mutual TLS
+type TLSClientOptions struct {
+	Certificate        string
+	Key                string
+	CA                 string
+	ServerName         string
+	InsecureSkipVerify bool
+	_                  struct{}
+}
+
+// TLSClientAuth creates a tls.Config for mutual auth
+func TLSClientAuth(opts TLSClientOptions) (*tls.Config, error) {
+	// create client tls config
+	cfg := &tls.Config{}
+
+	// load client cert if specified
+	if opts.Certificate != "" {
+		cert, err := tls.LoadX509KeyPair(opts.Certificate, opts.Key)
+		if err != nil {
+			return nil, fmt.Errorf("tls client cert: %v", err)
+		}
+		cfg.Certificates = []tls.Certificate{cert}
+	}
+
+	cfg.InsecureSkipVerify = opts.InsecureSkipVerify
+
+	// When no CA certificate is provided, default to the system cert pool
+	// that way when a request is made to a server known by the system trust store,
+	// the name is still verified
+	if opts.CA != "" {
+		// load ca cert
+		caCert, err := ioutil.ReadFile(opts.CA)
+		if err != nil {
+			return nil, fmt.Errorf("tls client ca: %v", err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+		cfg.RootCAs = caCertPool
+	}
+
+	// apply servername overrride
+	if opts.ServerName != "" {
+		cfg.InsecureSkipVerify = false
+		cfg.ServerName = opts.ServerName
+	}
+
+	cfg.BuildNameToCertificate()
+
+	return cfg, nil
+}
+
+// TLSTransport creates a http client transport suitable for mutual tls auth
+func TLSTransport(opts TLSClientOptions) (http.RoundTripper, error) {
+	cfg, err := TLSClientAuth(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &http.Transport{TLSClientConfig: cfg}, nil
+}
+
+// TLSClient creates a http.Client for mutual auth
+func TLSClient(opts TLSClientOptions) (*http.Client, error) {
+	transport, err := TLSTransport(opts)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Client{Transport: transport}, nil
+}
 
 // DefaultTimeout the default request timeout
 var DefaultTimeout = 30 * time.Second
@@ -48,7 +121,6 @@ type Runtime struct {
 	//Spec      *spec.Document
 	Host     string
 	BasePath string
-	RawBasePath string
 	Formats  strfmt.Registry
 	Debug    bool
 	Context  context.Context
@@ -60,7 +132,7 @@ type Runtime struct {
 }
 
 // New creates a new default runtime for a swagger api runtime.Client
-func New(host, basePath, rawBasePath string, schemes []string) *Runtime {
+func New(host, basePath string, schemes []string) *Runtime {
 	var rt Runtime
 	rt.DefaultMediaType = runtime.JSONMime
 
@@ -81,13 +153,12 @@ func New(host, basePath, rawBasePath string, schemes []string) *Runtime {
 	rt.Jar = nil
 	rt.Host = host
 	rt.BasePath = basePath
-	rt.RawBasePath = rawBasePath
 	rt.Context = context.Background()
 	rt.clientOnce = new(sync.Once)
 	if !strings.HasPrefix(rt.BasePath, "/") {
 		rt.BasePath = "/" + rt.BasePath
 	}
-	rt.Debug = os.Getenv("DEBUG") == "1"
+	rt.Debug = len(os.Getenv("DEBUG")) > 0
 	if len(schemes) > 0 {
 		rt.schemes = schemes
 	}
@@ -96,8 +167,8 @@ func New(host, basePath, rawBasePath string, schemes []string) *Runtime {
 }
 
 // NewWithClient allows you to create a new transport with a configured http.Client
-func NewWithClient(host, basePath, rawBasePath string, schemes []string, client *http.Client) *Runtime {
-	rt := New(host, basePath, rawBasePath, schemes)
+func NewWithClient(host, basePath string, schemes []string, client *http.Client) *Runtime {
+	rt := New(host, basePath, schemes)
 	if client != nil {
 		rt.clientOnce.Do(func() {
 			rt.client = client
@@ -146,10 +217,10 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	}
 
 	var accept []string
-	for _, mimeType := range operation.ProducesMediaTypes {
-		accept = append(accept, mimeType)
+	accept = append(accept, operation.ProducesMediaTypes...)
+	if err = request.SetHeaderParam(runtime.HeaderAccept, accept...); err != nil {
+		return nil, err
 	}
-	request.SetHeaderParam(runtime.HeaderAccept, accept...)
 
 	if auth == nil && r.DefaultAuthentication != nil {
 		auth = r.DefaultAuthentication
@@ -162,8 +233,12 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 
 	// TODO: pick appropriate media type
 	cmt := r.DefaultMediaType
-	if len(operation.ConsumesMediaTypes) > 0 {
-		cmt = operation.ConsumesMediaTypes[0]
+	for _, mediaType := range operation.ConsumesMediaTypes {
+		// Pick first non-empty media type
+		if mediaType != "" {
+			cmt = mediaType
+			break
+		}
 	}
 
 	req, err := request.BuildHTTP(cmt, r.Producers, r.Formats)
@@ -176,20 +251,8 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	if req.URL.Path != "" && req.URL.Path != "/" && req.URL.Path[len(req.URL.Path)-1] == '/' {
 		reinstateSlash = true
 	}
-	
-	if r.RawBasePath != "" {
-		if r.RawBasePath[0] != '/' {
-			req.URL.RawPath = path.Join("/", r.RawBasePath, req.URL.Path)
-		} else {
-			req.URL.RawPath = path.Join(r.RawBasePath, req.URL.Path)
-		}
-	}
 	req.URL.Path = path.Join(r.BasePath, req.URL.Path)
-
 	if reinstateSlash {
-		if r.RawBasePath != "" {
-			req.URL.RawPath = req.URL.RawPath + "/"
-		}
 		req.URL.Path = req.URL.Path + "/"
 	}
 
