@@ -21,6 +21,7 @@ type MtaClientOperations interface {
 	UploadMtaFile(file os.File) (*models.File, error)
 }
 
+// ResponseHeader response header
 type ResponseHeader struct {
 	Location strfmt.URI
 }
