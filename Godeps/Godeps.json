@@ -101,15 +101,15 @@
 		},
 		{
 			"ImportPath": "github.com/go-openapi/analysis",
-			"Rev": "7222828b8ce19afee3c595aef6643b9e42150120"
+			"Rev": "8ed83f2ea9f00f945516462951a288eaa68bf0d6"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/errors",
-			"Rev": "49fe8b3a0e0d32a617d8d50c67f856ad6e45b28b"
+			"Rev": "03cfca65330da08a5a440053faf994a3c682b5bf"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/jsonpointer",
-			"Rev": "8d96a2dc61536b690bd36b2e9df0b3c0b62825b2"
+			"Rev": "779f45308c19820f1a69e9a4cd965f496e0da10f"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/jsonreference",
@@ -117,31 +117,31 @@
 		},
 		{
 			"ImportPath": "github.com/go-openapi/loads",
-			"Rev": "5861a4879a2866943dce3c644c879af9e59c22a3"
+			"Rev": "c3e1ca4c0b6160cac10aeef7e8b425cc95b9c820"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/runtime",
-			"Rev": "12c07accf0687ab20b1e7b6293d8012ce282499c"
+			"Rev": "e8231e16de5bcda9839e03ae07c5c96a1fd82041"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/runtime/client",
-			"Rev": "12c07accf0687ab20b1e7b6293d8012ce282499c"
+			"Rev": "e8231e16de5bcda9839e03ae07c5c96a1fd82041"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/spec",
-			"Rev": "f7ae86df5bc115a2744343016c789a89f065a4bd"
+			"Rev": "84b5bee7bcb76f3d17bcbaf421bac44bd5709ca6"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/strfmt",
-			"Rev": "34fc3ba7c0f5fb615fda47a2b4fbd4c641b215f2"
+			"Rev": "610b6cacdcde6852f4de68998bd20ce1dac85b22"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/swag",
-			"Rev": "3b6d86cd965820f968760d5d419cb4add096bdd7"
+			"Rev": "f3f9494671f93fcff853e3c6e9e948b3eb71e590"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/validate",
-			"Rev": "027696d4b54399770f1cdcc6c6daa56975f9e14e"
+			"Rev": "b6cfc35bf312e6fb320d85ed9fc3ac408dcb8694"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/copier",
