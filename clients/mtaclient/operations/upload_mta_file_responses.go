@@ -47,7 +47,7 @@ func NewUploadMtaFileCreated() *UploadMtaFileCreated {
 Created
 */
 type UploadMtaFileCreated struct {
-	Payload *models.File
+	Payload *models.FileMetadata
 }
 
 func (o *UploadMtaFileCreated) Error() string {
@@ -56,7 +56,7 @@ func (o *UploadMtaFileCreated) Error() string {
 
 func (o *UploadMtaFileCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.File)
+	o.Payload = new(models.FileMetadata)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
