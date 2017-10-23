@@ -28,7 +28,7 @@ type Client struct {
 ExecuteOperationAction Executes a particular action over Multi-Target Application operation
 
 */
-func (a *Client) ExecuteOperationAction(params *ExecuteOperationActionParams) (*ExecuteOperationActionAccepted, error) {
+func (a *Client) ExecuteOperationAction(params *ExecuteOperationActionParams, authInfo runtime.ClientAuthInfoWriter) (*ExecuteOperationActionAccepted, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewExecuteOperationActionParams()
@@ -43,6 +43,7 @@ func (a *Client) ExecuteOperationAction(params *ExecuteOperationActionParams) (*
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &ExecuteOperationActionReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -57,7 +58,7 @@ func (a *Client) ExecuteOperationAction(params *ExecuteOperationActionParams) (*
 GetMta Retrieves Multi-Target Application in a space
 
 */
-func (a *Client) GetMta(params *GetMtaParams) (*GetMtaOK, error) {
+func (a *Client) GetMta(params *GetMtaParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtaOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMtaParams()
@@ -72,6 +73,7 @@ func (a *Client) GetMta(params *GetMtaParams) (*GetMtaOK, error) {
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetMtaReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -86,7 +88,7 @@ func (a *Client) GetMta(params *GetMtaParams) (*GetMtaOK, error) {
 GetMtaFiles Retrieves all Multi-Target Application files
 
 */
-func (a *Client) GetMtaFiles(params *GetMtaFilesParams) (*GetMtaFilesOK, error) {
+func (a *Client) GetMtaFiles(params *GetMtaFilesParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtaFilesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMtaFilesParams()
@@ -101,6 +103,7 @@ func (a *Client) GetMtaFiles(params *GetMtaFilesParams) (*GetMtaFilesOK, error) 
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetMtaFilesReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -115,7 +118,7 @@ func (a *Client) GetMtaFiles(params *GetMtaFilesParams) (*GetMtaFilesOK, error) 
 GetMtaOperation Retrieves Multi-Target Application operation
 
 */
-func (a *Client) GetMtaOperation(params *GetMtaOperationParams) (*GetMtaOperationOK, error) {
+func (a *Client) GetMtaOperation(params *GetMtaOperationParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtaOperationOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMtaOperationParams()
@@ -130,6 +133,7 @@ func (a *Client) GetMtaOperation(params *GetMtaOperationParams) (*GetMtaOperatio
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetMtaOperationReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -144,7 +148,7 @@ func (a *Client) GetMtaOperation(params *GetMtaOperationParams) (*GetMtaOperatio
 GetMtaOperationLogs Retrieves the logs Multi-Target Application operation
 
 */
-func (a *Client) GetMtaOperationLogs(params *GetMtaOperationLogsParams) (*GetMtaOperationLogsOK, error) {
+func (a *Client) GetMtaOperationLogs(params *GetMtaOperationLogsParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtaOperationLogsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMtaOperationLogsParams()
@@ -159,6 +163,7 @@ func (a *Client) GetMtaOperationLogs(params *GetMtaOperationLogsParams) (*GetMta
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetMtaOperationLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -173,7 +178,7 @@ func (a *Client) GetMtaOperationLogs(params *GetMtaOperationLogsParams) (*GetMta
 GetMtaOperations Retrieves Multi-Target Application operations
 
 */
-func (a *Client) GetMtaOperations(params *GetMtaOperationsParams) (*GetMtaOperationsOK, error) {
+func (a *Client) GetMtaOperations(params *GetMtaOperationsParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtaOperationsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMtaOperationsParams()
@@ -188,6 +193,7 @@ func (a *Client) GetMtaOperations(params *GetMtaOperationsParams) (*GetMtaOperat
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetMtaOperationsReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -202,7 +208,7 @@ func (a *Client) GetMtaOperations(params *GetMtaOperationsParams) (*GetMtaOperat
 GetMtas Retrieves all Multi-Target Applications in a space
 
 */
-func (a *Client) GetMtas(params *GetMtasParams) (*GetMtasOK, error) {
+func (a *Client) GetMtas(params *GetMtasParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtasOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMtasParams()
@@ -217,6 +223,7 @@ func (a *Client) GetMtas(params *GetMtasParams) (*GetMtasOK, error) {
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetMtasReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -231,7 +238,7 @@ func (a *Client) GetMtas(params *GetMtasParams) (*GetMtasOK, error) {
 GetOperationActions Retrieves available actions for Multi-Target Application operation
 
 */
-func (a *Client) GetOperationActions(params *GetOperationActionsParams) (*GetOperationActionsOK, error) {
+func (a *Client) GetOperationActions(params *GetOperationActionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOperationActionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperationActionsParams()
@@ -246,6 +253,7 @@ func (a *Client) GetOperationActions(params *GetOperationActionsParams) (*GetOpe
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &GetOperationActionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -260,7 +268,7 @@ func (a *Client) GetOperationActions(params *GetOperationActionsParams) (*GetOpe
 StartMtaOperation Starts execution of a Multi-Target Application operation
 
 */
-func (a *Client) StartMtaOperation(params *StartMtaOperationParams) (*StartMtaOperationAccepted, error) {
+func (a *Client) StartMtaOperation(params *StartMtaOperationParams, authInfo runtime.ClientAuthInfoWriter) (*StartMtaOperationAccepted, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewStartMtaOperationParams()
@@ -275,6 +283,7 @@ func (a *Client) StartMtaOperation(params *StartMtaOperationParams) (*StartMtaOp
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &StartMtaOperationReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -289,7 +298,7 @@ func (a *Client) StartMtaOperation(params *StartMtaOperationParams) (*StartMtaOp
 UploadMtaFile Uploads an Multi Target Application file
 
 */
-func (a *Client) UploadMtaFile(params *UploadMtaFileParams) (*UploadMtaFileCreated, error) {
+func (a *Client) UploadMtaFile(params *UploadMtaFileParams, authInfo runtime.ClientAuthInfoWriter) (*UploadMtaFileCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUploadMtaFileParams()
@@ -304,6 +313,7 @@ func (a *Client) UploadMtaFile(params *UploadMtaFileParams) (*UploadMtaFileCreat
 		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &UploadMtaFileReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
