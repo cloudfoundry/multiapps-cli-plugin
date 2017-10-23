@@ -1,362 +1,384 @@
----
-swagger: "2.0"
+swagger: '2.0'
 info:
-  description: "This is an API for the deploy-service(MTA) application"
-  version: "1.0.0"
-  title: "MTA REST API"
+  description: This is an API for the deploy-service(MTA) application
+  version: 1.0.0
+  title: MTA REST API
   contact:
-    email: "DL_563CD7577BCF844DBD000037@exchange.sap.corp"
+    email: DL_563CD7577BCF844DBD000037@exchange.sap.corp
   license:
-    name: "Apache 2.0"
-    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "deploy-service.bosh-lite.com"
-basePath: "/spaces/{space_guid}"
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+host: deploy-service.bosh-lite.com
+basePath: '/spaces/{space_guid}'
 schemes:
-- "https"
+  - https
 consumes:
-- "application/json"
+  - application/json
 produces:
-- "application/json"
+  - application/json
+securityDefinitions:
+  oauth2:
+    type: oauth2
+    tokenUrl: 'https://uaa.bosh-lite.com/oauth/token'
+    flow: password
+    scopes: {}
+security:
+  - oauth2: []
 paths:
   /mtas:
     get:
-      description: "Retrieves all Multi-Target Applications in a space\n"
-      operationId: "GetMtas"
+      description: |
+        Retrieves all Multi-Target Applications in a space
+      operationId: GetMtas
       parameters: []
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            type: "array"
+            type: array
             items:
-              $ref: "#/definitions/Mta"
-  /mtas/{mta_id}:
+              $ref: '#/definitions/Mta'
+  '/mtas/{mta_id}':
     get:
-      description: "Retrieves Multi-Target Application in a space\n"
-      operationId: "GetMta"
+      description: |
+        Retrieves Multi-Target Application in a space
+      operationId: GetMta
       parameters:
-      - name: "mta_id"
-        in: "path"
-        required: true
-        type: "string"
+        - name: mta_id
+          in: path
+          required: true
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            $ref: "#/definitions/Mta"
+            $ref: '#/definitions/Mta'
   /files:
     get:
-      description: "Retrieves all Multi-Target Application files\n"
-      operationId: "GetMtaFiles"
+      description: |
+        Retrieves all Multi-Target Application files
+      operationId: GetMtaFiles
       parameters: []
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            type: "array"
+            type: array
             items:
-              $ref: "#/definitions/File"
+              $ref: '#/definitions/FileMetadata'
     post:
-      description: "Uploads an Multi Target Application file\n"
-      operationId: "UploadMtaFile"
+      description: |
+        Uploads an Multi Target Application file
+      operationId: UploadMtaFile
       consumes:
-      - "multipart/form-data"
+        - multipart/form-data
       parameters:
-      - name: "file"
-        in: "formData"
-        required: true
-        type: "file"
+        - name: file
+          in: formData
+          required: true
+          type: file
       responses:
-        201:
-          description: "Created"
+        '201':
+          description: Created
           schema:
-            $ref: "#/definitions/File"
+            $ref: '#/definitions/FileMetadata'
   /operations:
     get:
-      description: "Retrieves Multi-Target Application operations\n"
-      operationId: "GetMtaOperations"
+      description: |
+        Retrieves Multi-Target Application operations
+      operationId: GetMtaOperations
       parameters:
-      - name: "last"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "status"
-        in: "query"
-        required: false
-        type: "array"
-        items:
-          type: "string"
-        collectionFormat: "multi"
+        - name: last
+          in: query
+          required: false
+          type: string
+        - name: status
+          in: query
+          required: false
+          type: array
+          items:
+            type: string
+          collectionFormat: multi
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            type: "array"
+            type: array
             items:
-              $ref: "#/definitions/Operation"
+              $ref: '#/definitions/Operation'
     post:
-      description: "Starts execution of a Multi-Target Application operation\n"
-      operationId: "StartMtaOperation"
+      description: |
+        Starts execution of a Multi-Target Application operation
+      operationId: StartMtaOperation
       parameters:
-      - in: "body"
-        name: "operation"
-        required: true
-        schema:
-          $ref: "#/definitions/Operation"
+        - in: body
+          name: operation
+          required: true
+          schema:
+            $ref: '#/definitions/Operation'
       responses:
-        202:
-          description: "Accepted"
+        '202':
+          description: Accepted
           headers:
             Location:
-              type: "string"
-              format: "uri"
-  /operations/{operationId}:
+              type: string
+              format: uri
+              description: >
+                A Location header, used for transpassing between different
+                resources
+  '/operations/{operationId}':
     get:
-      description: "Retrieves Multi-Target Application operation\n"
-      operationId: "GetMtaOperation"
+      description: |
+        Retrieves Multi-Target Application operation
+      operationId: GetMtaOperation
       parameters:
-      - name: "operationId"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "embed"
-        in: "query"
-        description: "Adds the specified property in the response body\n"
-        required: false
-        type: "string"
+        - name: operationId
+          in: path
+          required: true
+          type: string
+        - name: embed
+          in: query
+          description: |
+            Adds the specified property in the response body
+          required: false
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            $ref: "#/definitions/Operation"
+            $ref: '#/definitions/Operation'
     post:
-      description: "Executes a particular action over Multi-Target Application operation\n"
-      operationId: "ExecuteOperationAction"
+      description: |
+        Executes a particular action over Multi-Target Application operation
+      operationId: ExecuteOperationAction
       parameters:
-      - name: "operationId"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "actionId"
-        in: "query"
-        required: true
-        type: "string"
+        - name: operationId
+          in: path
+          required: true
+          type: string
+        - name: actionId
+          in: query
+          required: true
+          type: string
       responses:
-        202:
-          description: "Accepted"
+        '202':
+          description: Accepted
           headers:
             Location:
-              type: "string"
-              format: "uri"
-  /operations/{operationId}/actions:
+              type: string
+              format: uri
+  '/operations/{operationId}/actions':
     get:
-      description: "Retrieves available actions for Multi-Target Application operation\n"
-      operationId: "GetOperationActions"
+      description: |
+        Retrieves available actions for Multi-Target Application operation
+      operationId: GetOperationActions
       parameters:
-      - name: "operationId"
-        in: "path"
-        required: true
-        type: "string"
+        - name: operationId
+          in: path
+          required: true
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            type: "array"
+            type: array
             items:
-              type: "string"
-  /operations/{operationId}/logs:
+              type: string
+  '/operations/{operationId}/logs':
     get:
-      description: "Retrieves the logs Multi-Target Application operation\n"
-      operationId: "GetMtaOperationLogs"
+      description: |
+        Retrieves the logs Multi-Target Application operation
+      operationId: GetMtaOperationLogs
       parameters:
-      - name: "operationId"
-        in: "path"
-        required: true
-        type: "string"
+        - name: operationId
+          in: path
+          required: true
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           schema:
-            type: "array"
+            type: array
             items:
-              $ref: "#/definitions/Log"
+              $ref: '#/definitions/Log'
 definitions:
-  File:
-    type: "object"
+  FileMetadata:
+    type: object
     properties:
       id:
-        type: "string"
+        type: string
       name:
-        type: "string"
+        type: string
       size:
-        type: "number"
+        type: number
       digest:
-        type: "string"
+        type: string
       digestAlgorithm:
-        type: "string"
+        type: string
       space:
-        type: "string"
+        type: string
   Mta:
-    type: "object"
+    type: object
     properties:
       metadata:
-        $ref: "#/definitions/Metadata"
+        $ref: '#/definitions/Metadata'
       modules:
-        type: "array"
+        type: array
         items:
-          $ref: "#/definitions/Module"
+          $ref: '#/definitions/Module'
       services:
-        type: "array"
+        type: array
         uniqueItems: true
         items:
-          type: "string"
+          type: string
   Metadata:
-    type: "object"
+    type: object
     properties:
       id:
-        type: "string"
+        type: string
       version:
-        type: "string"
+        type: string
   Module:
-    type: "object"
+    type: object
     properties:
       moduleName:
-        type: "string"
+        type: string
       appName:
-        type: "string"
+        type: string
       createdOn:
-        type: "string"
-        format: "date"
+        type: string
+        format: date
       updatedOn:
-        type: "string"
-        format: "date"
+        type: string
+        format: date
       providedDendencyNames:
-        type: "array"
+        type: array
         items:
-          type: "string"
+          type: string
       services:
-        type: "array"
+        type: array
         items:
-          type: "string"
+          type: string
       uris:
-        type: "array"
+        type: array
         items:
-          type: "string"
+          type: string
       deployAttributes:
-        type: "object"
+        type: object
         additionalProperties:
-          type: "object"
+          type: object
           properties: {}
   Operation:
-    type: "object"
+    type: object
     properties:
       processId:
-        type: "string"
+        type: string
       processType:
-        type: "string"
+        type: string
       startedAt:
-        type: "string"
-        format: "date"
+        type: string
+        format: date
       spaceId:
-        type: "string"
+        type: string
       mtaId:
-        type: "string"
+        type: string
       user:
-        type: "string"
+        type: string
       acquiredLock:
-        type: "boolean"
+        type: boolean
       state:
-        type: "string"
+        type: string
       messages:
-        type: "array"
+        type: array
         items:
-          $ref: "#/definitions/Message"
+          $ref: '#/definitions/Message'
       parameters:
-        type: "object"
+        type: object
         additionalProperties:
-          type: "object"
+          type: object
           properties: {}
   Message:
-    type: "object"
+    type: object
     properties:
       id:
-        type: "integer"
+        type: integer
       message:
-        type: "string"
+        type: string
       type:
-        $ref: "#/definitions/message_type"
+        $ref: '#/definitions/message_type'
   Log:
-    type: "object"
+    type: object
     properties:
       id:
-        type: "string"
+        type: string
       lastModified:
-        type: "string"
-        format: "date-time"
+        type: string
+        format: date-time
       content:
-        type: "string"
-        format: "uri"
+        type: string
+        format: uri
       size:
-        type: "integer"
-        format: "int64"
+        type: integer
+        format: int64
       displayName:
-        type: "string"
+        type: string
       description:
-        type: "string"
+        type: string
       externalInfo:
-        type: "string"
-        format: "uri"
+        type: string
+        format: uri
   message_type:
-    type: "string"
+    type: string
     enum:
-    - "INFO"
-    - "ERROR"
-    - "WARNING"
-    - "EXT"
-    - "TASK_STARTUP"
+      - INFO
+      - ERROR
+      - WARNING
+      - EXT
+      - TASK_STARTUP
 parameters:
   space_guid:
-    name: "space_guid"
-    in: "path"
+    name: space_guid
+    in: path
     required: true
-    type: "string"
+    type: string
   file:
-    name: "file"
-    in: "formData"
+    name: file
+    in: formData
     required: true
-    type: "file"
+    type: file
   last:
-    name: "last"
-    in: "query"
+    name: last
+    in: query
     required: false
-    type: "string"
+    type: string
   status:
-    name: "status"
-    in: "query"
+    name: status
+    in: query
     required: false
-    type: "array"
+    type: array
     items:
-      type: "string"
-    collectionFormat: "multi"
+      type: string
+    collectionFormat: multi
   operation:
-    in: "body"
-    name: "operation"
+    in: body
+    name: operation
     required: true
     schema:
-      $ref: "#/definitions/Operation"
+      $ref: '#/definitions/Operation'
   operationId:
-    name: "operationId"
-    in: "path"
+    name: operationId
+    in: path
     required: true
-    type: "string"
+    type: string
   actionId:
-    name: "actionId"
-    in: "query"
+    name: actionId
+    in: query
     required: true
-    type: "string"
+    type: string
   embed:
-    name: "embed"
-    in: "query"
-    description: "Adds the specified property in the response body\n"
+    name: embed
+    in: query
+    description: |
+      Adds the specified property in the response body
     required: false
-    type: "string"
+    type: string

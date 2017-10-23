@@ -17,7 +17,7 @@ import (
 // GetMtaFilesOKBody get mta files o k body
 // swagger:model getMtaFilesOKBody
 
-type GetMtaFilesOKBody []*File
+type GetMtaFilesOKBody []*FileMetadata
 
 // Validate validates this get mta files o k body
 func (m GetMtaFilesOKBody) Validate(formats strfmt.Registry) error {

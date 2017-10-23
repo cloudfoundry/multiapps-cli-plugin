@@ -45,6 +45,9 @@ func NewStartMtaOperationAccepted() *StartMtaOperationAccepted {
 Accepted
 */
 type StartMtaOperationAccepted struct {
+	/*A Location header, used for transpassing between different resources
+
+	 */
 	Location strfmt.URI
 }
 
