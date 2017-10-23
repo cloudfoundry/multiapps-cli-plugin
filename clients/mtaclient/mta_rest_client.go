@@ -28,37 +28,156 @@ func NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar
 func (c MtaRestClient) ExecuteAction(operationID, actionID string) (ResponseHeader, error) {
 	params := &operations.ExecuteOperationActionParams{
 		OperationID: operationID,
-		ActionID: actionID,
-		Context: context.TODO()
+		ActionID:    actionID,
+		Context:     context.TODO(),
 	}
 	token, err := c.TokenFactory.NewToken()
 	if err != nil {
 		return ResponseHeader{}, baseclient.NewClientError(err)
 	}
-	// TODO: the token must be added to the accepting parameters. This should be done through the swagger. See the `auth` section :)
-	resp, err := c.client.Operations.ExecuteOperationAction(params)
+	resp, err := c.client.Operations.ExecuteOperationAction(params, token)
 	if err != nil {
 		return ResponseHeader{}, baseclient.NewClientError(err)
 	}
 	return ResponseHeader{Location: resp.Payload}, nil
 }
-func (client MtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 
-}
-func (client MtaRestClient) GetMtaFiles() ([]*File, error) {
-}
-func (client MtaRestClient) GetMtaOperation(operationID, embed string) (*models.Operation, error) {
+func (c MtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
+	params := &operations.GetMtaParams{
+		Context: context.TODO(),
+		MtaID:   mtaID,
+	}
 
+	result, err := executeRestOperation(c.TokenFactory, func(token string) (interface{}, error) {
+		return c.client.Operations.GetMta(params, token)
+	})
+
+	return result.(*models.Mta), err
 }
-func (client MtaRestClient) GetMtaOperationLogs(operationID string) ([]*models.Log, error) {
+
+func (c MtaRestClient) GetMtaFiles() ([]*File, error) {
+	params := &operations.GetMtaFilesParams{
+		Context: context.TODO(),
+	}
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.GetMtaFiles(params, token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
 }
-func (client MtaRestClient) GetMtaOperations() ([]*models.Operation, error) {
+func (c MtaRestClient) GetMtaOperation(operationID, embed string) (*models.Operation, error) {
+	params := &operations.GetMtaOperationParms{
+		Context:     context.TODO(),
+		OperationID: operationID,
+		Embed:       embed,
+	}
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.GetMtaOperation(params, token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
 }
-func (client MtaRestClient) GetMtas() ([]*models.Mta, error) {
+func (c MtaRestClient) GetMtaOperationLogs(operationID string) ([]*models.Log, error) {
+	params := &operations.GetMtaOperationLogsParams{
+		Context:     context.TODO(),
+		OperationID: operationID,
+	}
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.GetMtaOperationLogs(params, token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
 }
-func (client MtaRestClient) GetOperationActions(operationID string) ([]string, error) {
+func (c MtaRestClient) GetMtaOperations(last *string, status []string) ([]*models.Operation, error) {
+	params := &operations.GetMtaOperationsParams{
+		Context: context.TODO(),
+		Last:    last,
+		Status:  status,
+	}
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.GetMtaOperations(params, token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
 }
-func (client MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHeader, error) {
+func (c MtaRestClient) GetMtas() ([]*models.Mta, error) {
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.GetMtas(nil, token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
 }
-func (client MtaRestClient) UploadMtaFile(file os.File) (*models.File, error) {
+func (c MtaRestClient) GetOperationActions(operationID string) ([]string, error) {
+	params := &operations.GetOperationActionsParams{
+		Context:     context.TODO(),
+		OperationID: operationID,
+	}
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.GetOperationActions(params, token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
+}
+func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHeader, error) {
+	params := &operations.StartMtaOperationParams{
+		Context:   context.TODO(),
+		Operation: &operation,
+	}
+	token, err := c.TokenFactory.NewToken()
+	if err != nil {
+		return ResponseHeader{}, baseclient.NewClientError(err)
+	}
+	resp, err := c.client.Operations.StartMtaOperation(params, token)
+	if err != nil {
+		return ResponseHeader{}, baseclient.NewClientError(err)
+	}
+	return ResponseHeader{Location: res.Location}, nil
+}
+func (c MtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
+	params := &operations.GetOperationActionsParams{
+		Context: context.TODO(),
+		File:    file,
+	}
+
+	result, err := executeRestOperation(c.TokenFactory, func(token string) (interface{}, error) {
+		return c.client.Operations.UploadMtaFile(params, token)
+	})
+
+	return result.(*models.FileMetadata), err
+}
+
+func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token string) (interface{}, error)) (interface{}, error) {
+	token, err := tokenProvider.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	resp, err := restOperation(token)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return res.Payload, nil
 }
