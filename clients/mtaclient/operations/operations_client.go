@@ -324,6 +324,66 @@ func (a *Client) UploadMtaFile(params *UploadMtaFileParams, authInfo runtime.Cli
 
 }
 
+/*
+GetCsrfToken Retrieves a csrf-token header
+
+*/
+func (a *Client) GetCsrfToken(params *GetCsrfTokenParams, authInfo runtime.ClientAuthInfoWriter) (*GetCsrfTokenNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCsrfTokenParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCsrfToken",
+		Method:             "GET",
+		PathPattern:        "/csrf-token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCsrfTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCsrfTokenNoContent), nil
+
+}
+
+/*
+GetInfo Retrieve information about the Deploy Service application
+
+*/
+func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter) (*GetInfoOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetInfoParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getInfo",
+		Method:             "GET",
+		PathPattern:        "/info",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInfoReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetInfoOK), nil
+
+}
+
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport

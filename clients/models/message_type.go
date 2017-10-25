@@ -15,7 +15,7 @@ import (
 )
 
 // MessageType message type
-// swagger:model message_type
+// swagger:model MessageType
 
 type MessageType string
 

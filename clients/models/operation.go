@@ -39,10 +39,10 @@ type Operation struct {
 	SpaceID string `json:"spaceId,omitempty"`
 
 	// started at
-	StartedAt strfmt.Date `json:"startedAt,omitempty"`
+	StartedAt string `json:"startedAt,omitempty"`
 
 	// state
-	State string `json:"state,omitempty"`
+	State State `json:"state,omitempty"`
 
 	// user
 	User string `json:"user,omitempty"`
@@ -72,9 +72,30 @@ type Operation struct {
 func (m *Operation) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateState(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *Operation) validateState(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.State) { // not required
+		return nil
+	}
+
+	if err := m.State.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("state")
+		}
+		return err
+	}
+
 	return nil
 }
 
