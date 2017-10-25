@@ -64,7 +64,7 @@ for the get mta operations operation typically these are written to a http.Reque
 type GetMtaOperationsParams struct {
 
 	/*Last*/
-	Last *string
+	Last *int64
 	/*Status*/
 	Status []string
 
@@ -107,13 +107,13 @@ func (o *GetMtaOperationsParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithLast adds the last to the get mta operations params
-func (o *GetMtaOperationsParams) WithLast(last *string) *GetMtaOperationsParams {
+func (o *GetMtaOperationsParams) WithLast(last *int64) *GetMtaOperationsParams {
 	o.SetLast(last)
 	return o
 }
 
 // SetLast adds the last to the get mta operations params
-func (o *GetMtaOperationsParams) SetLast(last *string) {
+func (o *GetMtaOperationsParams) SetLast(last *int64) {
 	o.Last = last
 }
 
@@ -139,11 +139,11 @@ func (o *GetMtaOperationsParams) WriteToRequest(r runtime.ClientRequest, reg str
 	if o.Last != nil {
 
 		// query param last
-		var qrLast string
+		var qrLast int64
 		if o.Last != nil {
 			qrLast = *o.Last
 		}
-		qLast := qrLast
+		qLast := swag.FormatInt64(qrLast)
 		if qLast != "" {
 			if err := r.SetQueryParam("last", qLast); err != nil {
 				return err
