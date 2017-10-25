@@ -4,15 +4,15 @@ import (
 	"net/http"
 
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
+	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
-	slmpclient "github.com/SAP/cf-mta-plugin/clients/slmpclient"
-	slppclient "github.com/SAP/cf-mta-plugin/clients/slppclient"
+	"github.wdf.sap.corp/xs2ds/cf-cli-plugin/clients/slmpclient"
+	"github.wdf.sap.corp/xs2ds/cf-cli-plugin/clients/slppclient"
 )
 
 type TestClientFactory struct {
-	SlmpClient slmpclient.SlmpClientOperations
-	SlppClient slppclient.SlppClientOperations
 	RestClient restclient.RestClientOperations
+	MtaClient  mtaclient.MtaClientOperations
 }
 
 func NewTestClientFactory(slmpClient slmpclient.SlmpClientOperations, slppClient slppclient.SlppClientOperations,

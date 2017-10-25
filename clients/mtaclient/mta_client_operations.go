@@ -14,7 +14,7 @@ type MtaClientOperations interface {
 	GetMtaFiles() ([]*File, error)
 	GetMtaOperation(operationID, embed string) (*models.Operation, error)
 	GetMtaOperationLogs(operationID string) ([]*models.Log, error)
-	GetMtaOperations() ([]*models.Operation, error)
+	GetMtaOperations(last *string, status []string) ([]*models.Operation, error)
 	GetMtas() ([]*models.Mta, error)
 	GetOperationActions(operationID string) ([]string, error)
 	StartMtaOperation(operation models.Operation) (ResponseHeader, error)

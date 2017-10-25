@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
@@ -31,14 +30,13 @@ var reportedProgressMessages []string
 // DeployCommand is a command for deploying an MTA archive
 type DeployCommand struct {
 	BaseCommand
-	serviceID               ServiceID
 	commandFlagsDefiner     CommandFlagsDefiner
 	processParametersSetter ProcessParametersSetter
 }
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
-	return &DeployCommand{BaseCommand{}, DeployServiceID, deployCommandFlagsDefiner(), deployProcessParametersSetter()}
+	return &DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), deployProcessParametersSetter()}
 }
 
 // GetPluginCommand returns the plugin command details
@@ -231,22 +229,17 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	// Create SLMP client
-	slmpClient, err := c.NewSlmpClient(host)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
 	// Check SLMP metadata
-	err = CheckSlmpMetadata(slmpClient)
+	// TODO: ensure session
+
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get space guid:", err)
 		return Failure
 	}
 
 	// Upload the MTA archive file
-	mtaArchiveUploader := NewFileUploader(c.serviceID.String(), []string{mtaArchivePath}, slmpClient)
+	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient)
 	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()
 	if status == Failure {
 		return Failure
@@ -256,17 +249,10 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		uploadedArchivePartIds = append(uploadedArchivePartIds, *uploadedMtaArchivePart.ID)
 	}
 
-	// Recreate the slmp client to ensure that the token is recreated
-	slmpClient, err = c.NewSlmpClient(host)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
 	// Upload the extension descriptor files
 	var uploadedExtDescriptorIDs []string
 	if len(extDescriptorPaths) != 0 {
-		extDescriptorsUploader := NewFileUploader(c.serviceID.String(), extDescriptorPaths, slmpClient)
+		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient)
 		uploadedExtDescriptors, status := extDescriptorsUploader.UploadFiles()
 		if status == Failure {
 			return Failure
@@ -279,45 +265,26 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	ui.Say("Starting deployment process...")
 
 	// Build the process instance
+	// TODO: when the new process parameters are introduced - enhance the existing logic in order to use it.
 	processBuilder := util.NewProcessBuilder()
-	processBuilder.ServiceID(c.serviceID.String())
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
 	processBuilder.Parameter("targetPlatform", context.Org+" "+context.Space)
 	c.processParametersSetter(optionValues, processBuilder)
-	process := processBuilder.Build()
+	operation := processBuilder.Build()
 
-	// Ensure that the session is not expired
-	err = EnsureSlmpSession(slmpClient)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
+	// TODO: Ensure that the session is not expired
 
 	// Create the new process
-	createdProcess, err := slmpClient.CreateServiceProcess(c.serviceID.String(), process)
+	responseHeader, err := mtaClient.StartMtaOperation(operation)
 	if err != nil {
-		ui.Failed("Could not create process for service %s: %s", terminal.EntityNameColor(c.serviceID.String()), err)
+		ui.Failed("Could not create operation: %s", err)
 		return Failure
 	}
 	ui.Ok()
 
-	processID := createdProcess.ID
-	// Create SLPP client
-	slppClient, err := c.NewSlppClient(host, c.serviceID.String(), processID)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
-	// Check SLPP metadata
-	err = CheckSlppMetadata(slppClient)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
+	// TODO: use the responseHeader to monitor the newly created operation
 	// Monitor the process execution
-	monitorExecutor := NewExecutionMonitor(processID, c.name, slppClient, []*models.ProgressMessage{})
+	monitorExecutor := NewExecutionMonitor(c.name, responseHeader.Location, mtaClient)
 	return monitorExecutor.Monitor()
 }
