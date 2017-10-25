@@ -1,21 +1,26 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/cli/cf/terminal"
-	slppclient "github.com/SAP/cf-mta-plugin/clients/slppclient"
+	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry/cli/cf/terminal"
 )
 
 // MonitorAction monitors process execution
 type MonitorAction struct{}
 
 // Execute executes monitor action on process with the specified id
-func (a *MonitorAction) Execute(processID, commandName string, slppClient slppclient.SlppClientOperations) ExecutionStatus {
-	progressMessages, err := getReportedProgressMessages(slppClient)
-	if err != nil {
-		ui.Failed("Could not get the already reported progress messages for process %s: %s", terminal.EntityNameColor(processID), err)
-	}
+func (a *MonitorAction) Execute(operationID, commandName string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
+	// TODO: refactor the Execution monitor in order to use the new client
+	// TODO: introduce a new way of building the reporting
 
-	monitor := NewExecutionMonitor(processID, commandName, slppClient, progressMessages)
+	responseHeader, err = mtaClient.ExecuteAction(operationID, "monitor")
+	if err != nil {
+		ui.Failed("Could not monitor multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), err)
+		return Failure
+	}
+	ui.Ok()
+
+	monitor := NewExecutionMonitor(operationID, commandName, responseHeader.Location, mtaClient)
 	return monitor.Monitor()
 }

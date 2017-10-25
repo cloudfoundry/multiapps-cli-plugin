@@ -6,12 +6,11 @@ package mtaclient
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	operations "github.com/SAP/cf-mta-plugin/clients/mtaclient/operations"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
-
-	"github.com/SAP/cf-mta-plugin/clients/mtaclient/operations"
 )
 
 // Default mta client HTTP client.

@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
-	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -18,9 +17,8 @@ import (
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/csrf"
 	"github.com/SAP/cf-mta-plugin/clients/models"
+	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
-	slmpclient "github.com/SAP/cf-mta-plugin/clients/slmpclient"
-	slppclient "github.com/SAP/cf-mta-plugin/clients/slppclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -54,7 +52,7 @@ type BaseCommand struct {
 // Initialize initializes the command with the specified name and CLI connection
 func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	log.Tracef("Initializing command '%s'\n", name)
-	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), &defaultClientFactory{}, NewDefaultTokenFactory(cliConnection))
+	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), clients.NewDefaultClientFactory(), NewDefaultTokenFactory(cliConnection))
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
@@ -169,34 +167,6 @@ func ContainsSpecificOptions(flags *flag.FlagSet, args []string, specificOptions
 	return matchedOptions == len(specificOptions), nil
 }
 
-// NewSlmpClient creates a new SLMP client
-func (c *BaseCommand) NewSlmpClient(host string) (slmpclient.SlmpClientOperations, error) {
-	space, err := c.GetSpace()
-	if err != nil {
-		return nil, err
-	}
-	org, err := c.GetOrg()
-	if err != nil {
-		return nil, err
-	}
-	slppClient := c.clientFactory.NewSlmpClient(host, org.Name, space.Name, c.transport, c.jar, c.tokenFactory)
-	return slppClient, nil
-}
-
-// NewSlppClient creates a new SLPP client for the specified service ID and process ID
-func (c *BaseCommand) NewSlppClient(host, serviceID, processID string) (slppclient.SlppClientOperations, error) {
-	space, err := c.GetSpace()
-	if err != nil {
-		return nil, err
-	}
-	org, err := c.GetOrg()
-	if err != nil {
-		return nil, err
-	}
-	slmpClient := c.clientFactory.NewSlppClient(host, org.Name, space.Name, serviceID, processID, c.transport, c.jar, c.tokenFactory)
-	return slmpClient, nil
-}
-
 // NewRestClient creates a new MTA deployer REST client
 func (c *BaseCommand) NewRestClient(host string) (restclient.RestClientOperations, error) {
 	space, err := c.GetSpace()
@@ -211,12 +181,24 @@ func (c *BaseCommand) NewRestClient(host string) (restclient.RestClientOperation
 	return restClient, nil
 }
 
+// NewMtaClient creates a new MTA deployer REST client
+func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, error) {
+	space, err := c.GetSpace()
+	if err != nil {
+		return nil, err
+	}
+
+	return c.clientFactory.NewMtaClient(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
+}
+
+// Context holding the username, Org and Space of the current used
 type Context struct {
 	Username string
 	Org      string
 	Space    string
 }
 
+// GetContext initializes and retrieves the Context
 func (c *BaseCommand) GetContext() (Context, error) {
 	username, err := c.GetUsername()
 	if err != nil {
@@ -280,104 +262,17 @@ func (c *BaseCommand) GetDeployServiceURL() (string, error) {
 	return deployServiceURL, nil
 }
 
-func (c *BaseCommand) ComputeDeployServiceURL() (string, error) {
-	apiEndpoint, err := c.cliConnection.ApiEndpoint()
-	if err != nil {
-		return "", fmt.Errorf("Could not get API endpoint: %s", err)
-	}
-	if apiEndpoint == "" {
-		return "", fmt.Errorf("No api endpoint set. Use '%s' to set an endpoint.", terminal.CommandColor("cf api"))
-	}
-	url, err := url.Parse(apiEndpoint)
-	if err != nil {
-		return "", fmt.Errorf("Could not parse API endpoint %s: %s", terminal.EntityNameColor(apiEndpoint), err)
-	}
-	if strings.HasPrefix(url.Host, "api.cf.") {
-		return "deploy-service.cfapps" + url.Host[6:], nil
-	} else if strings.HasPrefix(url.Host, "api.") {
-		return "deploy-service" + url.Host[3:], nil
-	}
-	return "", nil
-}
-
-// EnsureSlmpSession checks twice slmp metadata in order to recreate session if it is expired
-func EnsureSlmpSession(slmpClient slmpclient.SlmpClientOperations) error {
-	var err error
-	err = CheckSlmpMetadata(slmpClient)
-	if err != nil {
-		return err
-	}
-	err = CheckSlmpMetadata(slmpClient)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// CheckSlmpMetadata retrieves the SLMP metadata and checks if the SLMP version is a supported one
-func CheckSlmpMetadata(slmpClient slmpclient.SlmpClientOperations) error {
-	metadata, err := slmpClient.GetMetadata()
-	if err != nil {
-		return fmt.Errorf("Could not get SLMP metadata: %s", err)
-	}
-	if metadata.Slmpversion != "1.2.0" {
-		return fmt.Errorf("Unsupported SLMP version %s", terminal.EntityNameColor(metadata.Slmpversion))
-	}
-	return nil
-}
-
-// EnsureSlppSession checks twice slpp metadata in order to recreate session if it is expired
-func EnsureSlppSession(slppClient slppclient.SlppClientOperations) error {
-	var err error
-	err = CheckSlppMetadata(slppClient)
-	if err != nil {
-		return err
-	}
-	err = CheckSlppMetadata(slppClient)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// CheckSlppMetadata retrieves the SLPP metadata and checks if the SLPP version is a supported one
-func CheckSlppMetadata(slppClient slppclient.SlppClientOperations) error {
-	metadata, err := slppClient.GetMetadata()
-	if err != nil {
-		return fmt.Errorf("Could not get SLPP metadata: %s", err)
-	}
-	if metadata.Slppversion != "1.2.0" {
-		return fmt.Errorf("Unsupported SLPP version %s", terminal.EntityNameColor(metadata.Slppversion))
-	}
-	return nil
-}
-
-// GetServiceID returns the service ID of the process with the specified process ID.
-// If such a process is not found, returns an empty string.
-func GetServiceID(processID string, slmpClient slmpclient.SlmpClientOperations) (string, error) {
-	// Get process
-	process, err := slmpClient.GetProcess(processID)
-	if err != nil {
-		clientError := err.(*baseclient.ClientError)
-		if clientError.Code == 404 {
-			return "", fmt.Errorf("Multi-target app operation with id %s not found", processID)
-		}
-		return "", fmt.Errorf("Failed to get process: %s", err)
-	}
-	return process.Service.String(), nil
-}
-
 // ExecuteAction executes the action over the process specified with operationID
-func (c *BaseCommand) ExecuteAction(operationID, actionID, host string, serviceID ServiceID) ExecutionStatus {
+func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) ExecutionStatus {
 	// Create REST client
-	restClient, err := c.NewRestClient(host)
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	// find ongoing operation by the specified operationID
-	ongoingOperation, err := c.findOngoingOperationByID(operationID, serviceID.ProcessType(), restClient)
+	ongoingOperation, err := c.findOngoingOperationByID(operationID, mtaClient)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
@@ -388,13 +283,6 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string, serviceI
 		return Failure
 	}
 
-	// Create SLPP client for the found ongoing operation
-	slppClient, err := c.getSlppClientForOperation(host, ongoingOperation)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
 	// Finds the action specified with the actionID
 	action := GetActionToExecute(actionID)
 	if action == nil {
@@ -402,32 +290,26 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string, serviceI
 		return Failure
 	}
 	// Executes the action specified with actionID
-	return action.Execute(operationID, c.name, slppClient)
+	return action.Execute(operationID, c.name, mtaClient)
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
 func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force bool) (bool, error) {
-	// Create REST client
-	restClient, err := c.NewRestClient(host)
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		return false, err
 	}
 
 	// Check if there is an ongoing operation for this MTA ID
-	ongoingOperation, err := c.findOngoingOperation(mtaID, restClient)
+	ongoingOperation, err := c.findOngoingOperation(mtaID, mtaClient)
 	if err != nil {
 		return false, err
 	}
 	if ongoingOperation != nil {
-		slppClient, err := c.getSlppClientForOperation(host, ongoingOperation)
-		if err != nil {
-			return false, err
-		}
-
 		// Abort the conflict process if confirmed by the user
 		if c.shouldAbortConflictingOperation(mtaID, force) {
 			action := GetActionToExecute("abort")
-			status := action.Execute(*ongoingOperation.ProcessID, c.name, slppClient)
+			status := action.Execute(*ongoingOperation.ProcessID, c.name, mtaClient)
 			if status == Failure {
 				return false, nil
 			}
@@ -440,33 +322,14 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 	return true, nil
 }
 
-func (c *BaseCommand) getSlppClientForOperation(host string, ongoingOperation *models.Operation) (slppclient.SlppClientOperations, error) {
-	// Create SLPP client for the conflicting process
-	serviceID, err := ToServiceID(ongoingOperation.ProcessType)
-	if err != nil {
-		return nil, fmt.Errorf("Could not compute service ID from an ongoing operation's process type: %s", err.Error())
-	}
-	slppClient, err := c.NewSlppClient(host, serviceID.String(), *ongoingOperation.ProcessID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = CheckSlppMetadata(slppClient)
-	if err != nil {
-		return nil, err
-	}
-
-	return slppClient, nil
-}
-
-func (c *BaseCommand) findOngoingOperationByID(processID string, processType models.ProcessType, restClient restclient.RestClientOperations) (*models.Operation, error) {
-	ongoingOperations, err := restClient.GetOperations(nil, nil)
+func (c *BaseCommand) findOngoingOperationByID(processID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+	ongoingOperations, err := mtaClient.GetMtaOperations(nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Could not get ongoing operation with id %s: %s", terminal.EntityNameColor(processID), err)
 	}
 
-	for _, ongoingOperation := range ongoingOperations.Operations {
-		if *ongoingOperation.ProcessID == processID && ongoingOperation.ProcessType == processType {
+	for _, ongoingOperation := range ongoingOperations {
+		if *ongoingOperation.ProcessID == processID {
 			return ongoingOperation, nil
 		}
 	}
@@ -474,12 +337,12 @@ func (c *BaseCommand) findOngoingOperationByID(processID string, processType mod
 }
 
 // FindOngoingOperation finds ongoing operation for mta with the specified id
-func (c *BaseCommand) findOngoingOperation(mtaID string, restClient restclient.RestClientOperations) (*models.Operation, error) {
-	ongoingOperations, err := restClient.GetOperations(nil, nil)
+func (c *BaseCommand) findOngoingOperation(mtaID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+	ongoingOperations, err := mtaClient.GetMtaOperations(nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Could not get ongoing operations for multi-target app %s: %s", terminal.EntityNameColor(mtaID), err)
 	}
-	for _, ongoingOperation := range ongoingOperations.Operations {
+	for _, ongoingOperation := range ongoingOperations {
 		isConflicting, err := c.isConflicting(ongoingOperation, mtaID)
 		if err != nil {
 			return nil, err
@@ -521,23 +384,6 @@ func newCookieJar() http.CookieJar {
 		panic(fmt.Sprintf("Could not create cookie jar: %s", err))
 	}
 	return jar
-}
-
-type defaultClientFactory struct{}
-
-func (d *defaultClientFactory) NewSlmpClient(host, org, space string,
-	rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) slmpclient.SlmpClientOperations {
-	return slmpclient.NewRetryableSlmpClient(host, org, space, rt, jar, tokenfactory)
-}
-
-func (d *defaultClientFactory) NewSlppClient(host, org, space, serviceID, processID string,
-	rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) slppclient.SlppClientOperations {
-	return slppclient.NewRetryableSlppClient(host, org, space, serviceID, processID, rt, jar, tokenfactory)
-}
-
-func (d *defaultClientFactory) NewRestClient(host, org, space string,
-	rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations {
-	return restclient.NewRetryableRestClient(host, org, space, rt, jar, tokenfactory)
 }
 
 func getTokenValue(tokenString string) string {

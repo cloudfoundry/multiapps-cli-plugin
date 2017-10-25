@@ -4,13 +4,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
 	"github.com/SAP/cf-mta-plugin/clients/models"
-	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
+	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry/cli/cf/terminal"
+	"github.com/cloudfoundry/cli/plugin"
 )
 
 // MtaOperationsCommand is a command for listing all mta operations
@@ -65,14 +65,14 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	printInitialMessage(context, all, last)
 
 	// Create new REST client
-	restClient, err := c.NewRestClient(host)
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	// Get ongoing operations
-	operationsToPrint, err := getOperationsToPrint(restClient, last, all)
+	operationsToPrint, err := getOperationsToPrint(mtaClient, last, all)
 	if err != nil {
 		ui.Failed("Could not get multi-target app operations: %s", err)
 		return Failure
@@ -110,20 +110,20 @@ func printInitialMessage(context Context, all bool, last uint) {
 		terminal.EntityNameColor(context.Username))
 }
 
-func getOperationsToPrint(restClient restclient.RestClientOperations, last uint, all bool) ([]*models.Operation, error) {
+func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, last uint, all bool) ([]*models.Operation, error) {
 	var ops models.Operations
 	var err error
 	if all {
 		// Get all operations
-		ops, err = restClient.GetOperations(nil, nil)
+		ops, err = mtaClient.GetMtaOperations(nil, nil)
 	} else {
 		if last == 0 {
 			// Get operations in active state
-			ops, err = restClient.GetOperations(nil, activeStatesList)
+			ops, err = mtaClient.GetMtaOperations(nil, activeStatesList)
 		} else {
 			// Get last requested operations
 			requestedOperationsCount := strconv.Itoa(int(last))
-			ops, err = restClient.GetOperations(&requestedOperationsCount, nil)
+			ops, err = mtaClient.GetMtaOperations(&requestedOperationsCount, nil)
 		}
 	}
 	if err != nil {

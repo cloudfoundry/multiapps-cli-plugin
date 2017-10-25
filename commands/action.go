@@ -1,10 +1,10 @@
 package commands
 
-import slppclient "github.com/SAP/cf-mta-plugin/clients/slppclient"
+import mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 
 // Action interface representing actions to be excuted on processes
 type Action interface {
-	Execute(processID, commandName string, slppClient slppclient.SlppClientOperations) ExecutionStatus
+	Execute(operationID, commandName string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus
 }
 
 // GetActionToExecute returns the action to execute specified with action id

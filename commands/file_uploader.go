@@ -8,7 +8,7 @@ import (
 
 	"github.com/cloudfoundry/cli/cf/terminal"
 
-	slmpclient "github.com/SAP/cf-mta-plugin/clients/slmpclient"
+	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
@@ -17,24 +17,17 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const (
-	ServiceVersion1_0 = "1.0"
-	ServiceVersion1_1 = "1.1"
-)
-
 //FileUploader uploads files for the service with the specified service ID
 type FileUploader struct {
-	serviceID  string
-	files      []string
-	slmpClient slmpclient.SlmpClientOperations
+	files     []string
+	mtaClient mtaclient.MtaClientOperations
 }
 
 //NewFileUploader creates a new file uploader for the specified service ID, files, and SLMP client
-func NewFileUploader(serviceID string, files []string, slmpClient slmpclient.SlmpClientOperations) *FileUploader {
+func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations) *FileUploader {
 	return &FileUploader{
-		serviceID:  serviceID,
-		files:      files,
-		slmpClient: slmpClient,
+		files:     files,
+		mtaClient: mtaClient,
 	}
 }
 
@@ -43,7 +36,7 @@ func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
 	log.Tracef("Uploading files '%v'\n", f.files)
 
 	// Get all files that are already uploaded
-	serviceFiles, err := f.slmpClient.GetServiceFiles(f.serviceID)
+	uploadedMtaFiles, err := f.mtaClient.GetMtaFiles()
 	if err != nil {
 		ui.Failed("Could not get files for service %s: %s", terminal.EntityNameColor(f.serviceID), err)
 		return nil, Failure
@@ -64,7 +57,7 @@ func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
 		}
 
 		// Check if the files is already uploaded
-		if !isFileAlreadyUploaded(file, fileInfo, serviceFiles, &alreadyUploadedFiles) {
+		if !isFileAlreadyUploaded(file, fileInfo, uploadedMtaFiles, &alreadyUploadedFiles) {
 			// If not, add it to the list of uploaded files
 			fileToUpload, err := os.Open(file)
 			defer fileToUpload.Close()
@@ -93,16 +86,11 @@ func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
 			ui.Say("  " + fullPath)
 
 			// Recreate the session if it is expired
-			EnsureSlmpSession(f.slmpClient)
+			// TODO: ensure session
+			// EnsureSlmpSession(f.slmpClient)
 
 			// Upload the file
-			shouldUploadInChunks, err := f.shouldUploadInChunks()
-			if err != nil {
-				ui.Failed("Could not get versions for service %s", terminal.EntityNameColor(f.serviceID), err)
-				return nil, Failure
-			}
-
-			uploaded, err := f.upload(shouldUploadInChunks, fileToUpload, fullPath)
+			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.mtaClient)
 			if err != nil {
 				ui.Failed("Could not upload file %s", terminal.EntityNameColor(fileToUpload.Name()))
 				return nil, Failure
@@ -114,38 +102,7 @@ func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
 	return uploadedFiles, Success
 }
 
-func (f *FileUploader) upload(shouldUploadInChunks bool, fileToUpload os.File, filePath string) ([]*models.File, error) {
-	if shouldUploadInChunks {
-		// upload files in chunks
-		return uploadInChunks(filePath, fileToUpload, f.serviceID, f.slmpClient)
-	}
-
-	//upload normally
-	file, err := uploadFile(&fileToUpload, fileToUpload.Name(), f.serviceID, f.slmpClient)
-	return []*models.File{file}, err
-}
-
-func (f *FileUploader) shouldUploadInChunks() (bool, error) {
-	serviceVersions, err := f.slmpClient.GetServiceVersions(f.serviceID)
-	if err != nil {
-		return false, err
-
-	}
-	baseServiceVersion := getBaseServiceVersion(serviceVersions.ComponentVersions)
-	return baseServiceVersion == ServiceVersion1_1, nil
-}
-
-func getBaseServiceVersion(serviceVersions []*models.ComponentVersion) string {
-	baseServiceVersion := ServiceVersion1_0
-	for _, version := range serviceVersions {
-		if *version.Version == ServiceVersion1_1 {
-			return ServiceVersion1_1
-		}
-	}
-	return baseServiceVersion
-}
-
-func uploadInChunks(fullPath string, fileToUpload os.File, serviceID string, slmpClient slmpclient.SlmpClientOperations) ([]*models.File, error) {
+func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.MtaClientOperations) ([]*models.File, error) {
 	// Upload the file
 	fileToUploadParts, err := util.SplitFile(fullPath)
 	if err != nil {
@@ -162,7 +119,7 @@ func uploadInChunks(fullPath string, fileToUpload os.File, serviceID string, slm
 			return nil, fmt.Errorf("Could not open file part %s of file %s", filePart.Name(), fullPath)
 		}
 		uploaderGroup.Go(func() error {
-			file, err := uploadFilePart(filePart, fileToUpload.Name(), serviceID, slmpClient)
+			file, err := uploadFilePart(filePart, fileToUpload.Name(), mtaClient)
 			if err != nil {
 				return err
 			}
@@ -210,23 +167,19 @@ func attemptToRemoveFileParts(fileParts []string) {
 	}
 }
 
-func uploadFilePart(filePart *os.File, baseFileName string, serviceID string, client slmpclient.SlmpClientOperations) (*models.File, error) {
-	return uploadFile(filePart, baseFileName, serviceID, client)
-}
-
-func uploadFile(file *os.File, baseFileName string, serviceID string, client slmpclient.SlmpClientOperations) (*models.File, error) {
-	createdFiles, err := client.CreateServiceFile(serviceID, *file)
+func uploadFilePart(filePart *os.File, baseFileName string, client mtaclient.MtaClientOperations) (*models.File, error) {
+	uploadedFile, err := client.UploadMtaFile(*file)
 	defer file.Close()
-	if err != nil || len(createdFiles.Files) == 0 {
-		return nil, fmt.Errorf("Could not create file %s for service %s: %s", terminal.EntityNameColor(baseFileName), terminal.EntityNameColor(serviceID), err)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create file %s: %s", terminal.EntityNameColor(baseFileName), err)
 	}
-	return createdFiles.Files[0], nil
+	return uploadedFile, nil
 }
 
-func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles models.Files, alreadyUploadedFiles *[]*models.File) bool {
+func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []models.File, alreadyUploadedFiles *[]*models.File) bool {
 	newFileDigests := make(map[string]string)
-	for _, oldFile := range oldFiles.Files {
-		if *oldFile.FileName != fileInfo.Name() {
+	for _, oldFile := range oldFiles {
+		if *oldFile.Name != fileInfo.Name() {
 			continue
 		}
 		if newFileDigests[oldFile.DigestAlgorithm] == "" {
@@ -237,7 +190,7 @@ func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles mo
 			newFileDigests[oldFile.DigestAlgorithm] = strings.ToUpper(digest)
 		}
 		if newFileDigests[oldFile.DigestAlgorithm] == oldFile.Digest {
-			*alreadyUploadedFiles = append(*alreadyUploadedFiles, oldFile)
+			*alreadyUploadedFiles = append(*alreadyUploadedFiles, &oldFile)
 			ui.Say("Previously uploaded file %s with same digest detected, new upload will be skipped.",
 				terminal.EntityNameColor(fileInfo.Name()))
 			return true

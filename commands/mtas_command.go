@@ -1,11 +1,11 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry/cli/cf/terminal"
+	"github.com/cloudfoundry/cli/plugin"
 )
 
 // MtasCommand is a command for listing all deployed MTAs
@@ -56,14 +56,14 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 		terminal.EntityNameColor(context.Org), terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
 
 	// Create new REST client
-	restClient, err := c.NewRestClient(host)
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	// Get all deployed components
-	components, err := restClient.GetComponents()
+	mtas, err := mtaClient.GetMtas()
 	if err != nil {
 		ui.Failed("Could not get deployed components: %s", err)
 		return Failure
@@ -71,7 +71,6 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 	ui.Ok()
 
 	// Print all deployed MTAs
-	mtas := components.Mtas.Mtas
 	if len(mtas) > 0 {
 		table := ui.Table([]string{"mta id", "version"})
 		for _, mta := range mtas {

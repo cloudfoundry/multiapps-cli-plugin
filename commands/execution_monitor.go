@@ -1,139 +1,137 @@
 package commands
 
 import (
-	"strconv"
+	"strings"
 	"time"
 
-	"github.com/cloudfoundry/cli/cf/terminal"
-	slppclient "github.com/SAP/cf-mta-plugin/clients/slppclient"
+	"net/url"
+
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry/cli/cf/terminal"
 
 	"github.com/SAP/cf-mta-plugin/clients/models"
+	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 )
 
 const consoleOffset = "  "
 
 //ExecutionMonitor monitors execution of a process
 type ExecutionMonitor struct {
-	slppClient               slppclient.SlppClientOperations
-	reportedProgressMessages map[int]bool
-	processID                string
-	commandName              string
+	mtaClient          mtaclient.MtaClientOperations
+	reportedMessages   map[int64]bool
+	operationID        string
+	commandName        string
+	monitoringLocation string
 }
 
 //NewExecutionMonitor creates a new execution monitor
-func NewExecutionMonitor(processID, commandName string, slppClient slppclient.SlppClientOperations, reportedProgressMessages []*models.ProgressMessage) *ExecutionMonitor {
+func NewExecutionMonitor(commandName, monitoringLocation string, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	return &ExecutionMonitor{
-		slppClient:               slppClient,
-		reportedProgressMessages: getProgressMessagesIds(reportedProgressMessages),
-		processID:                processID,
-		commandName:              commandName,
+		mtaClient:          mtaClient,
+		reportedMessages:   getAlreadyReportedOperationMessages(monitoringLocation, mtaClient),
+		commandName:        commandName,
+		monitoringLocation: monitoringLocation,
 	}
 }
 
-func getProgressMessagesIds(reportedProgressMessages []*models.ProgressMessage) map[int]bool {
+func getAlreadyReportedOperationMessages(monitoringLocation string, mtaClient mtaclient.MtaClientOperation) map[int64]bool {
 	result := make(map[int]bool)
-	for _, progressMessage := range reportedProgressMessages {
-		idNum, _ := strconv.Atoi(*progressMessage.ID)
-		result[idNum] = true
+	operation, _ := getOperation(monitoringLocation, mtaClient)
+	for _, message := range operation.Messages {
+		result[message.ID] = true
 	}
 	return result
 }
 
-//Monitor monitors current state of the execution
 func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 	ui.Say("Monitoring process execution...")
 
-	for {
-		processTask, err := m.slppClient.GetTasklistTask(m.slppClient.GetServiceID())
-		if err != nil {
-			ui.Failed("Could not get task: %s", err)
-			return Failure
-		}
-		if processTask.Type != models.SlpTaskTypeSlpTaskTypePROCESS {
-			ui.Failed("The SLP task must be a Process task")
-			return Failure
-		}
-		m.reportProgressMessages(*processTask)
-		switch processTask.Status {
-		case models.SlpTaskStateSlpTaskStateRUNNING:
-			time.Sleep(2000)
-		case models.SlpTaskStateSlpTaskStateFINISHED:
-			ui.Say("Process finished.")
-			return Success
-		case models.SlpTaskStateSlpTaskStateABORTED:
-			ui.Say("Process was aborted.")
-			return Failure
-		case models.SlpTaskStateSlpTaskStateERROR:
-			clientError, err := m.slppClient.GetError()
-			if err != nil {
-				ui.Failed("Could not get client error: %s", err)
-				return Failure
-			}
-			ui.Say("Process failed: %s", clientError.Description)
-			m.reportAvaiableActions()
-			m.reportCommandForDownloadOfProcessLogs()
-			return Failure
-		case models.SlpTaskStateSlpTaskStateACTIONREQUIRED, models.SlpTaskStateSlpTaskStateDIALOG:
-			ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
-			m.reportAvaiableActions()
-			ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
-			return Success
-		default:
-			ui.Failed("Process is in illegal state %s.", terminal.EntityNameColor(string(processTask.Status)))
-			return Failure
-		}
+	operation, err := getOperation(m.monitoringLocation, m.mtaClient)
+	if err != nil {
+		ui.Failed("Could not get ongoing operation: %s", err)
+		return Failure
 	}
-	ui.Failed("Error during process monitoring")
-	return Failure
-}
-
-func (m *ExecutionMonitor) reportAvaiableActions() {
-	actions, _ := m.slppClient.GetActions()
-	actionsList := actions.Actions
-	for i := 0; i < len(actionsList); i++ {
-		m.reportAvailableAction(*actionsList[i])
+	m.reportOperationMessages(operation)
+	switch operation.Status {
+	case models.StateRUNNING:
+		time.Sleep(2000)
+	case models.StateFINISHED:
+		ui.Say("Process finished.")
+		return Success
+	case models.SlpTaskStateSlpTaskStateABORTED:
+		ui.Say("Process was aborted.")
+		return Failure
+	case models.SlpTaskStateSlpTaskStateERROR:
+		messageInError := findErrorMessage(operation.Messages)
+		if messageInError == nil {
+			ui.Failed("There is not error message for operation with id %s", operation.ProcessID)
+		}
+		ui.Say("Process failed: %s", messageInError.Message)
+		m.reportAvaiableActions(operation.ProcessID)
+		m.reportCommandForDownloadOfProcessLogs(operation.ProcessID)
+		return Failure
+	case models.SlpTaskStateSlpTaskStateACTIONREQUIRED, models.SlpTaskStateSlpTaskStateDIALOG:
+		ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
+		m.reportAvaiableActions(operation.ProcessID)
+		ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
+		return Success
+	default:
+		ui.Failed("Process is in illegal state %s.", terminal.EntityNameColor(string(processTask.Status)))
+		return Failure
 	}
 }
 
-func (m *ExecutionMonitor) reportCommandForDownloadOfProcessLogs() {
+func findErrorMessage(messages models.OperationMessages) *models.Message {
+	for _, message := range messages {
+		if message.Type == models.MessageTypeERROR {
+			return message
+		}
+	}
+	return nil
+}
+
+func (m *ExecutionMonitor) reportOperationMessages(operation *models.Operation) {
+	for _, message := range operation.Messages {
+		if m.reportedMessages[message.ID] {
+			continue
+		}
+		m.reportedMessages[message.ID] = true
+		ui.Say("%s%s", consoleOffset, message.Message)
+	}
+}
+
+func getMonitoringInformation(monitoringLocation string) (string, string, error) {
+	parsedUrl, _ := url.Parse(monitoringLocation)
+	path := parsedUrl.Path
+	parsedQuery, _ := url.ParseQuery(parsedUrl.RawQuery)
+	return strings.Split(path, "operations/")[1], parsedQuery["embed"], nil
+}
+
+func getOperation(monitoringLocation, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+	operationID, embedMessages, _ := getMonitoringInformation(monitoringLocation)
+	return mtaClient.GetMtaOperation(operationID, embedMessages)
+}
+
+func (m *ExecutionMonitor) reportAvaiableActions(operationID string) {
+	actions, _ := m.mtaClient.GetOperationActions(operationID)
+	for _, action := range actions {
+		m.reportAvailableAction(action, operationID)
+	}
+}
+
+func (m *ExecutionMonitor) reportCommandForDownloadOfProcessLogs(operationID string) {
 	downloadProcessLogsCommand := DownloadMtaOperationLogsCommand{}
 	commandBuilder := util.NewCfCommandStringBuilder()
 	commandBuilder.SetName(downloadProcessLogsCommand.GetPluginCommand().Alias)
-	commandBuilder.AddOption(operationIDOpt, m.processID)
+	commandBuilder.AddOption(operationIDOpt, operationID)
 	ui.Say("Use \"%s\" to download the logs of the process", commandBuilder.Build())
 }
 
-func (m *ExecutionMonitor) reportAvailableAction(action models.Action) {
+func (m *ExecutionMonitor) reportAvailableAction(action, operationID string) {
 	commandBuilder := util.NewCfCommandStringBuilder()
 	commandBuilder.SetName(m.commandName)
-	commandBuilder.AddOption(operationIDOpt, m.processID)
-	commandBuilder.AddOption(actionOpt, *action.ID)
-	ui.Say("Use \"%s\" to %s the process.", commandBuilder.Build(), *action.ID)
-}
-
-func (m *ExecutionMonitor) reportProgressMessages(task models.Task) {
-	for _, progressMessage := range task.ProgressMessages.ProgressMessages {
-		m.reportProgressMessage(progressMessage)
-	}
-}
-
-func (m *ExecutionMonitor) reportProgressMessage(progressMessage *models.ProgressMessage) {
-	idNum, _ := strconv.Atoi(*progressMessage.ID)
-	if m.reportedProgressMessages[idNum] {
-		return
-	}
-
-	m.reportedProgressMessages[idNum] = true
-	ui.Say("%s%s", consoleOffset, *progressMessage.Message)
-}
-
-func contains(slice []string, element string) bool {
-	for _, sliceElement := range slice {
-		if sliceElement == element {
-			return true
-		}
-	}
-	return false
+	commandBuilder.AddOption(operationIDOpt, operationID)
+	commandBuilder.AddOption(actionOpt, action)
+	ui.Say("Use \"%s\" to %s the process.", commandBuilder.Build(), action)
 }
