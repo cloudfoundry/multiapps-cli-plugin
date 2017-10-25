@@ -19,7 +19,7 @@ type MtaRestClient struct {
 }
 
 func NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaClientOperations {
-	restURL := restBaseUrl + spaceID
+	restURL := restBaseURL + spaceID
 	t := baseclient.NewHTTPTransport(host, restURL, restURL, rt, jar)
 	httpMtaClient := New(t, strfmt.Default)
 	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, client: httpMtaClient}

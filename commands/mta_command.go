@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloudfoundry/cli/cf/formatters"
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
-	"github.com/cloudfoundry/cli/plugin/models"
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry/cli/cf/formatters"
+	"github.com/cloudfoundry/cli/cf/terminal"
+	"github.com/cloudfoundry/cli/plugin"
+	"github.com/cloudfoundry/cli/plugin/models"
 )
 
 // MtaCommand is a command for listing a deployed MTA
@@ -66,17 +66,16 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
 
 	// Create new REST client
-	restClient, err := c.NewRestClient(host)
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	// Get the MTA
-	mta, err := restClient.GetMta(mtaID)
+	mta, err := mtaClient.GetMta(mtaID)
 	if err != nil {
 		ce, ok := err.(*baseclient.ClientError)
-		// TODO(ivan): This is crap. It should be changed.
 		if ok && ce.Code == 404 && strings.Contains(fmt.Sprint(ce.Description), mtaID) {
 			ui.Failed("Multi-target app %s not found", terminal.EntityNameColor(mtaID))
 			return Failure
@@ -92,7 +91,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	ui.Say("\nApps:")
 	table := ui.Table([]string{"name", "requested state", "instances", "memory", "disk", "urls"})
 	serviceApps := make(map[string][]string)
-	for _, mtaModule := range mta.Modules.Modules {
+	for _, mtaModule := range mta.Modules {
 		app, err := c.cliConnection.GetApp(*mtaModule.AppName)
 		if err != nil {
 			ui.Failed("Could not get app %s: %s", terminal.EntityNameColor(*mtaModule.AppName), err)
@@ -107,7 +106,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	if len(mta.Services.Services) > 0 {
 		ui.Say("\nServices:")
 		table := ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
-		for _, serviceName := range mta.Services.Services {
+		for _, serviceName := range mta.Services {
 			service, err := c.cliConnection.GetService(serviceName)
 			if err != nil {
 				ui.Failed("Could not get service %s: %s", terminal.EntityNameColor(serviceName), err)

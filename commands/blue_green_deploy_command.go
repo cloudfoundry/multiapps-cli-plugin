@@ -17,7 +17,7 @@ type BlueGreenDeployCommand struct {
 
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
-	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, BgDeployServiceID, blueGreenDeployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter()}}
+	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, blueGreenDeployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter()}}
 }
 
 // GetPluginCommand returns more information for the blue green deploy command.
@@ -52,11 +52,6 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 			},
 		},
 	}
-}
-
-// ServiceID returns the service ID of the processes started by DeployCommand
-func (c *BlueGreenDeployCommand) ServiceID() ServiceID {
-	return BgDeployServiceID
 }
 
 // BlueGreenDeployCommandFlagsDefiner returns a new CommandFlagsDefiner.
