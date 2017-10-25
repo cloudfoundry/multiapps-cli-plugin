@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry/cli/cf/terminal"
+	"github.com/cloudfoundry/cli/plugin"
 )
 
 const (
@@ -78,49 +78,23 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
 
 	// Create new SLMP client
-	slmpClient, err := c.NewSlmpClient(host)
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
-	// Check SLMP metadata
-	err = CheckSlmpMetadata(slmpClient)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
-	// Get the service ID for the specified operation ID
-	serviceID, err := GetServiceID(operationID, slmpClient)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
-	// Create new SLPP client
-	slppClient, err := c.NewSlppClient(host, serviceID, operationID)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
-	// Check SLPP metadata
-	err = CheckSlppMetadata(slppClient)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
+	// TODO: ensure session
 
 	// Download all logs
 	downloadedLogs := make(map[string]*string)
-	logs, err := slppClient.GetLogs()
+	logs, err := mtaClient.GetMtaOperationLogs(operationID)
 	if err != nil {
 		ui.Failed("Could not get process logs: %s", err)
 		return Failure
 	}
-	for _, logx := range logs.Logs {
-		content, err := slppClient.GetLogContent(*logx.ID)
+	for _, logx := range logs {
+		content, err := mtaClient.GetMtaOperationLogContent(operationID, logx.ID)
 		if err != nil {
 			ui.Failed("Could not get content of log %s: %s", terminal.EntityNameColor(*logx.ID), err)
 			return Failure
