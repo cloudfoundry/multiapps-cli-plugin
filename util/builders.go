@@ -14,6 +14,11 @@ func NewProcessBuilder() *ProcessBuilder {
 	return &ProcessBuilder{}
 }
 
+func (pb *ProcessBuilder) ProcessType(processType string) *ProcessBuilder {
+	pb.operation.ProcessType = processType
+	return pb
+}
+
 // Parameter adds a parameter to the process if it is set
 func (pb *ProcessBuilder) Parameter(parameterID string, value string) *ProcessBuilder {
 	if value != "" {

@@ -309,7 +309,7 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 		// Abort the conflict process if confirmed by the user
 		if c.shouldAbortConflictingOperation(mtaID, force) {
 			action := GetActionToExecute("abort")
-			status := action.Execute(*ongoingOperation.ProcessID, c.name, mtaClient)
+			status := action.Execute(ongoingOperation.ProcessID, c.name, mtaClient)
 			if status == Failure {
 				return false, nil
 			}
@@ -329,7 +329,7 @@ func (c *BaseCommand) findOngoingOperationByID(processID string, mtaClient mtacl
 	}
 
 	for _, ongoingOperation := range ongoingOperations {
-		if *ongoingOperation.ProcessID == processID {
+		if ongoingOperation.ProcessID == processID {
 			return ongoingOperation, nil
 		}
 	}
@@ -359,7 +359,7 @@ func (c *BaseCommand) isConflicting(operation *models.Operation, mtaID string) (
 	if err != nil {
 		return false, err
 	}
-	return operation.MtaID == mtaID && *operation.SpaceID == space.Guid && *operation.AcquiredLock, nil
+	return operation.MtaID == mtaID && operation.SpaceID == space.Guid && operation.AcquiredLock, nil
 }
 
 func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) bool {

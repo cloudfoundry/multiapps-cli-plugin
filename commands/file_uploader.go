@@ -32,19 +32,19 @@ func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations) *F
 }
 
 //UploadFiles uploads the files
-func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
+func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	log.Tracef("Uploading files '%v'\n", f.files)
 
 	// Get all files that are already uploaded
 	uploadedMtaFiles, err := f.mtaClient.GetMtaFiles()
 	if err != nil {
-		ui.Failed("Could not get files for service %s: %s", terminal.EntityNameColor(f.serviceID), err)
+		ui.Failed("Could not get mta files: %s", err)
 		return nil, Failure
 	}
 
 	// Determine which files to uplaod
 	filesToUpload := []os.File{}
-	alreadyUploadedFiles := []*models.File{}
+	alreadyUploadedFiles := []*models.FileMetadata{}
 	for _, file := range f.files {
 		// Check if the file exists
 		fileInfo, err := os.Stat(file)
@@ -70,7 +70,7 @@ func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
 	}
 
 	// If there are new files to upload, upload them
-	uploadedFiles := []*models.File{}
+	uploadedFiles := []*models.FileMetadata{}
 	uploadedFiles = append(uploadedFiles, alreadyUploadedFiles...)
 	if len(filesToUpload) != 0 {
 		ui.Say("Uploading %d files...", len(filesToUpload))
@@ -102,7 +102,7 @@ func (f *FileUploader) UploadFiles() ([]*models.File, ExecutionStatus) {
 	return uploadedFiles, Success
 }
 
-func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.MtaClientOperations) ([]*models.File, error) {
+func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.MtaClientOperations) ([]*models.FileMetadata, error) {
 	// Upload the file
 	fileToUploadParts, err := util.SplitFile(fullPath)
 	if err != nil {
@@ -111,7 +111,7 @@ func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.M
 	defer attemptToRemoveFileParts(fileToUploadParts)
 
 	var uploaderGroup errgroup.Group
-	uploadedFilesChannel := make(chan *models.File)
+	uploadedFilesChannel := make(chan *models.FileMetadata)
 	defer close(uploadedFilesChannel)
 	for _, fileToUploadPart := range fileToUploadParts {
 		filePart, err := os.Open(fileToUploadPart)
@@ -127,7 +127,7 @@ func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.M
 			return nil
 		})
 	}
-	uploadedFileParts := []*models.File{}
+	uploadedFileParts := []*models.FileMetadata{}
 	var retrieverGroup errgroup.Group
 	retrieverGroup.Go(func() error {
 		for uploadedFile := range uploadedFilesChannel {
@@ -167,19 +167,19 @@ func attemptToRemoveFileParts(fileParts []string) {
 	}
 }
 
-func uploadFilePart(filePart *os.File, baseFileName string, client mtaclient.MtaClientOperations) (*models.File, error) {
-	uploadedFile, err := client.UploadMtaFile(*file)
-	defer file.Close()
+func uploadFilePart(filePart *os.File, baseFileName string, client mtaclient.MtaClientOperations) (*models.FileMetadata, error) {
+	uploadedFile, err := client.UploadMtaFile(*filePart)
+	defer filePart.Close()
 	if err != nil {
 		return nil, fmt.Errorf("Could not create file %s: %s", terminal.EntityNameColor(baseFileName), err)
 	}
 	return uploadedFile, nil
 }
 
-func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []models.File, alreadyUploadedFiles *[]*models.File) bool {
+func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []*models.FileMetadata, alreadyUploadedFiles *[]*models.FileMetadata) bool {
 	newFileDigests := make(map[string]string)
 	for _, oldFile := range oldFiles {
-		if *oldFile.Name != fileInfo.Name() {
+		if oldFile.Name != fileInfo.Name() {
 			continue
 		}
 		if newFileDigests[oldFile.DigestAlgorithm] == "" {
@@ -190,7 +190,7 @@ func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []
 			newFileDigests[oldFile.DigestAlgorithm] = strings.ToUpper(digest)
 		}
 		if newFileDigests[oldFile.DigestAlgorithm] == oldFile.Digest {
-			*alreadyUploadedFiles = append(*alreadyUploadedFiles, &oldFile)
+			*alreadyUploadedFiles = append(*alreadyUploadedFiles, oldFile)
 			ui.Say("Previously uploaded file %s with same digest detected, new upload will be skipped.",
 				terminal.EntityNameColor(fileInfo.Name()))
 			return true

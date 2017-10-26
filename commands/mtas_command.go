@@ -74,7 +74,7 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 	if len(mtas) > 0 {
 		table := ui.Table([]string{"mta id", "version"})
 		for _, mta := range mtas {
-			table.Add(*mta.Metadata.ID, util.GetMtaVersionAsString(mta))
+			table.Add(mta.Metadata.ID, util.GetMtaVersionAsString(mta))
 		}
 		table.Print()
 	} else {
