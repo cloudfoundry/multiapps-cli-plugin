@@ -17,7 +17,9 @@ type BlueGreenDeployCommand struct {
 
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
-	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, blueGreenDeployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter()}}
+	blueGreenDeployCommand := &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, blueGreenDeployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter(), nil}}
+	blueGreenDeployCommand.DeployCommand.processTypeProvider = blueGreenDeployCommand
+	return blueGreenDeployCommand
 }
 
 // GetPluginCommand returns more information for the blue green deploy command.
@@ -69,4 +71,8 @@ func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
 		deployProcessParametersSetter()(optionValues, processBuilder)
 		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, optionValues)))
 	}
+}
+
+func (bg BlueGreenDeployCommand) GetProcessType() string {
+	return "bg-deploy"
 }

@@ -22,7 +22,8 @@ const (
 	DefaultHost string = "deploy-service.bosh-lite.com"
 	// DefaultBasePath is the default BasePath
 	// found in Meta (info) section of spec file
-	DefaultBasePath string = "/spaces/{space_guid}"
+	DefaultBasePath    string = "/spaces/{space_guid}"
+	DefaultRawBasePath string = "/spaces/{space_guid}"
 )
 
 // DefaultSchemes are the default schemes found in Meta (info) section of spec file
@@ -45,7 +46,7 @@ func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *Mta
 	}
 
 	// create transport and client
-	transport := httptransport.New(cfg.Host, cfg.BasePath, cfg.Schemes)
+	transport := httptransport.New(cfg.Host, cfg.BasePath, cfg.RawBasePath, cfg.Schemes)
 	return New(transport, formats)
 }
 
@@ -63,18 +64,20 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *MtaClient 
 // default settings taken from the meta section of the spec file.
 func DefaultTransportConfig() *TransportConfig {
 	return &TransportConfig{
-		Host:     DefaultHost,
-		BasePath: DefaultBasePath,
-		Schemes:  DefaultSchemes,
+		Host:        DefaultHost,
+		BasePath:    DefaultBasePath,
+		RawBasePath: DefaultRawBasePath,
+		Schemes:     DefaultSchemes,
 	}
 }
 
 // TransportConfig contains the transport related info,
 // found in the meta section of the spec file.
 type TransportConfig struct {
-	Host     string
-	BasePath string
-	Schemes  []string
+	Host        string
+	BasePath    string
+	RawBasePath string
+	Schemes     []string
 }
 
 // WithHost overrides the default host,

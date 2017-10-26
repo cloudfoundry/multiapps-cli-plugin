@@ -32,11 +32,14 @@ type DeployCommand struct {
 	BaseCommand
 	commandFlagsDefiner     CommandFlagsDefiner
 	processParametersSetter ProcessParametersSetter
+	processTypeProvider     ProcessTypeProvider
 }
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
-	return &DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), deployProcessParametersSetter()}
+	deployCommand := &DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), deployProcessParametersSetter(), nil}
+	deployCommand.processTypeProvider = deployCommand
+	return deployCommand
 }
 
 // GetPluginCommand returns the plugin command details
@@ -176,7 +179,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	if operationID != "" || action != "" {
-		return c.ExecuteAction(operationID, action, host, c.serviceID)
+		return c.ExecuteAction(operationID, action, host)
 	}
 
 	mtaArchive := args[0]
@@ -246,7 +249,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 	var uploadedArchivePartIds []string
 	for _, uploadedMtaArchivePart := range uploadedMtaArchives {
-		uploadedArchivePartIds = append(uploadedArchivePartIds, *uploadedMtaArchivePart.ID)
+		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedMtaArchivePart.ID)
 	}
 
 	// Upload the extension descriptor files
@@ -258,7 +261,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 			return Failure
 		}
 		for _, uploadedExtDescriptor := range uploadedExtDescriptors {
-			uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, *uploadedExtDescriptor.ID)
+			uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, uploadedExtDescriptor.ID)
 		}
 	}
 
@@ -267,6 +270,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Build the process instance
 	// TODO: when the new process parameters are introduced - enhance the existing logic in order to use it.
 	processBuilder := util.NewProcessBuilder()
+	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
 	processBuilder.Parameter("targetPlatform", context.Org+" "+context.Space)
@@ -276,15 +280,16 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// TODO: Ensure that the session is not expired
 
 	// Create the new process
-	responseHeader, err := mtaClient.StartMtaOperation(operation)
+	responseHeader, err := mtaClient.StartMtaOperation(*operation)
 	if err != nil {
 		ui.Failed("Could not create operation: %s", err)
 		return Failure
 	}
 	ui.Ok()
 
-	// TODO: use the responseHeader to monitor the newly created operation
-	// Monitor the process execution
-	monitorExecutor := NewExecutionMonitor(c.name, responseHeader.Location, mtaClient)
-	return monitorExecutor.Monitor()
+	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
+}
+
+func (d DeployCommand) GetProcessType() string {
+	return "deploy"
 }

@@ -15,12 +15,12 @@ func (a *ResumeAction) Execute(operationID, commandName string, mtaClient mtacli
 	// TODO: Ensure session is not expired
 
 	ui.Say("Resuming multi-target app operation with id %s...", terminal.EntityNameColor(operationID))
-	responseHeader, err = mtaClient.ExecuteAction(operationID, "resume")
+	responseHeader, err := mtaClient.ExecuteAction(operationID, "resume")
 	if err != nil {
-		ui.Failed("Could not resume multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), err)
+		ui.Failed("Could not resume multi-target app operation: %s", err)
 		return Failure
 	}
 	ui.Ok()
 
-	return NewExecutionMonitor(operationID, commandName, responseHeader.Location, mtaClient).Monitor()
+	return NewExecutionMonitor(commandName, responseHeader.Location.String(), mtaClient).Monitor()
 }
