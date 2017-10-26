@@ -21,23 +21,23 @@ type DefaultClientFactory struct {
 }
 
 // NewDefaultClientFactory a default intialization method for the factory
-func NewDefaultClientFactory() DefaultClientFactory {
-	return DefaultClientFactory{mtaClient: nil, restClient: nil}
+func NewDefaultClientFactory() *DefaultClientFactory {
+	return &DefaultClientFactory{mtaClient: nil, restClient: nil}
 }
 
 // NewMtaClient used for creating or returning cached value of the mta rest client
-func (d DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
-	if mtaClient == nil {
-		mtaClient = mtaclient.NewMtaClient(host, spaceID, rt, jar, tokenFactory)
+func (d *DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
+	if d.mtaClient == nil {
+		d.mtaClient = mtaclient.NewMtaClient(host, spaceID, rt, jar, tokenFactory)
 	}
-	return mtaclient
+	return d.mtaClient
 }
 
 // NewRestClient used for creating or returning cached value of the rest client
-func (d DefaultClientFactory) NewRestClient(host, org, space string,
+func (d *DefaultClientFactory) NewRestClient(host, org, space string,
 	rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations {
-	if restClient == nil {
-		restClient = restclient.NewRetryableRestClient(host, org, space, rt, jar, tokenfactory)
+	if d.restClient == nil {
+		d.restClient = restclient.NewRetryableRestClient(host, org, space, rt, jar, tokenfactory)
 	}
-	return restclient
+	return d.restClient
 }

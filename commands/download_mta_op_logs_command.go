@@ -96,10 +96,10 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	for _, logx := range logs {
 		content, err := mtaClient.GetMtaOperationLogContent(operationID, logx.ID)
 		if err != nil {
-			ui.Failed("Could not get content of log %s: %s", terminal.EntityNameColor(*logx.ID), err)
+			ui.Failed("Could not get content of log %s: %s", terminal.EntityNameColor(logx.ID), err)
 			return Failure
 		}
-		downloadedLogs[*logx.ID] = &content
+		downloadedLogs[logx.ID] = &content
 	}
 	ui.Ok()
 

@@ -1,9 +1,6 @@
 package commands
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/log"
@@ -86,7 +83,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 			if operation.MtaID == "" {
 				mtaid = "N/A"
 			}
-			table.Add(*operation.ProcessID, string(operation.ProcessType), mtaid, getStatus(operation.State), *operation.StartedAt, *operation.User)
+			table.Add(operation.ProcessID, string(operation.ProcessType), mtaid, string(operation.State), operation.StartedAt, operation.User)
 		}
 		table.Print()
 	} else {
@@ -111,7 +108,7 @@ func printInitialMessage(context Context, all bool, last uint) {
 }
 
 func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, last uint, all bool) ([]*models.Operation, error) {
-	var ops models.Operations
+	var ops []*models.Operation
 	var err error
 	if all {
 		// Get all operations
@@ -122,21 +119,14 @@ func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, last uint, al
 			ops, err = mtaClient.GetMtaOperations(nil, activeStatesList)
 		} else {
 			// Get last requested operations
-			requestedOperationsCount := strconv.Itoa(int(last))
+			requestedOperationsCount := int64(last)
 			ops, err = mtaClient.GetMtaOperations(&requestedOperationsCount, nil)
 		}
 	}
 	if err != nil {
 		return []*models.Operation{}, err
 	}
-	return ops.Operations, nil
+	return ops, nil
 }
 
 var activeStatesList = []string{"SLP_TASK_STATE_RUNNING", "SLP_TASK_STATE_ERROR", "SLP_TASK_STATE_DIALOG", "SLP_TASK_STATE_ACTION_REQUIRED", "SLP_TASK_STATE_BREAKPOINT"}
-
-func getStatus(state models.SlpTaskStateEnum) string {
-	if strings.HasPrefix(string(state), "SLP_TASK_STATE_") {
-		return string(state[len("SLP_TASK_STATE_"):])
-	}
-	return string(state)
-}

@@ -92,7 +92,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	if operationID != "" || actionID != "" {
-		return c.ExecuteAction(operationID, actionID, host, serviceID)
+		return c.ExecuteAction(operationID, actionID, host)
 	}
 
 	mtaID := args[0]
@@ -149,9 +149,9 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	operation := processBuilder.Build()
 
 	// Create the new process
-	responseHeader, err := mtaClient.StartMtaOperation(operation.ProcessType)
+	responseHeader, err := mtaClient.StartMtaOperation(*operation)
 	if err != nil {
-		ui.Failed("Could not create process of type %s: %s", terminal.EntityNameColor(operation.ProcessType), err)
+		ui.Failed("Could not create undeploy process: %s", err)
 		return Failure
 	}
 	ui.Ok()
@@ -159,5 +159,5 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	// TODO: ensure session
 
 	// Monitor process execution
-	return NewExecutionMonitor(c.name, responseHeader.Location, mtaClient).Monitor()
+	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
 }

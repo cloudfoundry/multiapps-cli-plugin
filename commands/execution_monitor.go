@@ -35,8 +35,8 @@ func NewExecutionMonitor(commandName, monitoringLocation string, mtaClient mtacl
 	}
 }
 
-func getAlreadyReportedOperationMessages(monitoringLocation string, mtaClient mtaclient.MtaClientOperation) map[int64]bool {
-	result := make(map[int]bool)
+func getAlreadyReportedOperationMessages(monitoringLocation string, mtaClient mtaclient.MtaClientOperations) map[int64]bool {
+	result := make(map[int64]bool)
 	operation, _ := getOperation(monitoringLocation, mtaClient)
 	for _, message := range operation.Messages {
 		result[message.ID] = true
@@ -47,38 +47,40 @@ func getAlreadyReportedOperationMessages(monitoringLocation string, mtaClient mt
 func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 	ui.Say("Monitoring process execution...")
 
-	operation, err := getOperation(m.monitoringLocation, m.mtaClient)
-	if err != nil {
-		ui.Failed("Could not get ongoing operation: %s", err)
-		return Failure
-	}
-	m.reportOperationMessages(operation)
-	switch operation.Status {
-	case models.StateRUNNING:
-		time.Sleep(2000)
-	case models.StateFINISHED:
-		ui.Say("Process finished.")
-		return Success
-	case models.SlpTaskStateSlpTaskStateABORTED:
-		ui.Say("Process was aborted.")
-		return Failure
-	case models.SlpTaskStateSlpTaskStateERROR:
-		messageInError := findErrorMessage(operation.Messages)
-		if messageInError == nil {
-			ui.Failed("There is not error message for operation with id %s", operation.ProcessID)
+	for {
+		operation, err := getOperation(m.monitoringLocation, m.mtaClient)
+		if err != nil {
+			ui.Failed("Could not get ongoing operation: %s", err)
+			return Failure
 		}
-		ui.Say("Process failed: %s", messageInError.Message)
-		m.reportAvaiableActions(operation.ProcessID)
-		m.reportCommandForDownloadOfProcessLogs(operation.ProcessID)
-		return Failure
-	case models.SlpTaskStateSlpTaskStateACTIONREQUIRED, models.SlpTaskStateSlpTaskStateDIALOG:
-		ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
-		m.reportAvaiableActions(operation.ProcessID)
-		ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
-		return Success
-	default:
-		ui.Failed("Process is in illegal state %s.", terminal.EntityNameColor(string(processTask.Status)))
-		return Failure
+		m.reportOperationMessages(operation)
+		switch operation.State {
+		case models.StateRUNNING:
+			time.Sleep(2000)
+		case models.StateFINISHED:
+			ui.Say("Process finished.")
+			return Success
+		case models.StateABORTED:
+			ui.Say("Process was aborted.")
+			return Failure
+		case models.StateERROR:
+			messageInError := findErrorMessage(operation.Messages)
+			if messageInError == nil {
+				ui.Failed("There is not error message for operation with id %s", operation.ProcessID)
+			}
+			ui.Say("Process failed: %s", messageInError.Message)
+			m.reportAvaiableActions(operation.ProcessID)
+			m.reportCommandForDownloadOfProcessLogs(operation.ProcessID)
+			return Failure
+		case models.StateACTIONREQUIRED:
+			ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
+			m.reportAvaiableActions(operation.ProcessID)
+			ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
+			return Success
+		default:
+			ui.Failed("Process is in illegal state %s.", terminal.EntityNameColor(string(operation.State)))
+			return Failure
+		}
 	}
 }
 
@@ -105,10 +107,10 @@ func getMonitoringInformation(monitoringLocation string) (string, string, error)
 	parsedUrl, _ := url.Parse(monitoringLocation)
 	path := parsedUrl.Path
 	parsedQuery, _ := url.ParseQuery(parsedUrl.RawQuery)
-	return strings.Split(path, "operations/")[1], parsedQuery["embed"], nil
+	return strings.Split(path, "operations/")[1], parsedQuery["embed"][0], nil
 }
 
-func getOperation(monitoringLocation, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+func getOperation(monitoringLocation string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
 	operationID, embedMessages, _ := getMonitoringInformation(monitoringLocation)
 	return mtaClient.GetMtaOperation(operationID, embedMessages)
 }

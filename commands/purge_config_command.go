@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry/cli/cf/terminal"
+	"github.com/cloudfoundry/cli/plugin"
 )
 
 type PurgeConfigCommand struct {
@@ -55,19 +55,8 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed(err.Error())
 		return Failure
 	}
-	if _, err := rc.GetComponents(); err != nil {
-		c.reportError(err)
-		return Failure
-	}
-	// TODO: Why do the same thing twice?
-	if _, err := rc.GetComponents(); err != nil {
-		c.reportError(err)
-		return Failure
-	}
+	// TODO: ensure session
 
-	// TODO(ivan): the basePath construction for the rest client should
-	// be part of each API call, not once when the client is created.
-	rc = c.clientFactory.NewRestClient(host, "", "", c.transport, c.jar, c.tokenFactory)
 	if err := rc.PurgeConfiguration(context.Org, context.Space); err != nil {
 		c.reportError(err)
 		return Failure
