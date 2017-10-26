@@ -92,9 +92,9 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	table := ui.Table([]string{"name", "requested state", "instances", "memory", "disk", "urls"})
 	serviceApps := make(map[string][]string)
 	for _, mtaModule := range mta.Modules {
-		app, err := c.cliConnection.GetApp(*mtaModule.AppName)
+		app, err := c.cliConnection.GetApp(mtaModule.AppName)
 		if err != nil {
-			ui.Failed("Could not get app %s: %s", terminal.EntityNameColor(*mtaModule.AppName), err)
+			ui.Failed("Could not get app %s: %s", terminal.EntityNameColor(mtaModule.AppName), err)
 			return Failure
 		}
 		table.Add(app.Name, app.State, getInstances(app), size(app.Memory), size(app.DiskQuota), getRoutes(app))
@@ -103,7 +103,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 		}
 	}
 	table.Print()
-	if len(mta.Services.Services) > 0 {
+	if len(mta.Services) > 0 {
 		ui.Say("\nServices:")
 		table := ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
 		for _, serviceName := range mta.Services {

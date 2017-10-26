@@ -16,13 +16,13 @@ func (a *RetryAction) Execute(operationID, commandName string, mtaClient mtaclie
 	// EnsureSlppSession(slppClient)
 
 	ui.Say("Retrying multi-target app operation with id %s...", terminal.EntityNameColor(operationID))
-	responseHeader, err = mtaClient.ExecuteAction(operationID, "retry")
+	responseHeader, err := mtaClient.ExecuteAction(operationID, "retry")
 	if err != nil {
-		ui.Failed("Could not retry multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), err)
+		ui.Failed("Could not retry multi-target app operation: %s", err)
 		return Failure
 	}
 	ui.Ok()
 
-	monitor := NewExecutionMonitor(operationID, commandName, responseHeader.Location, mtaClient)
+	monitor := NewExecutionMonitor(commandName, responseHeader.Location.String(), mtaClient)
 	return monitor.Monitor()
 }
