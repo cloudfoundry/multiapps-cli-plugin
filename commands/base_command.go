@@ -85,7 +85,8 @@ func (c *BaseCommand) CreateFlags(host *string) (*flag.FlagSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	flags.StringVar(host, "u", deployServiceURL, "")
+
+	flags.StringVar(host, deployServiceURLOpt, deployServiceURL, "")
 	flags.SetOutput(ioutil.Discard)
 	return flags, nil
 }
@@ -93,6 +94,12 @@ func (c *BaseCommand) CreateFlags(host *string) (*flag.FlagSet, error) {
 // ParseFlags parses the flags and checks for wrong arguments and missing required flags
 func (c *BaseCommand) ParseFlags(args []string, positionalArgNames []string, flags *flag.FlagSet,
 	required map[string]bool) error {
+
+	customDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
+	if customDeployServiceURL != "" {
+		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", customDeployServiceURL))
+	}
+
 	// Check for missing positional arguments
 	positionalArgsCount := len(positionalArgNames)
 	if len(args) < positionalArgsCount {
@@ -127,6 +134,16 @@ func (c *BaseCommand) ParseFlags(args []string, positionalArgNames []string, fla
 		return fmt.Errorf("Missing required options '%v'.", missingRequiredOptions)
 	}
 	return nil
+}
+
+func GetOptionValue(args []string, optionName string) string {
+	for index, arg := range args {
+		trimmedArg := strings.Trim(arg, "-")
+		if optionName == trimmedArg && len(args) > index+1 {
+			return args[index+1]
+		}
+	}
+	return ""
 }
 
 // ContainsSpecificOptions checks if the argument list contains all the specific options
@@ -257,24 +274,30 @@ func (c *BaseCommand) GetUsername() (string, error) {
 func (c *BaseCommand) GetDeployServiceURL() (string, error) {
 	deployServiceURL := os.Getenv(DeployServiceURLEnv)
 	if deployServiceURL == "" {
-		apiEndpoint, err := c.cliConnection.ApiEndpoint()
-		if err != nil {
-			return "", fmt.Errorf("Could not get API endpoint: %s", err)
-		}
-		if apiEndpoint == "" {
-			return "", fmt.Errorf("No api endpoint set. Use '%s' to set an endpoint.", terminal.CommandColor("cf api"))
-		}
-		url, err := url.Parse(apiEndpoint)
-		if err != nil {
-			return "", fmt.Errorf("Could not parse API endpoint %s: %s", terminal.EntityNameColor(apiEndpoint), err)
-		}
-		if strings.HasPrefix(url.Host, "api.cf.") {
-			deployServiceURL = "deploy-service.cfapps" + url.Host[6:]
-		} else if strings.HasPrefix(url.Host, "api.") {
-			deployServiceURL = "deploy-service" + url.Host[3:]
-		}
+		return c.ComputeDeployServiceURL()
 	}
+	ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the environment variable 'DEPLOY_SERVICE_URL'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", deployServiceURL))
 	return deployServiceURL, nil
+}
+
+func (c *BaseCommand) ComputeDeployServiceURL() (string, error) {
+	apiEndpoint, err := c.cliConnection.ApiEndpoint()
+	if err != nil {
+		return "", fmt.Errorf("Could not get API endpoint: %s", err)
+	}
+	if apiEndpoint == "" {
+		return "", fmt.Errorf("No api endpoint set. Use '%s' to set an endpoint.", terminal.CommandColor("cf api"))
+	}
+	url, err := url.Parse(apiEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("Could not parse API endpoint %s: %s", terminal.EntityNameColor(apiEndpoint), err)
+	}
+	if strings.HasPrefix(url.Host, "api.cf.") {
+		return "deploy-service.cfapps" + url.Host[6:], nil
+	} else if strings.HasPrefix(url.Host, "api.") {
+		return "deploy-service" + url.Host[3:], nil
+	}
+	return "", nil
 }
 
 // EnsureSlmpSession checks twice slmp metadata in order to recreate session if it is expired
