@@ -4,37 +4,10 @@ package fakes
 import (
 	"sync"
 
-	"github.com/SAP/cf-mta-plugin/clients/models"
 	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
 )
 
-type FakeRestClientOperations struct {
-	GetOperationsStub        func(lastRequestedOperations *string, requestedStates []string) (models.Operations, error)
-	getOperationsMutex       sync.RWMutex
-	getOperationsArgsForCall []struct {
-		lastRequestedOperations *string
-		requestedStates         []string
-	}
-	getOperationsReturns struct {
-		result1 models.Operations
-		result2 error
-	}
-	GetComponentsStub        func() (*models.Components, error)
-	getComponentsMutex       sync.RWMutex
-	getComponentsArgsForCall []struct{}
-	getComponentsReturns     struct {
-		result1 *models.Components
-		result2 error
-	}
-	GetMtaStub        func(mtaID string) (*models.Mta, error)
-	getMtaMutex       sync.RWMutex
-	getMtaArgsForCall []struct {
-		mtaID string
-	}
-	getMtaReturns struct {
-		result1 *models.Mta
-		result2 error
-	}
+type FakeRestClientOperations struct {}
 	PurgeConfigurationStub        func(org, space string) error
 	purgeConfigurationMutex       sync.RWMutex
 	purgeConfigurationArgsForCall []struct {
@@ -43,112 +16,6 @@ type FakeRestClientOperations struct {
 	}
 	purgeConfigurationReturns struct {
 		result1 error
-	}
-}
-
-func (fake *FakeRestClientOperations) GetOperations(lastRequestedOperations *string, requestedStates []string) (models.Operations, error) {
-	fake.getOperationsMutex.Lock()
-	fake.getOperationsArgsForCall = append(fake.getOperationsArgsForCall, struct {
-		lastRequestedOperations *string
-		requestedStates         []string
-	}{lastRequestedOperations, requestedStates})
-	fake.getOperationsMutex.Unlock()
-	if fake.GetOperationsStub != nil {
-		return fake.GetOperationsStub(lastRequestedOperations, requestedStates)
-	} else {
-		return fake.getOperationsReturns.result1, fake.getOperationsReturns.result2
-	}
-}
-
-func (fake *FakeRestClientOperations) GetOperationsCallCount() int {
-	fake.getOperationsMutex.RLock()
-	defer fake.getOperationsMutex.RUnlock()
-	return len(fake.getOperationsArgsForCall)
-}
-
-func (fake *FakeRestClientOperations) GetOperationsArgsForCall(i int) (*string, []string) {
-	fake.getOperationsMutex.RLock()
-	defer fake.getOperationsMutex.RUnlock()
-	return fake.getOperationsArgsForCall[i].lastRequestedOperations, fake.getOperationsArgsForCall[i].requestedStates
-}
-
-func (fake *FakeRestClientOperations) GetOperationsReturns(result1 models.Operations, result2 error) {
-	fake.GetOperationsStub = nil
-	fake.getOperationsReturns = struct {
-		result1 models.Operations
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeRestClientOperations) GetComponents() (*models.Components, error) {
-	fake.getComponentsMutex.Lock()
-	fake.getComponentsArgsForCall = append(fake.getComponentsArgsForCall, struct{}{})
-	fake.getComponentsMutex.Unlock()
-	if fake.GetComponentsStub != nil {
-		return fake.GetComponentsStub()
-	} else {
-		return fake.getComponentsReturns.result1, fake.getComponentsReturns.result2
-	}
-}
-
-func (fake *FakeRestClientOperations) GetComponentsCallCount() int {
-	fake.getComponentsMutex.RLock()
-	defer fake.getComponentsMutex.RUnlock()
-	return len(fake.getComponentsArgsForCall)
-}
-
-func (fake *FakeRestClientOperations) GetComponentsReturns(result1 *models.Components, result2 error) {
-	fake.GetComponentsStub = nil
-	fake.getComponentsReturns = struct {
-		result1 *models.Components
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeRestClientOperations) GetMta(mtaID string) (*models.Mta, error) {
-	fake.getMtaMutex.Lock()
-	fake.getMtaArgsForCall = append(fake.getMtaArgsForCall, struct {
-		mtaID string
-	}{mtaID})
-	fake.getMtaMutex.Unlock()
-	if fake.GetMtaStub != nil {
-		return fake.GetMtaStub(mtaID)
-	} else {
-		return fake.getMtaReturns.result1, fake.getMtaReturns.result2
-	}
-}
-
-func (fake *FakeRestClientOperations) GetMtaCallCount() int {
-	fake.getMtaMutex.RLock()
-	defer fake.getMtaMutex.RUnlock()
-	return len(fake.getMtaArgsForCall)
-}
-
-func (fake *FakeRestClientOperations) GetMtaArgsForCall(i int) string {
-	fake.getMtaMutex.RLock()
-	defer fake.getMtaMutex.RUnlock()
-	return fake.getMtaArgsForCall[i].mtaID
-}
-
-func (fake *FakeRestClientOperations) GetMtaReturns(result1 *models.Mta, result2 error) {
-	fake.GetMtaStub = nil
-	fake.getMtaReturns = struct {
-		result1 *models.Mta
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeRestClientOperations) PurgeConfiguration(org string, space string) error {
-	fake.purgeConfigurationMutex.Lock()
-	fake.purgeConfigurationArgsForCall = append(fake.purgeConfigurationArgsForCall, struct {
-		org   string
-		space string
-	}{org, space})
-	fake.purgeConfigurationMutex.Unlock()
-	if fake.PurgeConfigurationStub != nil {
-		return fake.PurgeConfigurationStub(org, space)
-	} else {
-		return fake.purgeConfigurationReturns.result1
 	}
 }
 
