@@ -13,88 +13,24 @@ securityDefinitions:
     flow: password
     scopes: {}
 security:
-  - basic: []
   - oauth2: []
 schemes:
-  - http
   - https
 consumes:
   - application/xml
 produces:
   - application/xml
 paths:
-  /operations:
-    get:
-      operationId: GetOperations
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: "#/definitions/operations"
-    parameters:
-      - $ref: "#/parameters/last"
-      - $ref: "#/parameters/status"
-  /operations/{processId}:
-    get:
-      operationId: GetOperation
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: "#/definitions/operation"
-    parameters:
-      - $ref: "#/parameters/processId"
-  /components:
-    get:
-      operationId: GetComponents
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: "#/definitions/components"
-  /components/{mtaId}:
-    get:
-      operationId: GetMta
-      responses:
-        200:
-          description: OK
-          schema:
-            $ref: "#/definitions/mta"
-    parameters:
-      - $ref: "#/parameters/mtaId"
   /configuration-entries/purge:
     post:
       operationId: PurgeConfiguration
       responses:
         204:
-          description: OK
+          description: No Content
     parameters:
       - $ref: "#/parameters/org"
       - $ref: "#/parameters/space"
 parameters:
-  processId:
-    name: processId
-    in: path
-    required: true
-    type: string
-  mtaId:
-    name: mtaId
-    in: path
-    required: true
-    type: string
-  last:
-    name: last
-    in: query
-    required: false
-    type: string
-  status:
-    name: status
-    in: query
-    required: false
-    type: array
-    items:
-      type: string
-    collectionFormat: multi
   org:
     name: org
     in: query
@@ -105,139 +41,3 @@ parameters:
     in: query
     required: true
     type: string
-definitions:
-  operations:
-    type: array
-    items:
-      $ref: "#/definitions/operation"
-    xml:
-      name: ongoing-operations
-      wrapped: true
-  operation:
-    type: object
-    required:
-      - process-id
-      - process-type
-      - started-at
-      - space-id
-      - user
-      - state
-      - acquired-lock
-    properties:
-      process-id:
-        type: string
-      process-type:
-        $ref: "#/definitions/process_type"
-      started-at:
-        type: string
-      space-id:
-        type: string
-      mta-id:
-        type: string
-      user:
-        type: string
-      state:
-        $ref: "#/definitions/slp_task_state_enum"
-      acquired-lock:
-        type: boolean
-    xml:
-      name: ongoing-operation
-  components:
-    type: object
-    required:
-      - mtas
-      - standaloneApps
-    properties:
-      mtas:
-        type: array
-        items:
-          $ref: "#/definitions/mta"
-        xml:
-          wrapped: true
-      standaloneApps:
-        type: array
-        items:
-          type: string
-          xml:
-            name: standaloneApp
-        xml:
-          wrapped: true
-  mta:
-    type: object
-    required:
-      - metadata
-      - modules
-      - services
-    properties:
-      metadata:
-        type: object
-        required:
-          - id
-          - version
-        properties:
-          id:
-            type: string
-          version:
-            type: string
-      modules:
-        type: array
-        items:
-          type: object
-          required:
-            - moduleName
-            - appName
-            - services
-            - providedDependencies
-          properties:
-            moduleName:
-              type: string
-            appName:
-              type: string
-            services:
-              type: array
-              items:
-                type: string
-                xml:
-                  name: service
-              xml:
-                wrapped: true
-            providedDependencies:
-              type: array
-              items:
-                type: string
-                xml:
-                  name: providedDependency
-              xml:
-                wrapped: true
-          xml:
-            name: module
-        xml:
-          wrapped: true
-      services:
-        type: array
-        items:
-          type: string
-          xml:
-            name: service
-        xml:
-          wrapped: true
-  # Simple types
-  process_type:
-    type: string
-    enum:
-      - deploy
-      - undeploy
-      - blue-green-deploy
-  slp_task_state_enum:
-    type: string
-    enum:
-      - SLP_TASK_STATE_INITIAL
-      - SLP_TASK_STATE_RUNNING
-      - SLP_TASK_STATE_ERROR
-      - SLP_TASK_STATE_DIALOG
-      - SLP_TASK_STATE_FINISHED
-      - SLP_TASK_STATE_ABORTED
-      - SLP_TASK_STATE_SKIPPED
-      - SLP_TASK_STATE_ACTION_REQUIRED
-      - SLP_TASK_STATE_BREAKPOINT
-      - SLP_TASK_STATE_STOPPED
