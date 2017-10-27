@@ -19,6 +19,7 @@ type MtaClientOperations interface {
 	GetOperationActions(operationID string) ([]string, error)
 	StartMtaOperation(operation models.Operation) (ResponseHeader, error)
 	UploadMtaFile(file os.File) (*models.FileMetadata, error)
+	GetMtaOperationLogContent(operationID, logID string) (string, error)
 }
 
 // ResponseHeader response header
