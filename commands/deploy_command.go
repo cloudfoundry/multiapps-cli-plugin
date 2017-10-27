@@ -37,9 +37,7 @@ type DeployCommand struct {
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
-	deployCommand := &DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), deployProcessParametersSetter(), nil}
-	deployCommand.processTypeProvider = deployCommand
-	return deployCommand
+	return &DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}}
 }
 
 // GetPluginCommand returns the plugin command details
@@ -290,6 +288,8 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
 }
 
-func (d DeployCommand) GetProcessType() string {
+type deployCommandProcessTypeProvider struct{}
+
+func (d deployCommandProcessTypeProvider) GetProcessType() string {
 	return "deploy"
 }
