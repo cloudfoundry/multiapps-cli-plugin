@@ -16,6 +16,11 @@ import (
 //UndeployCommand is a command for undeploying MTAs
 type UndeployCommand struct {
 	BaseCommand
+	processTypeProvider ProcessTypeProvider
+}
+
+func NewUndeployCommand() *UndeployCommand {
+	return &UndeployCommand{processTypeProvider: &undeployCommandProcessTypeProvider{}}
 }
 
 // GetPluginCommand returns the plugin command details
@@ -141,6 +146,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	ui.Say("Starting undeployment process...")
 
 	processBuilder := util.NewProcessBuilder()
+	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("mtaId", mtaID)
 	processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(noRestartSubscribedApps))
 	processBuilder.Parameter("deleteServices", strconv.FormatBool(deleteServices))
@@ -160,4 +166,10 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 
 	// Monitor process execution
 	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
+}
+
+type undeployCommandProcessTypeProvider struct{}
+
+func (d undeployCommandProcessTypeProvider) GetProcessType() string {
+	return "undeploy"
 }
