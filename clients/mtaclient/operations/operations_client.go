@@ -145,6 +145,36 @@ func (a *Client) GetMtaOperation(params *GetMtaOperationParams, authInfo runtime
 }
 
 /*
+GetMtaOperationLogContent Retrieves the log content for Multi-Target Application operation
+
+*/
+func (a *Client) GetMtaOperationLogContent(params *GetMtaOperationLogContentParams, authInfo runtime.ClientAuthInfoWriter) (*GetMtaOperationLogContentOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetMtaOperationLogContentParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "GetMtaOperationLogContent",
+		Method:             "GET",
+		PathPattern:        "/operations/{operationId}/logs/{logId}/content",
+		ProducesMediaTypes: []string{"text/plain"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetMtaOperationLogContentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetMtaOperationLogContentOK), nil
+
+}
+
+/*
 GetMtaOperationLogs Retrieves the logs Multi-Target Application operation
 
 */
