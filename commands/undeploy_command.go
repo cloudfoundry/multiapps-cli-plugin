@@ -48,16 +48,9 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 	}
 }
 
-// ServiceID returns the service ID of the processes started by UndeployCommand
-func (c *UndeployCommand) ServiceID() ServiceID {
-	return UndeployServiceID
-}
-
 // Execute executes the command
 func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
-
-	var serviceID = c.ServiceID()
 
 	var host string
 	var operationID string

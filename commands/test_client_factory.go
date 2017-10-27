@@ -6,8 +6,6 @@ import (
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
-	"github.wdf.sap.corp/xs2ds/cf-cli-plugin/clients/slmpclient"
-	"github.wdf.sap.corp/xs2ds/cf-cli-plugin/clients/slppclient"
 )
 
 type TestClientFactory struct {
@@ -15,23 +13,16 @@ type TestClientFactory struct {
 	MtaClient  mtaclient.MtaClientOperations
 }
 
-func NewTestClientFactory(slmpClient slmpclient.SlmpClientOperations, slppClient slppclient.SlppClientOperations,
+func NewTestClientFactory(mtaClient mtaclient.MtaClientOperations,
 	restClient restclient.RestClientOperations) *TestClientFactory {
 	return &TestClientFactory{
-		SlmpClient: slmpClient,
-		SlppClient: slppClient,
+		MtaClient:  mtaClient,
 		RestClient: restClient,
 	}
 }
 
-func (f *TestClientFactory) NewSlmpClient(host, org, space string,
-	rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) slmpclient.SlmpClientOperations {
-	return f.SlmpClient
-}
-
-func (f *TestClientFactory) NewSlppClient(host, org, space, serviceID, processID string,
-	rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) slppclient.SlppClientOperations {
-	return f.SlppClient
+func (f *TestClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
+	return f.MtaClient
 }
 
 func (f *TestClientFactory) NewRestClient(host, org, space string,

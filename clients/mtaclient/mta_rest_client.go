@@ -53,7 +53,7 @@ func (c MtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 		return c.client.Operations.GetMta(params, token)
 	})
 
-	return result.(*models.Mta), err
+	return result.(*operations.GetMtaOK).Payload, baseclient.NewClientError(err)
 }
 
 func (c MtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
@@ -168,7 +168,21 @@ func (c MtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error)
 		return c.client.Operations.UploadMtaFile(params, token)
 	})
 
-	return result.(*models.FileMetadata), err
+	return result.(*operations.UploadMtaFileCreated).Payload, baseclient.NewClientError(err)
+}
+
+func (c MtaRestClient) GetMtaOperationLogContent(operationID, logID string) (string, error) {
+	params := &operations.GetMtaOperationLogContentParams{
+		Context:     context.TODO(),
+		LogID:       logID,
+		OperationID: operationID,
+	}
+
+	result, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
+		return c.client.Operations.GetMtaOperationLogContent(params, token)
+	})
+
+	return result.(*operations.GetMtaOperationLogContentOK).Payload, baseclient.NewClientError(err)
 }
 
 func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token runtime.ClientAuthInfoWriter) (interface{}, error)) (interface{}, error) {
@@ -176,9 +190,5 @@ func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation f
 	if err != nil {
 		return nil, baseclient.NewClientError(err)
 	}
-	resp, err := restOperation(token)
-	if err != nil {
-		return nil, baseclient.NewClientError(err)
-	}
-	return resp, nil
+	return restOperation(token)
 }
