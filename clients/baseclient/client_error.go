@@ -17,6 +17,9 @@ func (ce *ClientError) Error() string {
 }
 
 func NewClientError(err error) error {
+	if err == nil {
+		return nil
+	}
 	ae, ok := err.(*runtime.APIError)
 	if ok {
 		resp := ae.Response.(runtime.ClientResponse)

@@ -184,6 +184,26 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Log"
+  /operations/{operationId}/logs/{logId}/content:
+    get:
+      description: "Retrieves the log content for Multi-Target Application operation\n"
+      operationId: "GetMtaOperationLogContent"
+      produces:
+      - "text/plain"
+      parameters:
+      - name: "operationId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "logId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "string"
   /csrf-token:
     get:
       description: "Retrieves a csrf-token header\n"
@@ -399,4 +419,9 @@ parameters:
     in: "query"
     description: "Adds the specified property in the response body\n"
     required: false
+    type: "string"
+  logId:
+    name: "logId"
+    in: "path"
+    required: true
     type: "string"
