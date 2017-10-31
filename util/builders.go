@@ -11,7 +11,7 @@ type ProcessBuilder struct {
 
 // NewProcessBuilder creates a new process builder
 func NewProcessBuilder() *ProcessBuilder {
-	return &ProcessBuilder{}
+	return &ProcessBuilder{operation: models.Operation{Parameters: make(map[string]interface{})}}
 }
 
 func (pb *ProcessBuilder) ProcessType(processType string) *ProcessBuilder {

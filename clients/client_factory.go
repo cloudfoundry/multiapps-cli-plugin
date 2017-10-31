@@ -12,17 +12,19 @@ import (
 type ClientFactory interface {
 	NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
 	NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations
+	NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
 }
 
 // DefaultClientFactory a default implementation of the ClientFactory
 type DefaultClientFactory struct {
-	mtaClient  mtaclient.MtaClientOperations
-	restClient restclient.RestClientOperations
+	mtaClient           mtaclient.MtaClientOperations
+	managementMtaClient mtaclient.MtaClientOperations
+	restClient          restclient.RestClientOperations
 }
 
 // NewDefaultClientFactory a default intialization method for the factory
 func NewDefaultClientFactory() *DefaultClientFactory {
-	return &DefaultClientFactory{mtaClient: nil, restClient: nil}
+	return &DefaultClientFactory{mtaClient: nil, restClient: nil, managementMtaClient: nil}
 }
 
 // NewMtaClient used for creating or returning cached value of the mta rest client
@@ -31,6 +33,14 @@ func (d *DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundT
 		d.mtaClient = mtaclient.NewMtaClient(host, spaceID, rt, jar, tokenFactory)
 	}
 	return d.mtaClient
+}
+
+// NewManagementMtaClient used for creating or returning cached value of the mta rest client
+func (d *DefaultClientFactory) NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
+	if d.managementMtaClient == nil {
+		d.managementMtaClient = mtaclient.NewManagementMtaClient(host, rt, jar, tokenFactory)
+	}
+	return d.managementMtaClient
 }
 
 // NewRestClient used for creating or returning cached value of the rest client

@@ -20,7 +20,7 @@ type UndeployCommand struct {
 }
 
 func NewUndeployCommand() *UndeployCommand {
-	return &UndeployCommand{processTypeProvider: &undeployCommandProcessTypeProvider{}}
+	return &UndeployCommand{BaseCommand: BaseCommand{}, processTypeProvider: &undeployCommandProcessTypeProvider{}}
 }
 
 // GetPluginCommand returns the plugin command details
@@ -134,7 +134,16 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	// TODO: ensure session
+	sessionProvider, err := c.NewSessionProvider(host)
+	if err != nil {
+		ui.Failed("Could not retrieve x-csrf-token provider for the current session: %s", baseclient.NewClientError(err))
+		return Failure
+	}
+	err = sessionProvider.GetSession()
+	if err != nil {
+		ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
+		return Failure
+	}
 
 	ui.Say("Starting undeployment process...")
 
@@ -155,7 +164,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 	ui.Ok()
 
-	// TODO: ensure session
+	sessionProvider.GetSession()
 
 	// Monitor process execution
 	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
@@ -164,5 +173,5 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 type undeployCommandProcessTypeProvider struct{}
 
 func (d undeployCommandProcessTypeProvider) GetProcessType() string {
-	return "undeploy"
+	return "UNDEPLOY"
 }

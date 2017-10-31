@@ -74,5 +74,5 @@ func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
 type blueGreenDeployCommandProcessTypeProvider struct{}
 
 func (bg blueGreenDeployCommandProcessTypeProvider) GetProcessType() string {
-	return "bg-deploy"
+	return "BLUE_GREEN_DEPLOY"
 }

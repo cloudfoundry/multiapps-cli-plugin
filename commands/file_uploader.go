@@ -8,6 +8,8 @@ import (
 
 	"github.com/cloudfoundry/cli/cf/terminal"
 
+	"github.com/SAP/cf-mta-plugin/clients/baseclient"
+	"github.com/SAP/cf-mta-plugin/clients/csrf"
 	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
@@ -19,15 +21,17 @@ import (
 
 //FileUploader uploads files for the service with the specified service ID
 type FileUploader struct {
-	files     []string
-	mtaClient mtaclient.MtaClientOperations
+	files           []string
+	mtaClient       mtaclient.MtaClientOperations
+	sessionProvider csrf.SessionProvider
 }
 
 //NewFileUploader creates a new file uploader for the specified service ID, files, and SLMP client
-func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations) *FileUploader {
+func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations, sessionProvider csrf.SessionProvider) *FileUploader {
 	return &FileUploader{
-		files:     files,
-		mtaClient: mtaClient,
+		files:           files,
+		mtaClient:       mtaClient,
+		sessionProvider: sessionProvider,
 	}
 }
 
@@ -85,9 +89,11 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 			}
 			ui.Say("  " + fullPath)
 
-			// Recreate the session if it is expired
-			// TODO: ensure session
-			// EnsureSlmpSession(f.slmpClient)
+			err = f.sessionProvider.GetSession()
+			if err != nil {
+				ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
+				return nil, Failure
+			}
 
 			// Upload the file
 			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.mtaClient)
