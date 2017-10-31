@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-errors/errors"
+
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	models "github.com/SAP/cf-mta-plugin/clients/models"
 	operations "github.com/SAP/cf-mta-plugin/clients/mtaclient/operations"
@@ -12,7 +14,8 @@ import (
 	strfmt "github.com/go-openapi/strfmt"
 )
 
-const restBaseURL string = "api/v1/spaces/"
+const spacesURL string = "spaces/"
+const restBaseURL string = "api/v1/"
 
 type MtaRestClient struct {
 	baseclient.BaseClient
@@ -20,8 +23,14 @@ type MtaRestClient struct {
 }
 
 func NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaClientOperations {
-	restURL := restBaseURL + spaceID
+	restURL := restBaseURL + spacesURL + spaceID
 	t := baseclient.NewHTTPTransport(host, restURL, restURL, rt, jar)
+	httpMtaClient := New(t, strfmt.Default)
+	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
+}
+
+func NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaClientOperations {
+	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
 	httpMtaClient := New(t, strfmt.Default)
 	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
 }
@@ -52,8 +61,11 @@ func (c MtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 	result, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
 		return c.client.Operations.GetMta(params, token)
 	})
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
 
-	return result.(*operations.GetMtaOK).Payload, baseclient.NewClientError(err)
+	return result.(*operations.GetMtaOK).Payload, nil
 }
 
 func (c MtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
@@ -113,9 +125,16 @@ func (c MtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models
 	}
 	resp, err := c.client.Operations.GetMtaOperations(params, token)
 	if err != nil {
-		return nil, baseclient.NewClientError(err)
+		return nil, errors.New(err)
 	}
 	return resp.Payload, nil
+}
+func parseOperation(payload models.GetMtaOperationsOKBody) []*models.Operation {
+	var resultOperations []*models.Operation
+	for _, p := range payload {
+		resultOperations = append(resultOperations, p)
+	}
+	return resultOperations
 }
 func (c MtaRestClient) GetMtas() ([]*models.Mta, error) {
 	token, err := c.TokenFactory.NewToken()
@@ -183,6 +202,17 @@ func (c MtaRestClient) GetMtaOperationLogContent(operationID, logID string) (str
 	})
 
 	return result.(*operations.GetMtaOperationLogContentOK).Payload, baseclient.NewClientError(err)
+}
+
+func (c MtaRestClient) GetCsrfToken() error {
+	_, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
+		return c.client.Operations.GetCsrfToken(nil, token)
+	})
+	return err
+}
+
+func (c MtaRestClient) GetSession() error {
+	return c.GetCsrfToken()
 }
 
 func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token runtime.ClientAuthInfoWriter) (interface{}, error)) (interface{}, error) {
