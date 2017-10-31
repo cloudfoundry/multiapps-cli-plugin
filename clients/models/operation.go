@@ -21,7 +21,7 @@ type Operation struct {
 	AcquiredLock bool `json:"acquiredLock,omitempty"`
 
 	// messages
-	Messages OperationMessages `json:"messages"`
+	Messages OperationMessages `json:"messages,omitempty"`
 
 	// mta Id
 	MtaID string `json:"mtaId,omitempty"`

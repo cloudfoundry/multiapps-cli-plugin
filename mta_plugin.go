@@ -25,7 +25,7 @@ var Commands = []commands.Command{
 	commands.NewBlueGreenDeployCommand(),
 	&commands.MtasCommand{},
 	&commands.DownloadMtaOperationLogsCommand{},
-	&commands.UndeployCommand{},
+	commands.NewUndeployCommand(),
 	&commands.MtaCommand{},
 	&commands.MtaOperationsCommand{},
 	&commands.PurgeConfigCommand{},

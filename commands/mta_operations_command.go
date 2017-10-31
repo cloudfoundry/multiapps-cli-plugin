@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/log"
@@ -8,6 +10,7 @@ import (
 	"github.com/SAP/cf-mta-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/go-errors/errors"
 )
 
 // MtaOperationsCommand is a command for listing all mta operations
@@ -72,6 +75,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	operationsToPrint, err := getOperationsToPrint(mtaClient, last, all)
 	if err != nil {
 		ui.Failed("Could not get multi-target app operations: %s", err)
+		fmt.Println(err.(*errors.Error).ErrorStack())
 		return Failure
 	}
 	ui.Ok()
@@ -129,4 +133,4 @@ func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, last uint, al
 	return ops, nil
 }
 
-var activeStatesList = []string{"SLP_TASK_STATE_RUNNING", "SLP_TASK_STATE_ERROR", "SLP_TASK_STATE_DIALOG", "SLP_TASK_STATE_ACTION_REQUIRED", "SLP_TASK_STATE_BREAKPOINT"}
+var activeStatesList = []string{"RUNNING", "ERROR", "ACTION_REQUIRED"}

@@ -36,7 +36,6 @@ func NewHTTPTransport(host, url, encodedUrl string, rt http.RoundTripper, jar ht
 	// TODO: apply the changes made by Boyan here, as after the update of the dependencies the changes are not available
 	transport := client.New(host, url, encodedUrl, schemes)
 	transport.Consumers["text/html"] = runtime.TextConsumer()
-	transport.DefaultMediaType = "application/json" //TODO support XML for the config registry
 	transport.Transport = rt
 	transport.Jar = jar
 	return transport

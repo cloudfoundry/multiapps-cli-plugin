@@ -175,6 +175,16 @@ func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, 
 	return c.clientFactory.NewMtaClient(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
 }
 
+func (c *BaseCommand) NewManagementMtaClient(host string) (mtaclient.MtaClientOperations, error) {
+	return c.clientFactory.NewManagementMtaClient(host, c.transport, c.jar, c.tokenFactory), nil
+}
+
+// NewSessionProvider Returns a new SessionProvider - responponsible for giving a unique token each time
+func (c *BaseCommand) NewSessionProvider(host string) (csrf.SessionProvider, error) {
+	// TODO: introduce a factory for the different SessionProviders
+	return c.NewManagementMtaClient(host)
+}
+
 // Context holding the username, Org and Space of the current used
 type Context struct {
 	Username string
@@ -287,8 +297,11 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) Executio
 		ui.Failed("Invalid action %s", terminal.EntityNameColor(actionID))
 		return Failure
 	}
+
+	sessionProvider, _ := c.NewSessionProvider(host)
+
 	// Executes the action specified with actionID
-	return action.Execute(operationID, c.name, mtaClient)
+	return action.Execute(operationID, c.name, mtaClient, sessionProvider)
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
@@ -307,7 +320,8 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 		// Abort the conflict process if confirmed by the user
 		if c.shouldAbortConflictingOperation(mtaID, force) {
 			action := GetActionToExecute("abort")
-			status := action.Execute(ongoingOperation.ProcessID, c.name, mtaClient)
+			sessionProvider, _ := c.NewSessionProvider(host)
+			status := action.Execute(ongoingOperation.ProcessID, c.name, mtaClient, sessionProvider)
 			if status == Failure {
 				return false, nil
 			}
