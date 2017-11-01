@@ -3,16 +3,16 @@ package commands_test
 import (
 	"fmt"
 
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
-	"github.com/cloudfoundry/cli/plugin/models"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/SAP/cf-mta-plugin/clients/models"
-	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
+	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
+	"github.com/cloudfoundry/cli/plugin/models"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("MtaCommand", func() {
@@ -56,9 +56,9 @@ var _ = Describe("MtaCommand", func() {
 				APIEndpoint("https://api.test.ondemand.com", nil).
 				GetApp("", getGetAppModel("test-mta-module-1", "started", 1, 1, 512, 1024, "test-1", "bosh-lite.com", "test-service-1"), nil).
 				GetService("", getGetServiceModel("test-service-1", "test", "free", "create", "succeeded"), nil).Build()
-			restClient := restfake.NewFakeRestClientBuilder().
+			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMta("test", nil, nil).Build()
-			clientFactory = commands.NewTestClientFactory(nil, nil, restClient)
+			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.MtaCommand{}
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 
@@ -80,7 +80,7 @@ var _ = Describe("MtaCommand", func() {
 		Context("when can't connect to backend", func() {
 			const host = "x"
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
 					GetMta("test", nil, fmt.Errorf("Get https://%s/rest/test/test/mta: dial tcp: lookup %s: no such host", host, host)).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test", "-u", host}).ToInt()
@@ -92,7 +92,7 @@ var _ = Describe("MtaCommand", func() {
 		// backend returns a "not found" response - error
 		Context("with an error response returned by the backend", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
 					GetMta("test", nil, newClientError(404, "404 Not Found", `MTA with id "test" does not exist`)).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test"}).ToInt()
@@ -104,8 +104,8 @@ var _ = Describe("MtaCommand", func() {
 		// backend returns a non-empty response - success
 		Context("with a non-empty response returned by the backend", func() {
 			It("should print a information about the deployed MTA and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "test-version", []*models.MtaModulesItems0{
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "test-version", []*models.Module{
 						testutil.GetMtaModule("test-mta-module-1", []string{}, []string{})},
 						[]string{"test-service-1"}), nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
@@ -121,8 +121,8 @@ var _ = Describe("MtaCommand", func() {
 		// backend returns a non-empty response - success
 		Context("with a non-empty response without services returned by the backend", func() {
 			It("should print information about the deployed MTA and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "test-version", []*models.MtaModulesItems0{
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "test-version", []*models.Module{
 						testutil.GetMtaModule("test-mta-module-1", []string{}, []string{})},
 						[]string{}), nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
@@ -138,8 +138,8 @@ var _ = Describe("MtaCommand", func() {
 		// backend returns a non-empty response - success
 		Context("with a non-empty response with unknown MTA version", func() {
 			It("should print information about the deployed MTA and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "0.0.0-unknown", []*models.MtaModulesItems0{}, []string{}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "0.0.0-unknown", []*models.Module{}, []string{}), nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-mta-id"}).ToInt()
 				})
@@ -151,8 +151,8 @@ var _ = Describe("MtaCommand", func() {
 		// backend returns a non-empty response - success
 		Context("with a non-empty response without services and apps returned by the backend", func() {
 			It("should print information about the deployed MTA and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "test-version", []*models.MtaModulesItems0{}, []string{}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMta("test-mta-id", testutil.GetMta("test-mta-id", "test-version", []*models.Module{}, []string{}), nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-mta-id"}).ToInt()
 				})

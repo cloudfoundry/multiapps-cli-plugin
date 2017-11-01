@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/SAP/cf-mta-plugin/clients/baseclient"
+	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
@@ -272,7 +273,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 			uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, uploadedExtDescriptor.ID)
 		}
 	}
-
 	ui.Say("Starting deployment process...")
 
 	// Build the process instance
@@ -297,8 +297,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 	ui.Ok()
-
-	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
+	return NewExecutionMonitor(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
 type deployCommandProcessTypeProvider struct{}

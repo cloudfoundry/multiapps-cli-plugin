@@ -3,15 +3,15 @@ package commands_test
 import (
 	"fmt"
 
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/SAP/cf-mta-plugin/clients/models"
-	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
+	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("MtasCommand", func() {
@@ -50,7 +50,9 @@ var _ = Describe("MtasCommand", func() {
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).
 				APIEndpoint("https://api.test.ondemand.com", nil).Build()
-			clientFactory = commands.NewTestClientFactory(nil, nil, nil)
+			mtaClient := mtafake.NewFakeMtaClientBuilder().
+				GetMtas(nil, nil).Build()
+			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.MtasCommand{}
 			testTokenFactory = commands.NewTestTokenFactory(cliConnection)
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory)
@@ -82,8 +84,8 @@ var _ = Describe("MtasCommand", func() {
 		Context("when can't connect to backend", func() {
 			const host = "x"
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetComponents(nil, fmt.Errorf("Get https://%s/rest/test/test/components: dial tcp: lookup %s: no such host", host, host)).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtas(nil, fmt.Errorf("Get https://%s/rest/test/test/components: dial tcp: lookup %s: no such host", host, host)).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
@@ -94,8 +96,8 @@ var _ = Describe("MtasCommand", func() {
 		// backend returns an an error response - error
 		Context("with an error response returned by the backend", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetComponents(nil, fmt.Errorf("unknown error (status 404)")).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtas(nil, fmt.Errorf("unknown error (status 404)")).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -106,8 +108,8 @@ var _ = Describe("MtasCommand", func() {
 		// backend returns an empty response - success
 		Context("with an empty response returned by the backend", func() {
 			It("should print a message and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetComponents(testutil.GetComponents([]*models.Mta{}, []string{}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtas([]*models.Mta{}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -118,12 +120,10 @@ var _ = Describe("MtasCommand", func() {
 		// backend returns a non-empty response - success
 		Context("with a non-empty response returned by the backend containing an unknown MTA version", func() {
 			It("should print a table with all deployed MTAs and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetComponents(testutil.GetComponents(
-						[]*models.Mta{testutil.GetMta("org.cloudfoundry.samples.music", "0.0.0-unknown",
-							[]*models.MtaModulesItems0{testutil.GetMtaModule("spring-music", []string{"postgresql"}, []string{})},
-							[]string{"postgresql"})},
-						[]string{}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtas([]*models.Mta{testutil.GetMta("org.cloudfoundry.samples.music", "0.0.0-unknown",
+						[]*models.Module{testutil.GetMtaModule("spring-music", []string{"postgresql"}, []string{})},
+						[]string{"postgresql"})}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -135,12 +135,10 @@ var _ = Describe("MtasCommand", func() {
 		// backend returns a non-empty response - success
 		Context("with a non-empty response returned by the backend", func() {
 			It("should print a table with all deployed MTAs and exit with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetComponents(testutil.GetComponents(
-						[]*models.Mta{testutil.GetMta("org.cloudfoundry.samples.music", "1.0",
-							[]*models.MtaModulesItems0{testutil.GetMtaModule("spring-music", []string{"postgresql"}, []string{})},
-							[]string{"postgresql"})},
-						[]string{}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtas([]*models.Mta{testutil.GetMta("org.cloudfoundry.samples.music", "1.0",
+						[]*models.Module{testutil.GetMtaModule("spring-music", []string{"postgresql"}, []string{})},
+						[]string{"postgresql"})}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})

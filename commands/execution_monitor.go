@@ -26,19 +26,18 @@ type ExecutionMonitor struct {
 }
 
 //NewExecutionMonitor creates a new execution monitor
-func NewExecutionMonitor(commandName, monitoringLocation string, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
+func NewExecutionMonitor(commandName, monitoringLocation string, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	return &ExecutionMonitor{
 		mtaClient:          mtaClient,
-		reportedMessages:   getAlreadyReportedOperationMessages(monitoringLocation, mtaClient),
+		reportedMessages:   getAlreadyReportedOperationMessages(reportedOperationMessages),
 		commandName:        commandName,
 		monitoringLocation: monitoringLocation,
 	}
 }
 
-func getAlreadyReportedOperationMessages(monitoringLocation string, mtaClient mtaclient.MtaClientOperations) map[int64]bool {
+func getAlreadyReportedOperationMessages(reportedOperationMessages []*models.Message) map[int64]bool {
 	result := make(map[int64]bool)
-	operation, _ := getOperation(monitoringLocation, mtaClient)
-	for _, message := range operation.Messages {
+	for _, message := range reportedOperationMessages {
 		result[message.ID] = true
 	}
 	return result
@@ -67,6 +66,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			messageInError := findErrorMessage(operation.Messages)
 			if messageInError == nil {
 				ui.Failed("There is not error message for operation with id %s", operation.ProcessID)
+				return Failure
 			}
 			ui.Say("Process failed: %s", messageInError.Message)
 			m.reportAvaiableActions(operation.ProcessID)
