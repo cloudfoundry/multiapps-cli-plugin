@@ -6,11 +6,9 @@ import (
 	"os"
 	"runtime"
 
-	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
+	"github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/models"
-	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
-	slmpfake "github.com/SAP/cf-mta-plugin/clients/slmpclient/fakes"
-	slppfake "github.com/SAP/cf-mta-plugin/clients/slppclient/fakes"
+	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
@@ -28,9 +26,8 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
-		var slmpClient *slmpfake.FakeSlmpClientOperations
-		var slppClient *slppfake.FakeSlppClientOperations
-		var restClient *restfake.FakeRestClientOperations
+		var mtaClient mtafake.FakeMtaClientOperations
+		// var restClient *restfake.FakeRestClientOperations
 		var clientFactory *commands.TestClientFactory
 		var command *commands.DownloadMtaOperationLogsCommand
 		var oc = testutil.NewUIOutputCapturer()
@@ -63,15 +60,10 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).
 				APIEndpoint("https://api.test.ondemand.com", nil).Build()
-			slmpClient = slmpfake.NewFakeSlmpClientBuilder().
-				GetMetadata(&testutil.SlmpMetadataResult, nil).
-				GetProcess(testutil.ProcessID, &testutil.ProcessResult, nil).Build()
-			slppClient = slppfake.NewFakeSlppClientBuilder().
-				GetMetadata(&testutil.SlppMetadataResult, nil).
-				GetLogs(testutil.LogsResult, nil).
-				GetLogContent(testutil.LogID, testutil.LogContent, nil).Build()
-			restClient = restfake.NewFakeRestClientBuilder().Build()
-			clientFactory = commands.NewTestClientFactory(slmpClient, slppClient, restClient)
+			mtaClient = mtafake.NewFakeMtaClientBuilder().
+				GetMtaOperationLogs(testutil.ProcessID, []*models.Log{&testutil.SimpleMtaLog}, nil).
+				GetMtaOperationLogContent(testutil.ProcessID, testutil.LogID, testutil.LogContent, nil).Build()
+			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.DownloadMtaOperationLogsCommand{}
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory)
@@ -110,42 +102,17 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 			})
 		})
 
-		// can't connect to backend - error
-		Context("when can't connect to backend", func() {
-			const host = "x"
-			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.SlmpClient = slmpfake.NewFakeSlmpClientBuilder().
-					GetMetadata(nil, fmt.Errorf("Get https://%s/slprot/test/test/slp/metadata: dial tcp: lookup %s: no such host", host, host)).Build()
-				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"-i", testutil.ProcessID, "-u", host}).ToInt()
-				})
-				ex.ExpectFailureOnLine(status, output, "Could not get SLMP metadata:", 2)
-			})
-		})
-
-		// backend returns an an error response (GetMetadata) - error
-		Context("with an error response returned by the backend", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.SlmpClient = slmpfake.NewFakeSlmpClientBuilder().
-					GetMetadata(nil, fmt.Errorf("unknown error (status 404)")).Build()
-				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
-				})
-				ex.ExpectFailureOnLine(status, output, "Could not get SLMP metadata:", 1)
-			})
-		})
-
 		// non-existing process id - error
 		Context("with a non-existing process id", func() {
 			It("should print an error and exit with a non-zero status", func() {
+				os.Remove("mta-op-test")
 				var clientError = baseclient.NewClientError(testutil.ClientError)
-				clientFactory.SlmpClient = slmpfake.NewFakeSlmpClientBuilder().
-					GetProcess("test", nil, clientError).
-					GetMetadata(&testutil.SlmpMetadataResult, nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperationLogs("test", []*models.Log{}, clientError).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Multi-target app operation with id test not found", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get process logs: Process with id 404 not found (status 404): Process with id 404 not found", 1)
 				Expect(exists("mta-op-test")).To(Equal(false))
 			})
 		})
@@ -153,9 +120,8 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		// existing process id, backend returns an error response (GetLogs) - error
 		Context("with an existing process id and an error response returned by the backend", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.SlppClient = slppfake.NewFakeSlppClientBuilder().
-					GetMetadata(&testutil.SlppMetadataResult, nil).
-					GetLogs(models.Logs{}, fmt.Errorf("unknown error (status 500)")).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperationLogs(testutil.ProcessID, []*models.Log{}, fmt.Errorf("unknown error (status 500)")).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
 				})
@@ -167,16 +133,14 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		// existing process id, backend returns an error response (GetLogContent) - error
 		Context("with an existing process id and an error response returned by the backend", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				fakeSlppClient := slppfake.NewFakeSlppClientBuilder().
-					GetMetadata(&testutil.SlppMetadataResult, nil).
-					GetLogs(testutil.LogsResult, nil).
-					GetLogContent("", "", fmt.Errorf("unknown error (status 500)")).Build()
-				clientFactory.SlppClient = fakeSlppClient
+				fakeMtaClient := mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperationLogs(testutil.ProcessID, []*models.Log{&testutil.SimpleMtaLog}, nil).
+					GetMtaOperationLogContent("", "", "", fmt.Errorf("unknown error (status 500)")).Build()
+				clientFactory.MtaClient = fakeMtaClient
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
 				})
 				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not get content of log %s:", testutil.LogID), 1)
-				Expect(fakeSlppClient.GetLogContentArgsForCall(0)).To(Equal(testutil.LogID))
 				Expect(exists("mta-op-" + testutil.ProcessID)).To(Equal(false))
 			})
 		})

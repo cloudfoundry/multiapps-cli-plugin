@@ -7,7 +7,7 @@ import (
 	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
 )
 
-type FakeRestClientOperations struct {}
+type FakeRestClientOperations struct {
 	PurgeConfigurationStub        func(org, space string) error
 	purgeConfigurationMutex       sync.RWMutex
 	purgeConfigurationArgsForCall []struct {
@@ -19,6 +19,19 @@ type FakeRestClientOperations struct {}
 	}
 }
 
+func (fake *FakeRestClientOperations) PurgeConfiguration(org string, space string) error {
+	fake.purgeConfigurationMutex.Lock()
+	fake.purgeConfigurationArgsForCall = append(fake.purgeConfigurationArgsForCall, struct {
+		org   string
+		space string
+	}{org, space})
+	fake.purgeConfigurationMutex.Unlock()
+	if fake.PurgeConfigurationStub != nil {
+		return fake.PurgeConfigurationStub(org, space)
+	} else {
+		return fake.purgeConfigurationReturns.result1
+	}
+}
 func (fake *FakeRestClientOperations) PurgeConfigurationCallCount() int {
 	fake.purgeConfigurationMutex.RLock()
 	defer fake.purgeConfigurationMutex.RUnlock()

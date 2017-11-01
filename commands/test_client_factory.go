@@ -29,3 +29,7 @@ func (f *TestClientFactory) NewRestClient(host, org, space string,
 	rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
 	return f.RestClient
 }
+
+func (f *TestClientFactory) NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
+	return f.MtaClient
+}

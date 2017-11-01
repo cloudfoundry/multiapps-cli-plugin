@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/SAP/cf-mta-plugin/clients/models"
-	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
+	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
@@ -47,9 +47,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).
 				APIEndpoint("https://api.test.ondemand.com", nil).Build()
-			restClient := restfake.NewFakeRestClientBuilder().
+			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMta("test", nil, nil).Build()
-			clientFactory = commands.NewTestClientFactory(nil, nil, restClient)
+			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.MtaOperationsCommand{}
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory)
@@ -80,8 +80,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 		Context("when can't connect to backend", func() {
 			const host = "x"
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, models.Operations{}, fmt.Errorf("Get https://%s/rest/test/test/mta: dial tcp: lookup %s: no such host", host, host)).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{}, fmt.Errorf("Get https://%s/rest/test/test/mta: dial tcp: lookup %s: no such host", host, host)).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
@@ -92,8 +92,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 		// backend returns an an error response - error
 		Context("with an error response returned by the backend", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, models.Operations{}, fmt.Errorf("unknown error (status 404)")).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{}, fmt.Errorf("unknown error (status 404)")).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -103,8 +103,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 
 		Context("with empty response returned by the backend", func() {
 			It("should print info and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, models.Operations{}, nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -118,8 +118,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with non-empty response returned by the backend", func() {
 			It("should print info and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{&testutil.OperationResult}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{
+						testutil.GetOperation("111", "test-space", "test", "deploy", "ERROR", false)}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -135,9 +136,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with non-empty response returned by the backend containing a nil value for MTA ID", func() {
 			It("should print info and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("111", "test-space", "", "deploy", "SLP_TASK_STATE_ERROR", false)}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{
+						testutil.GetOperation("111", "test-space", "", "deploy", "ERROR", false)}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -153,11 +154,11 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend", func() {
 			It("should print info and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_ERROR", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{
+						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "ERROR", true),
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "ERROR", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -174,12 +175,11 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend and last option provided", func() {
 			It("should print the info of the last 2 operations and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(&[]string{"2"}[0], nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_ERROR", false),
-						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "SLP_TASK_STATE_ERROR", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(&[]int64{2}[0], nil, []*models.Operation{
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "ERROR", false),
+						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "ERROR", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-last", "2"}).ToInt()
 				})
@@ -196,12 +196,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend and last option provided", func() {
 			It("should print the info for all of the operations and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(&[]string{"10"}[0], nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_ERROR", false),
-						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "SLP_TASK_STATE_ERROR", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(&[]int64{10}[0], nil, []*models.Operation{
+						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "ERROR", true),
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "ERROR", false),
+						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "ERROR", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-last", "10"}).ToInt()
 				})
@@ -219,12 +219,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend and last option provided", func() {
 			It("should print the info for the last operation and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(&[]string{"10"}[0], nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_ERROR", false),
-						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "SLP_TASK_STATE_ERROR", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(&[]int64{10}[0], nil, []*models.Operation{
+						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "ERROR", true),
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "ERROR", false),
+						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "ERROR", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-last", "1"}).ToInt()
 				})
@@ -242,8 +242,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with empty response returned by the backend and last option provided", func() {
 			It("should print the info for all of the operations and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(&[]string{"10"}[0], nil, models.Operations{}, nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(&[]int64{10}[0], nil, []*models.Operation{}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-last", "10"}).ToInt()
 				})
@@ -257,12 +257,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend and no options provided", func() {
 			It("should print the info for operations in active state and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(&[]string{"10"}[0], nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_RUNNING", false),
-						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "SLP_TASK_STATE_ERROR", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(&[]int64{10}[0], nil, []*models.Operation{
+						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "ERROR", true),
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "RUNNING", false),
+						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "ERROR", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -280,12 +280,11 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend and no options provided", func() {
 			It("should print the info for operations in active state, not include operations in finished state and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, []string{"SLP_TASK_STATE_ERROR", "SLP_TASK_STATE_RUNNING"}, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_RUNNING", false),
-						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "SLP_TASK_STATE_FINISHED", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, []string{"SLP_TASK_STATE_ERROR", "SLP_TASK_STATE_RUNNING"}, []*models.Operation{
+						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "ERROR", true),
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "RUNNING", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -302,12 +301,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 		})
 		Context("with more than 1 operations returned by the backend and all option provided", func() {
 			It("should print the info for operations in active and finished state and return with zero status", func() {
-				clientFactory.RestClient = restfake.NewFakeRestClientBuilder().
-					GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{
-						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "SLP_TASK_STATE_ERROR", true),
-						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "SLP_TASK_STATE_RUNNING", false),
-						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "SLP_TASK_STATE_FINISHED", false),
-					}), nil).Build()
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, []*models.Operation{
+						testutil.GetOperation("test-1", "test-space", "test-mta-1", "deploy", "ERROR", true),
+						testutil.GetOperation("test-2", "test-space", "test-mta-2", "deploy", "RUNNING", false),
+						testutil.GetOperation("test-3", "test-space", "test-mta-3", "deploy", "FINISHED", false),
+					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-all"}).ToInt()
 				})
