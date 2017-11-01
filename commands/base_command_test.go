@@ -10,9 +10,9 @@ import (
 
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/models"
+	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
+	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	fakes "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
-	slmpfake "github.com/SAP/cf-mta-plugin/clients/slmpclient/fakes"
-	slppfake "github.com/SAP/cf-mta-plugin/clients/slppclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
@@ -26,14 +26,14 @@ var _ = Describe("BaseCommand", func() {
 	const org = "test-org"
 	const space = "test-space"
 	const user = "test-user"
+	const deployID = "DEPLOY"
 
 	var fakeCliConnection *plugin_fakes.FakeCliConnection
 	var command *commands.BaseCommand
 	var oc = testutil.NewUIOutputCapturer()
 	var ex = testutil.NewUIExpector()
 
-	fakeSlmpClientBuilder := slmpfake.NewFakeSlmpClientBuilder()
-	fakeSlppClientBuilder := slppfake.NewFakeSlppClientBuilder()
+	fakeMtaClientBuilder := mtafake.NewFakeMtaClientBuilder()
 	testTokenFactory := commands.NewTestTokenFactory(fakeCliConnection)
 
 	BeforeEach(func() {
@@ -46,66 +46,6 @@ var _ = Describe("BaseCommand", func() {
 			AccessToken("bearer test-token", nil).
 			APIEndpoint("https://api.test.ondemand.com", nil).Build()
 
-	})
-
-	Describe("CheckSlmpMetadata", func() {
-		Context("with valid SLMP metadata returned by the backend", func() {
-			It("should not exit or report any errors", func() {
-				client := fakeSlmpClientBuilder.GetMetadata(&testutil.SlmpMetadataResult, nil).Build()
-				Expect(commands.CheckSlmpMetadata(client)).Should(Succeed())
-			})
-		})
-		Context("with invalid SLMP metadata returned by the backend", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				client := fakeSlmpClientBuilder.GetMetadata(testutil.GetSlmpMetadata("invalid-version"), nil).Build()
-				Expect(commands.CheckSlmpMetadata(client)).Should(MatchError(fmt.Errorf("Unsupported SLMP version %s", terminal.EntityNameColor("invalid-version"))))
-			})
-		})
-		Context("with an error returned by the backend", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				client := fakeSlmpClientBuilder.GetMetadata(nil, fmt.Errorf("unknown error (status 500)")).Build()
-				Expect(commands.CheckSlmpMetadata(client)).Should(MatchError("Could not get SLMP metadata: unknown error (status 500)"))
-			})
-		})
-	})
-
-	Describe("CheckSlppMetadata", func() {
-		Context("with valid SLPP metadata returned by the backend", func() {
-			It("should not exit or report any errors", func() {
-				client := fakeSlppClientBuilder.GetMetadata(&testutil.SlppMetadataResult, nil).GetTasklistTask(&testutil.TaskResult, nil).Build()
-				Expect(commands.CheckSlppMetadata(client)).Should(Succeed())
-			})
-		})
-		Context("with invalid SLPP metadata returned by the backend", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				client := fakeSlppClientBuilder.GetMetadata(testutil.GetSlppMetadata("invalid-version"), nil).Build()
-				Expect(commands.CheckSlppMetadata(client)).Should(MatchError(fmt.Errorf("Unsupported SLPP version %s", terminal.EntityNameColor("invalid-version"))))
-			})
-		})
-		Context("with an error returned by the backend", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				client := fakeSlppClientBuilder.GetMetadata(nil, fmt.Errorf("unknown error (status 500)")).Build()
-				Expect(commands.CheckSlppMetadata(client)).Should(MatchError("Could not get SLPP metadata: unknown error (status 500)"))
-			})
-		})
-	})
-
-	Describe("GetServiceID", func() {
-		Context("with valid services and processes returned by the backend", func() {
-			It("should not exit or report any errors", func() {
-				client := fakeSlmpClientBuilder.
-					GetProcess(testutil.ProcessID, &testutil.ProcessResult, nil).Build()
-				Expect(commands.GetServiceID(testutil.ProcessID, client)).Should(Equal(testutil.ServiceID))
-			})
-		})
-		Context("with an error returned by the backend", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				var clientError = baseclient.NewClientError(testutil.ClientError)
-				client := fakeSlmpClientBuilder.GetProcess(testutil.ProcessID, nil, clientError).Build()
-				_, err := commands.GetServiceID(testutil.ProcessID, client)
-				Expect(err).Should(MatchError("Multi-target app operation with id 111 not found"))
-			})
-		})
 	})
 
 	Describe("GetOrg", func() {
@@ -207,15 +147,13 @@ var _ = Describe("BaseCommand", func() {
 
 		BeforeEach(func() {
 			mtaID = "mtaId"
-			ongoingOperationToReturn = testutil.GetOperation("test", "test-space-guid", mtaID, "deploy", "SLP_TASK_STATE_ERROR", true)
+			ongoingOperationToReturn = testutil.GetOperation("test", "test-space-guid", mtaID, "deploy", "ERROR", true)
 
 			fakeRestClientBuilder = fakes.NewFakeRestClientBuilder()
-			testClientFactory = commands.NewTestClientFactory(fakeSlmpClientBuilder.Build(), fakeSlppClientBuilder.Build(), fakeRestClientBuilder.Build())
+			testClientFactory = commands.NewTestClientFactory(fakeMtaClientBuilder.Build(), fakeRestClientBuilder.Build())
 
-			testClientFactory.RestClient = fakeRestClientBuilder.
-				GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{ongoingOperationToReturn}), nil).Build()
-			testClientFactory.SlppClient = fakeSlppClientBuilder.
-				GetMetadata(&testutil.SlppMetadataResult, nil).Build()
+			testClientFactory.MtaClient = fakeMtaClientBuilder.
+				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).Build()
 
 			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK, nil), nil, testClientFactory, testTokenFactory)
 		})
@@ -231,9 +169,9 @@ var _ = Describe("BaseCommand", func() {
 		})
 		Context("with one ongoing operation which does not have an MTA ID", func() {
 			It("should exit with zero status", func() {
-				nonConflictingOperation := testutil.GetOperation("111", "space-guid", "", "deploy", "SLP_TASK_STATE_ERROR", false)
-				testClientFactory.RestClient = fakeRestClientBuilder.
-					GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{nonConflictingOperation}), nil).Build()
+				nonConflictingOperation := testutil.GetOperation("111", "space-guid", "", "deploy", "ERROR", false)
+				testClientFactory.MtaClient = fakeMtaClientBuilder.
+					GetMtaOperations(nil, nil, []*models.Operation{nonConflictingOperation}, nil).Build()
 				wasAborted, err = command.CheckOngoingOperation(mtaID, "test-host", true)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
@@ -241,8 +179,8 @@ var _ = Describe("BaseCommand", func() {
 		})
 		Context("with no ongoing operations", func() {
 			It("should exit with zero status", func() {
-				testClientFactory.RestClient = fakeRestClientBuilder.
-					GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{}), nil).Build()
+				testClientFactory.MtaClient = fakeMtaClientBuilder.
+					GetMtaOperations(nil, nil, []*models.Operation{}, nil).Build()
 				wasAborted, err = command.CheckOngoingOperation(mtaID, "test-host", true)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
@@ -265,22 +203,20 @@ var _ = Describe("BaseCommand", func() {
 	Describe("ExecuteAction", func() {
 		var ongoingOperationToReturn *models.Operation
 		fakeRestClientBuilder := fakes.NewFakeRestClientBuilder()
-		testClientfactory := commands.NewTestClientFactory(fakeSlmpClientBuilder.Build(), fakeSlppClientBuilder.Build(), fakeRestClientBuilder.Build())
+		testClientfactory := commands.NewTestClientFactory(fakeMtaClientBuilder.Build(), fakeRestClientBuilder.Build())
 		BeforeEach(func() {
-			ongoingOperationToReturn = testutil.GetOperation("test-process-id", "test-space-guid", "test", "deploy", "SLP_TASK_STATE_ERROR", true)
-			testClientfactory.RestClient = fakeRestClientBuilder.
-				GetOperations(nil, nil, testutil.GetOperations([]*models.Operation{ongoingOperationToReturn}), nil).Build()
-			testClientfactory.SlppClient = fakeSlppClientBuilder.
-				GetMetadata(&testutil.SlppMetadataResult, nil).
-				GetTasklist(testutil.TasklistResult, nil).
-				ExecuteAction("abort", nil).
-				ExecuteAction("retry", nil).Build()
+			ongoingOperationToReturn = testutil.GetOperation("test-process-id", "test-space-guid", "test", "deploy", "ERROR", true)
+			testClientfactory.MtaClient = fakeMtaClientBuilder.
+				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
+				GetMtaOperation("test-process-id", "mesages", &testutil.SimpleOperationResult, nil).
+				ExecuteAction("test-process-id", "abort", mtaclient.ResponseHeader{}, nil).
+				ExecuteAction("test-process-id", "retry", mtaclient.ResponseHeader{Location: "operations/test-process-id?embed=messages"}, nil).Build()
 			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200, nil), nil, testClientfactory, testTokenFactory)
 		})
 		Context("with valid process id and valid action id", func() {
 			It("should abort and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("test-process-id", "abort", "test-host", commands.DeployServiceID).ToInt()
+					return command.ExecuteAction("test-process-id", "abort", "test-host").ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, []string{"Aborting multi-target app operation with id test-process-id...\n", "OK\n"})
 			})
@@ -288,7 +224,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with non-valid process id and valid action id", func() {
 			It("should return error and exit with non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("not-valid-process-id", "abort", "test-host", commands.DeployServiceID).ToInt()
+					return command.ExecuteAction("not-valid-process-id", "abort", "test-host").ToInt()
 				})
 				ex.ExpectFailureOnLine(status, output, "Multi-target app operation with id not-valid-process-id not found", 0)
 			})
@@ -297,7 +233,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with valid process id and invalid action id", func() {
 			It("should return error and exit with non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("test-process-id", "not-existing-action", "test-host", commands.DeployServiceID).ToInt()
+					return command.ExecuteAction("test-process-id", "not-existing-action", "test-host").ToInt()
 				})
 				ex.ExpectFailureOnLine(status, output, "Invalid action not-existing-action", 0)
 			})
@@ -306,7 +242,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with valid process id and valid action id", func() {
 			It("should retry the process and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("test-process-id", "retry", "test-host", commands.DeployServiceID).ToInt()
+					return command.ExecuteAction("test-process-id", "retry", "test-host").ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, []string{"Retrying multi-target app operation with id test-process-id...\n", "OK\n",
 					"Monitoring process execution...\n", "Process finished.\n"})

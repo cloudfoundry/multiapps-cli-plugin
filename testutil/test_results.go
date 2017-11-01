@@ -1,5 +1,13 @@
 package testutil
 
+import (
+	"io"
+	"os"
+
+	"github.com/SAP/cf-mta-plugin/clients/models"
+	"github.com/go-openapi/runtime"
+)
+
 //
 // import (
 // 	"encoding/xml"
@@ -12,12 +20,45 @@ package testutil
 // )
 //
 // const xmlns string = "http://www.SAP.com/lmsl/slp"
-//
+
+var SimpleOperationResult = models.Operation{
+	State:    "FINISHED",
+	Messages: []*models.Message{&SimpleMessage},
+}
+
+var SimpleMessage = models.Message{
+	ID:      0,
+	Type:    "INFO",
+	Message: "Test message",
+}
+
+var GetMessage = func(id int64, message string) *models.Message {
+	return &models.Message{
+		ID:      id,
+		Type:    "INFO",
+		Message: message,
+	}
+}
+
+var OperationResult = models.Operation{
+	State:       "FINISHED",
+	ProcessID:   "1000",
+	ProcessType: "DEPLOY",
+	Messages:    []*models.Message{&SimpleMessage},
+}
+
+var SimpleMtaLog = models.Log{
+	ID:          LogID,
+	DisplayName: "Test log",
+	Description: "Test log",
+}
+
 // const Version = "1.2.0"
 // const ServiceID = "xs2-undeploy"
-// const ProcessID = "111"
-// const LogID = "MAIN_LOG"
-// const LogContent = "test-test-test"
+const ProcessID = "1000"
+const LogID = "MAIN_LOG"
+const LogContent = "test-test-test"
+
 // const ActionID = "slp.action.ABORT"
 // const MtaID = "org.cloudfoundry.samples.music"
 //
@@ -171,47 +212,50 @@ package testutil
 // 	Files:   []*models.File{&FileResult},
 // }
 //
-// type RuntimeResponse struct {
-// 	code    int
-// 	message string
-// }
+type RuntimeResponse struct {
+	code    int
+	message string
+}
+
+func (r RuntimeResponse) Code() int {
+	return r.code
+}
+
+func (r RuntimeResponse) Message() string {
+	return r.message
+}
+
+func (r RuntimeResponse) GetHeader(header string) string {
+	return ""
+}
+
+func (r RuntimeResponse) Body() io.ReadCloser {
+	return nil
+}
+
 //
-// func (r RuntimeResponse) Code() int {
-// 	return r.code
-// }
+var notFoundResponse = RuntimeResponse{
+	code:    404,
+	message: "Process with id 404 not found",
+}
+
 //
-// func (r RuntimeResponse) Message() string {
-// 	return r.message
-// }
+var ClientError = &runtime.APIError{
+	OperationName: "Getting process",
+	Response:      notFoundResponse,
+	Code:          404,
+}
+
 //
-// func (r RuntimeResponse) GetHeader(header string) string {
-// 	return ""
-// }
-//
-// func (r RuntimeResponse) Body() io.ReadCloser {
-// 	return nil
-// }
-//
-// var notFoundResponse = RuntimeResponse{
-// 	code:    404,
-// 	message: "Process with id 404 not found",
-// }
-//
-// var ClientError = &runtime.APIError{
-// 	OperationName: "Getting process",
-// 	Response:      notFoundResponse,
-// 	Code:          404,
-// }
-//
-// //D41D8CD98F00B204E9800998ECF8427E -> MD5 hash for empty file
-// var FileResult = models.File{
-// 	XMLName:         xml.Name{Space: xmlns, Local: "File"},
-// 	ID:              strptr("test.mtar"),
-// 	FilePath:        "xs2-deploy",
-// 	Digest:          "D41D8CD98F00B204E9800998ECF8427E",
-// 	FileName:        strptr("test.mtar"),
-// 	DigestAlgorithm: "MD5",
-// }
+//D41D8CD98F00B204E9800998ECF8427E -> MD5 hash for empty file
+var SimpleFile = models.FileMetadata{
+	ID:              "test.mtar",
+	Digest:          "D41D8CD98F00B204E9800998ECF8427E",
+	Name:            "test.mtar",
+	DigestAlgorithm: "MD5",
+	Space:           "test-space",
+}
+
 //
 // var Actions = models.Actions{
 // 	XMLName: xml.Name{Space: xmlns, Local: "actions"},
@@ -282,24 +326,25 @@ package testutil
 // 	}
 // }
 //
-// func GetFiles(files []*models.File) models.Files {
-// 	return models.Files{
+// func GetFiles(files []*models.File) models.File {
+// 	return models.File{
 // 		XMLName: xml.Name{Space: xmlns, Local: "files"},
 // 		Files:   files,
 // 	}
 // }
+
 //
-// func GetFile(serviceID string, file os.File, digest string) *models.File {
-// 	stat, _ := os.Stat(file.Name())
-// 	return &models.File{
-// 		XMLName:         xml.Name{Space: xmlns, Local: "File"},
-// 		ID:              strptr(stat.Name()),
-// 		FilePath:        serviceID,
-// 		FileName:        strptr(stat.Name()),
-// 		Digest:          digest,
-// 		DigestAlgorithm: "MD5",
-// 	}
-// }
+func GetFile(file os.File, digest string) *models.FileMetadata {
+	stat, _ := os.Stat(file.Name())
+	return &models.FileMetadata{
+		ID:              stat.Name(),
+		Space:           "test-space",
+		Name:            stat.Name(),
+		Digest:          digest,
+		DigestAlgorithm: "MD5",
+	}
+}
+
 //
 // func GetComponents(mtas []*models.Mta, standaloneApps []string) *models.Components {
 // 	return &models.Components{
@@ -313,55 +358,42 @@ package testutil
 // 	}
 // }
 //
-// func GetOperations(operations []*models.Operation) models.Operations {
-// 	return models.Operations{
-// 		XMLName:    xml.Name{Local: "ongoing-operations"},
-// 		Operations: operations,
-// 	}
-// }
+
+func GetOperation(processID, spaceID string, mtaID string, processType string, state string, acquiredLock bool) *models.Operation {
+	return &models.Operation{
+		ProcessID:    processID,
+		ProcessType:  processType,
+		StartedAt:    "2016-03-04T14:23:24.521Z[Etc/UTC]",
+		SpaceID:      spaceID,
+		User:         "admin",
+		State:        models.State(state),
+		AcquiredLock: acquiredLock,
+		MtaID:        mtaID,
+	}
+}
+
 //
-// func GetOperation(processID, spaceID string, mtaID string, processType models.ProcessType, state string, acquiredLock bool) *models.Operation {
-// 	return &models.Operation{
-// 		XMLName:      xml.Name{Local: "ongoing-operation"},
-// 		ProcessID:    strptr(processID),
-// 		ProcessType:  models.ProcessType(processType),
-// 		StartedAt:    strptr("2016-03-04T14:23:24.521Z[Etc/UTC]"),
-// 		SpaceID:      strptr(spaceID),
-// 		User:         strptr("admin"),
-// 		State:        models.SlpTaskStateEnum(models.SlpTaskStateEnum(state)),
-// 		AcquiredLock: boolptr(acquiredLock),
-// 		MtaID:        mtaID,
-// 	}
-// }
+func GetMta(id, version string, modules []*models.Module, services []string) *models.Mta {
+	return &models.Mta{
+		Metadata: &models.Metadata{
+			ID:      id,
+			Version: version,
+		},
+		Modules:  modules,
+		Services: services,
+	}
+}
+
 //
-// func GetMta(id, version string, modules []*models.MtaModulesItems0, services []string) *models.Mta {
-// 	return &models.Mta{
-// 		XMLName: xml.Name{Local: "mta"},
-// 		Metadata: &models.MtaMetadata{
-// 			ID:      strptr(id),
-// 			Version: strptr(version),
-// 		},
-// 		Modules: models.MtaModules{
-// 			Modules: modules,
-// 		},
-// 		Services: models.MtaServices{
-// 			Services: services,
-// 		},
-// 	}
-// }
-//
-// func GetMtaModule(name string, services []string, providedDependencies []string) *models.MtaModulesItems0 {
-// 	return &models.MtaModulesItems0{
-// 		ModuleName: strptr(name),
-// 		AppName:    strptr(name),
-// 		Services: models.MtaModulesItems0Services{
-// 			Services: services,
-// 		},
-// 		ProvidedDependencies: models.MtaModulesItems0ProvidedDependencies{
-// 			ProvidedDependencies: providedDependencies,
-// 		},
-// 	}
-// }
+func GetMtaModule(name string, services []string, providedDependencies []string) *models.Module {
+	return &models.Module{
+		ModuleName:            name,
+		AppName:               name,
+		Services:              services,
+		ProvidedDendencyNames: providedDependencies,
+	}
+}
+
 //
 // func GetTaskList(task models.Task) models.Tasklist {
 // 	return models.Tasklist{

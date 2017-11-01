@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
+	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
@@ -167,7 +168,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	sessionProvider.GetSession()
 
 	// Monitor process execution
-	return NewExecutionMonitor(c.name, responseHeader.Location.String(), mtaClient).Monitor()
+	return NewExecutionMonitor(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
 type undeployCommandProcessTypeProvider struct{}

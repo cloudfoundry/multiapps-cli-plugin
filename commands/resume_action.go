@@ -27,5 +27,11 @@ func (a *ResumeAction) Execute(operationID, commandName string, mtaClient mtacli
 	}
 	ui.Ok()
 
-	return NewExecutionMonitor(commandName, responseHeader.Location.String(), mtaClient).Monitor()
+	operation, err := getMonitoringOperation(operationID, mtaClient)
+	if err != nil {
+		ui.Failed("Could not monitor multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), err)
+		return Failure
+	}
+
+	return NewExecutionMonitor(commandName, responseHeader.Location.String(), operation.Messages, mtaClient).Monitor()
 }

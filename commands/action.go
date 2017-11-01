@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/SAP/cf-mta-plugin/clients/csrf"
+	"github.com/SAP/cf-mta-plugin/clients/models"
 	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 )
 
@@ -24,4 +25,8 @@ func GetActionToExecute(actionID string) Action {
 	}
 
 	return nil
+}
+
+func getMonitoringOperation(operationID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+	return mtaClient.GetMtaOperation(operationID, "messages")
 }
