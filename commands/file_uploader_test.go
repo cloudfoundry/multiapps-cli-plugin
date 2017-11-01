@@ -6,14 +6,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	csrf_fakes "github.com/SAP/cf-mta-plugin/clients/csrf/fakes"
 	"github.com/SAP/cf-mta-plugin/clients/models"
-	"github.com/SAP/cf-mta-plugin/clients/slmpclient/fakes"
+	"github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("FileUploader", func() {
@@ -27,7 +28,8 @@ var _ = Describe("FileUploader", func() {
 		var oc = testutil.NewUIOutputCapturer()
 		var ex = testutil.NewUIExpector()
 
-		fakeSlmpClientBuilder := fakes.NewFakeSlmpClientBuilder()
+		fakeSlmpClientBuilder := fakes.NewFakeMtaClientBuilder()
+		sessionProvider := csrf_fakes.NewFakeSessionProviderBuilder().GetSession(nil).Build()
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
@@ -36,44 +38,43 @@ var _ = Describe("FileUploader", func() {
 			testFileDigest, _ = util.ComputeFileChecksum(testFileAbsolutePath, "MD5")
 			testFileDigest = strings.ToUpper(testFileDigest)
 		})
-		var uploadedFiles []*models.File
+		var uploadedFiles []*models.FileMetadata
 		var status commands.ExecutionStatus
 		Context("with non-existing service files and no files to upload", func() {
 			It("should return no uploaded files", func() {
-				client := fakeSlmpClientBuilder.GetServiceFiles("xs2-deploy", models.Files{}, nil).Build()
+				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
 
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader("xs2-deploy", []string{}, client)
+					fileUploader = commands.NewFileUploader([]string{}, client, sessionProvider)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
-				Expect(uploadedFiles).To(Equal([]*models.File{}))
+				Expect(uploadedFiles).To(Equal([]*models.FileMetadata{}))
 			})
 		})
 
 		Context("with existing service files and no files to upload", func() {
 			It("should return no uploaded files", func() {
-				client := fakeSlmpClientBuilder.GetServiceFiles("xs2-deploy", testutil.FilesResult, nil).Build()
-				var uploadedFiles []*models.File
+				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
+				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader("xs2-deploy", []string{}, client)
+					fileUploader = commands.NewFileUploader([]string{}, client, sessionProvider)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
-				Expect(uploadedFiles).To(Equal([]*models.File{}))
+				Expect(uploadedFiles).To(Equal([]*models.FileMetadata{}))
 			})
 		})
 
 		Context("with non-existing service files and one file to upload", func() {
 			It("should return the uploaded file", func() {
-				files := []*models.File{testutil.GetFile("xs2-deploy", *testFile, testFileDigest)}
+				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest)}
 				client := fakeSlmpClientBuilder.
-					GetMetadata(&testutil.SlmpMetadataResult, nil).
-					GetServiceFiles("xs2-deploy", models.Files{}, nil).
-					CreateServiceFile("xs2-deploy", testFile, testutil.GetFiles(files), nil).Build()
-				var uploadedFiles []*models.File
+					GetMtaFiles([]*models.FileMetadata{}, nil).
+					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest), nil).Build()
+				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader("xs2-deploy", []string{testFileAbsolutePath}, client)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, sessionProvider)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -89,13 +90,13 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with existing service files and one file to upload", func() {
 			It("should display a message that the file upload will be skipped", func() {
-				files := []*models.File{testutil.GetFile("xs2-deploy", *testFile, testFileDigest)}
+				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest)}
 				client := fakeSlmpClientBuilder.
-					GetServiceFiles("xs2-deploy", testutil.FilesResult, nil).
-					CreateServiceFile("xs2-deploy", testFile, testutil.GetFiles(files), nil).Build()
-				var uploadedFiles []*models.File
+					GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
+					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest), nil).Build()
+				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader("xs2-deploy", []string{testFileAbsolutePath}, client)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, sessionProvider)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
@@ -107,15 +108,13 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with non-existing service files and one file to upload and service versions returned from the backend", func() {
 			It("should return the uploaded file", func() {
-				files := []*models.File{testutil.GetFile("xs2-deploy", *testFile, testFileDigest)}
+				fileMetadata := testutil.GetFile(*testFile, testFileDigest)
 				client := fakeSlmpClientBuilder.
-					GetMetadata(&testutil.SlmpMetadataResult, nil).
-					GetServiceFiles("xs2-deploy", models.Files{}, nil).
-					CreateServiceFile("xs2-deploy", testFile, testutil.GetFiles(files), nil).
-					GetServiceVersions("xs2-deploy", testutil.ServiceVersion1_1, nil).Build()
-				var uploadedFiles []*models.File
+					GetMtaFiles([]*models.FileMetadata{}, nil).
+					UploadMtaFile(*testFile, fileMetadata, nil).Build()
+				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader("xs2-deploy", []string{testFileAbsolutePath}, client)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, sessionProvider)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -125,7 +124,7 @@ var _ = Describe("FileUploader", func() {
 					"  " + fullPath + "\n",
 					"OK\n",
 				})
-				Expect(uploadedFiles).To(Equal(files))
+				Expect(uploadedFiles).To(Equal([]*models.FileMetadata{fileMetadata}))
 			})
 		})
 
@@ -133,13 +132,11 @@ var _ = Describe("FileUploader", func() {
 			It("should return the uploaded file", func() {
 				// files := []*models.File{testutil.GetFile("xs2-deploy", *testFile, testFileDigest)}
 				client := fakeSlmpClientBuilder.
-					GetMetadata(&testutil.SlmpMetadataResult, nil).
-					GetServiceFiles("xs2-deploy", models.Files{}, nil).
-					CreateServiceFile("xs2-deploy", testFile, models.Files{}, errors.New("Unexpected error from the backend")).
-					GetServiceVersions("xs2-deploy", testutil.ServiceVersion1_1, nil).Build()
-				var uploadedFiles []*models.File
+					GetMtaFiles([]*models.FileMetadata{}, nil).
+					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
+				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader("xs2-deploy", []string{testFileAbsolutePath}, client)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, sessionProvider)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))

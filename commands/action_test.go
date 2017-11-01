@@ -3,8 +3,10 @@ package commands_test
 import (
 	"fmt"
 
-	slppclient "github.com/SAP/cf-mta-plugin/clients/slppclient"
-	"github.com/SAP/cf-mta-plugin/clients/slppclient/fakes"
+	csrf_fakes "github.com/SAP/cf-mta-plugin/clients/csrf/fakes"
+	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
+	"github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
+
 	"github.com/SAP/cf-mta-plugin/commands"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
@@ -16,12 +18,15 @@ var _ = Describe("Actions", func() {
 	const processID = "test-process-id"
 	const commandName = "deploy"
 	const actionID = "abort"
-	var slppClient slppclient.SlppClientOperations
+	var mtaClient fakes.FakeMtaClientOperations
+
+	var sessionProvider csrf_fakes.FakeSessionProvider
 	var action commands.Action
 	var oc = testutil.NewUIOutputCapturer()
 	var ex = testutil.NewUIExpector()
 
 	BeforeEach(func() {
+		sessionProvider = csrf_fakes.NewFakeSessionProviderBuilder().GetSession(nil).Build()
 		ui.DisableTerminalOutput(true)
 	})
 
@@ -29,25 +34,23 @@ var _ = Describe("Actions", func() {
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
 				action = &commands.AbortAction{}
-				slppClient = fakes.NewFakeSlppClientBuilder().
-					GetMetadata(&testutil.SlppMetadataResult, nil).
-					ExecuteAction("abort", nil).Build()
+				mtaClient = fakes.NewFakeMtaClientBuilder().
+					ExecuteAction(processID, "abort", mtaclient.ResponseHeader{}, nil).Build()
 			})
 			Context("with no error returned from backend", func() {
 				It("should abort the process and exit with zero status", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, slppClient).ToInt()
+						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
 					})
 					ex.ExpectSuccessWithOutput(status, output, []string{"Aborting multi-target app operation with id test-process-id...\n", "OK\n"})
 				})
 			})
 			Context("with an error returned from backend", func() {
 				It("should return error and exit with non-zero status", func() {
-					slppClient = fakes.NewFakeSlppClientBuilder().
-						GetMetadata(&testutil.SlppMetadataResult, nil).
-						ExecuteAction("abort", fmt.Errorf("test-error")).Build()
+					mtaClient = fakes.NewFakeMtaClientBuilder().
+						ExecuteAction(processID, "abort", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, slppClient).ToInt()
+						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
 					})
 					ex.ExpectFailureOnLine(status, output, "Could not abort multi-target app operation with id test-process-id: test-error", 1)
 				})
@@ -59,16 +62,15 @@ var _ = Describe("Actions", func() {
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
 				action = &commands.RetryAction{}
-				slppClient = fakes.NewFakeSlppClientBuilder().
-					GetMetadata(&testutil.SlppMetadataResult, nil).
-					ExecuteAction("retry", nil).
-					GetTasklistTask(&testutil.TaskResult, nil).
+				mtaClient = fakes.NewFakeMtaClientBuilder().
+					ExecuteAction(processID, "retry", mtaclient.ResponseHeader{Location: "operations/" + processID + "?embed=messages"}, nil).
+					GetMtaOperation(processID, "messages", &testutil.SimpleOperationResult, nil).
 					Build()
 			})
 			Context("with no error returned from backend", func() {
 				It("should retry the process and exit with zero status", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, slppClient).ToInt()
+						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
 					})
 					ex.ExpectSuccessWithOutput(status, output, []string{"Retrying multi-target app operation with id test-process-id...\n", "OK\n",
 						"Monitoring process execution...\n", "Process finished.\n"})
@@ -76,13 +78,12 @@ var _ = Describe("Actions", func() {
 			})
 			Context("with an error returned from backend", func() {
 				It("should return error and exit with non-zero status", func() {
-					slppClient = fakes.NewFakeSlppClientBuilder().
-						GetMetadata(&testutil.SlppMetadataResult, nil).
-						ExecuteAction("retry", fmt.Errorf("test-error")).
-						GetTasklistTask(&testutil.TaskResult, nil).
+					mtaClient = fakes.NewFakeMtaClientBuilder().
+						ExecuteAction(processID, "retry", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).
+						GetMtaOperation(processID, "messages", &testutil.SimpleOperationResult, nil).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, slppClient).ToInt()
+						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
 					})
 					ex.ExpectFailureOnLine(status, output, "Could not retry multi-target app operation with id test-process-id: test-error", 1)
 				})
