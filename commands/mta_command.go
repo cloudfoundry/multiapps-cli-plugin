@@ -56,7 +56,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 
 	context, err := c.GetContext()
 	if err != nil {
-		c.Usage(err.Error())
+		ui.Failed("Could not get org and space: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -68,7 +68,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	// Create new REST client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -80,7 +80,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 			ui.Failed("Multi-target app %s not found", terminal.EntityNameColor(mtaID))
 			return Failure
 		}
-		ui.Failed("Could not get multi-target app %s: %s", terminal.EntityNameColor(mtaID), err)
+		ui.Failed("Could not get multi-target app %s: %s", terminal.EntityNameColor(mtaID), baseclient.NewClientError(err))
 		return Failure
 
 	}
@@ -94,7 +94,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	for _, mtaModule := range mta.Modules {
 		app, err := c.cliConnection.GetApp(mtaModule.AppName)
 		if err != nil {
-			ui.Failed("Could not get app %s: %s", terminal.EntityNameColor(mtaModule.AppName), err)
+			ui.Failed("Could not get app %s: %s", terminal.EntityNameColor(mtaModule.AppName), baseclient.NewClientError(err))
 			return Failure
 		}
 		table.Add(app.Name, app.State, getInstances(app), size(app.Memory), size(app.DiskQuota), getRoutes(app))
@@ -109,7 +109,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 		for _, serviceName := range mta.Services {
 			service, err := c.cliConnection.GetService(serviceName)
 			if err != nil {
-				ui.Failed("Could not get service %s: %s", terminal.EntityNameColor(serviceName), err)
+				ui.Failed("Could not get service %s: %s", terminal.EntityNameColor(serviceName), baseclient.NewClientError(err))
 				return Failure
 			}
 			table.Add(service.Name, service.ServiceOffering.Name, service.ServicePlan.Name,

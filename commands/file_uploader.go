@@ -42,7 +42,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	// Get all files that are already uploaded
 	uploadedMtaFiles, err := f.mtaClient.GetMtaFiles()
 	if err != nil {
-		ui.Failed("Could not get mta files: %s", err)
+		ui.Failed("Could not get mta files: %s", baseclient.NewClientError(err))
 		return nil, Failure
 	}
 
@@ -112,7 +112,7 @@ func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.M
 	// Upload the file
 	fileToUploadParts, err := util.SplitFile(fullPath)
 	if err != nil {
-		return nil, fmt.Errorf("Could not process file %q: %v", fullPath, err)
+		return nil, fmt.Errorf("Could not process file %q: %v", fullPath, baseclient.NewClientError(err))
 	}
 	defer attemptToRemoveFileParts(fileToUploadParts)
 
@@ -177,7 +177,7 @@ func uploadFilePart(filePart *os.File, baseFileName string, client mtaclient.Mta
 	uploadedFile, err := client.UploadMtaFile(*filePart)
 	defer filePart.Close()
 	if err != nil {
-		return nil, fmt.Errorf("Could not create file %s: %s", terminal.EntityNameColor(baseFileName), err)
+		return nil, fmt.Errorf("Could not create file %s: %s", terminal.EntityNameColor(baseFileName), baseclient.NewClientError(err))
 	}
 	return uploadedFile, nil
 }
@@ -191,7 +191,7 @@ func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []
 		if newFileDigests[oldFile.DigestAlgorithm] == "" {
 			digest, err := util.ComputeFileChecksum(newFilePath, oldFile.DigestAlgorithm)
 			if err != nil {
-				ui.Failed("Could not compute digest of file %s: %s", terminal.EntityNameColor(newFilePath), err)
+				ui.Failed("Could not compute digest of file %s: %s", terminal.EntityNameColor(newFilePath), baseclient.NewClientError(err))
 			}
 			newFileDigests[oldFile.DigestAlgorithm] = strings.ToUpper(digest)
 		}

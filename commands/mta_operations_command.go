@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	"github.com/SAP/cf-mta-plugin/log"
@@ -55,7 +56,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 
 	context, err := c.GetContext()
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get org and space: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -64,14 +65,14 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	// Create new REST client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
 	// Get ongoing operations
 	operationsToPrint, err := getOperationsToPrint(mtaClient, last, all)
 	if err != nil {
-		ui.Failed("Could not get multi-target app operations: %s", err)
+		ui.Failed("Could not get multi-target app operations: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 	ui.Ok()

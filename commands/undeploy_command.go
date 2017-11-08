@@ -120,7 +120,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 			ui.Failed("Multi-target app %s not found", terminal.EntityNameColor(mtaID))
 			return Failure
 		}
-		ui.Failed("Could not get multi-target app %s: %s", terminal.EntityNameColor(mtaID), err)
+		ui.Failed("Could not get multi-target app %s: %s", terminal.EntityNameColor(mtaID), baseclient.NewClientError(err))
 		return Failure
 
 	}

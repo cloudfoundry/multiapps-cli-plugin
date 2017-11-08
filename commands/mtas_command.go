@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
@@ -58,14 +59,14 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 	// Create new REST client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
 	// Get all deployed components
 	mtas, err := mtaClient.GetMtas()
 	if err != nil {
-		ui.Failed("Could not get deployed components: %s", err)
+		ui.Failed("Could not get deployed components: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 	ui.Ok()

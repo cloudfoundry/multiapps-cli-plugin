@@ -23,14 +23,14 @@ func (a *RetryAction) Execute(operationID, commandName string, mtaClient mtaclie
 	ui.Say("Retrying multi-target app operation with id %s...", terminal.EntityNameColor(operationID))
 	responseHeader, err := mtaClient.ExecuteAction(operationID, "retry")
 	if err != nil {
-		ui.Failed("Could not retry multi-target app operation with id %s: %s", operationID, err)
+		ui.Failed("Could not retry multi-target app operation with id %s: %s", operationID, baseclient.NewClientError(err))
 		return Failure
 	}
 	ui.Ok()
 
 	operation, err := getMonitoringOperation(operationID, mtaClient)
 	if err != nil {
-		ui.Failed("Could not monitor multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), err)
+		ui.Failed("Could not monitor multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), baseclient.NewClientError(err))
 		return Failure
 	}
 
