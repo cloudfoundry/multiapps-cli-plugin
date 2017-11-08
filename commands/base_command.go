@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -270,6 +271,26 @@ func (c *BaseCommand) GetDeployServiceURL() (string, error) {
 	}
 	ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the environment variable 'DEPLOY_SERVICE_URL'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", deployServiceURL))
 	return deployServiceURL, nil
+}
+
+func (c *BaseCommand) ComputeDeployServiceURL() (string, error) {
+	apiEndpoint, err := c.cliConnection.ApiEndpoint()
+	if err != nil {
+		return "", fmt.Errorf("Could not get API endpoint: %s", err)
+	}
+	if apiEndpoint == "" {
+		return "", fmt.Errorf("No api endpoint set. Use '%s' to set an endpoint.", terminal.CommandColor("cf api"))
+	}
+	url, err := url.Parse(apiEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("Could not parse API endpoint %s: %s", terminal.EntityNameColor(apiEndpoint), err)
+	}
+	if strings.HasPrefix(url.Host, "api.cf.") {
+		return "deploy-service.cfapps" + url.Host[6:], nil
+	} else if strings.HasPrefix(url.Host, "api.") {
+		return "deploy-service" + url.Host[3:], nil
+	}
+	return "", nil
 }
 
 // ExecuteAction executes the action over the process specified with operationID
