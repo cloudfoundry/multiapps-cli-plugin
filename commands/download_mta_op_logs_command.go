@@ -81,7 +81,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	// Create new SLMP client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -99,13 +99,13 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	downloadedLogs := make(map[string]*string)
 	logs, err := mtaClient.GetMtaOperationLogs(operationID)
 	if err != nil {
-		ui.Failed("Could not get process logs: %s", err)
+		ui.Failed("Could not get process logs: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 	for _, logx := range logs {
 		content, err := mtaClient.GetMtaOperationLogContent(operationID, logx.ID)
 		if err != nil {
-			ui.Failed("Could not get content of log %s: %s", terminal.EntityNameColor(logx.ID), err)
+			ui.Failed("Could not get content of log %s: %s", terminal.EntityNameColor(logx.ID), baseclient.NewClientError(err))
 			return Failure
 		}
 		downloadedLogs[logx.ID] = &content
@@ -115,7 +115,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	// Create the download directory
 	downloadDir, err := createDownloadDirectory(downloadDirName)
 	if err != nil {
-		ui.Failed("Could not create download directory %s: %s", terminal.EntityNameColor(downloadDirName), err)
+		ui.Failed("Could not create download directory %s: %s", terminal.EntityNameColor(downloadDirName), baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -124,7 +124,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	for logID, content := range downloadedLogs {
 		err = saveLogContent(downloadDir, logID, content)
 		if err != nil {
-			ui.Failed("Could not save log %s: %s", terminal.EntityNameColor(logID), err)
+			ui.Failed("Could not save log %s: %s", terminal.EntityNameColor(logID), baseclient.NewClientError(err))
 			return Failure
 		}
 	}

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -52,13 +53,13 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 
 	rc, err := c.NewRestClient(host)
 	if err != nil {
-		ui.Failed(err.Error())
+		c.reportError(baseclient.NewClientError(err))
 		return Failure
 	}
 	// TODO: ensure session
 
 	if err := rc.PurgeConfiguration(context.Org, context.Space); err != nil {
-		c.reportError(err)
+		c.reportError(baseclient.NewClientError(err))
 		return Failure
 	}
 	ui.Ok()

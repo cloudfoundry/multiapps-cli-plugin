@@ -10,6 +10,7 @@ import (
 	"github.com/SAP/cf-mta-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 
+	"github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
 )
@@ -49,7 +50,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 	for {
 		operation, err := getOperation(m.monitoringLocation, m.mtaClient)
 		if err != nil {
-			ui.Failed("Could not get ongoing operation: %s", err)
+			ui.Failed("Could not get ongoing operation: %s", baseclient.NewClientError(err))
 			return Failure
 		}
 		m.reportOperationMessages(operation)
