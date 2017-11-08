@@ -225,7 +225,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Check for an ongoing operation for this MTA ID and abort it
 	wasAborted, err := c.CheckOngoingOperation(mtaID, host, force)
 	if err != nil {
-		ui.Failed(err.Error())
+		ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 	if !wasAborted {
@@ -246,7 +246,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed("Could not get space guid:", err)
+		ui.Failed("Could not get space guid:", baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -293,7 +293,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Create the new process
 	responseHeader, err := mtaClient.StartMtaOperation(*operation)
 	if err != nil {
-		ui.Failed("Could not create operation: %s", err)
+		ui.Failed("Could not create operation: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 	ui.Ok()
