@@ -117,7 +117,7 @@ func (c MtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models
 	params := &operations.GetMtaOperationsParams{
 		Context: context.TODO(),
 		Last:    last,
-		Status:  status,
+		State:   status,
 	}
 	token, err := c.TokenFactory.NewToken()
 	if err != nil {

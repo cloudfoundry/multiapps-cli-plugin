@@ -65,8 +65,8 @@ type GetMtaOperationsParams struct {
 
 	/*Last*/
 	Last *int64
-	/*Status*/
-	Status []string
+	/*State*/
+	State []string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -117,15 +117,15 @@ func (o *GetMtaOperationsParams) SetLast(last *int64) {
 	o.Last = last
 }
 
-// WithStatus adds the status to the get mta operations params
-func (o *GetMtaOperationsParams) WithStatus(status []string) *GetMtaOperationsParams {
-	o.SetStatus(status)
+// WithState adds the state to the get mta operations params
+func (o *GetMtaOperationsParams) WithState(state []string) *GetMtaOperationsParams {
+	o.SetState(state)
 	return o
 }
 
-// SetStatus adds the status to the get mta operations params
-func (o *GetMtaOperationsParams) SetStatus(status []string) {
-	o.Status = status
+// SetState adds the state to the get mta operations params
+func (o *GetMtaOperationsParams) SetState(state []string) {
+	o.State = state
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -152,11 +152,11 @@ func (o *GetMtaOperationsParams) WriteToRequest(r runtime.ClientRequest, reg str
 
 	}
 
-	valuesStatus := o.Status
+	valuesState := o.State
 
-	joinedStatus := swag.JoinByFormat(valuesStatus, "multi")
-	// query array param status
-	if err := r.SetQueryParam("status", joinedStatus...); err != nil {
+	joinedState := swag.JoinByFormat(valuesState, "multi")
+	// query array param state
+	if err := r.SetQueryParam("state", joinedState...); err != nil {
 		return err
 	}
 

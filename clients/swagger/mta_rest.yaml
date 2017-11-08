@@ -82,7 +82,7 @@ paths:
         in: "query"
         required: false
         type: "integer"
-      - name: "status"
+      - name: "state"
         in: "query"
         required: false
         type: "array"
