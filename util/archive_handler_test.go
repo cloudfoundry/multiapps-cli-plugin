@@ -37,5 +37,20 @@ var _ = Describe("ArchiveHandler", func() {
 				os.Remove(mtaArchiveFilePath)
 			})
 		})
+
+		Context("with oversize descriptor size", func() {
+			BeforeEach(func(){
+				setDefaultMaxDescriptorSize(64)
+			})
+			It("must return error for file exceeds max size limit", func(){
+				var mtaArchiveFilePath, _ = filepath.Abs("../test_resources/commands/mtaArchive.mtar")
+				_, err := GetMtaIDFromArchive(mtaArchiveFilePath)
+				Expect(err).To(MatchError("The size 109 of file META-INF/mtad.yaml exceeds max size limit 64"))
+			})
+			AfterEach(func() {
+				os.Remove(mtaArchiveFilePath)
+			})
+		})
+
 	})
 })
