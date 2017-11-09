@@ -30,7 +30,7 @@ func NewDefaultClientFactory() *DefaultClientFactory {
 // NewMtaClient used for creating or returning cached value of the mta rest client
 func (d *DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
 	if d.mtaClient == nil {
-		d.mtaClient = mtaclient.NewMtaClient(host, spaceID, rt, jar, tokenFactory)
+		d.mtaClient = mtaclient.NewRetryableMtaRestClient(host, spaceID, rt, jar, tokenFactory)
 	}
 	return d.mtaClient
 }
@@ -38,7 +38,7 @@ func (d *DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundT
 // NewManagementMtaClient used for creating or returning cached value of the mta rest client
 func (d *DefaultClientFactory) NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
 	if d.managementMtaClient == nil {
-		d.managementMtaClient = mtaclient.NewManagementMtaClient(host, rt, jar, tokenFactory)
+		d.managementMtaClient = mtaclient.NewRetryableManagementMtaRestClient(host, rt, jar, tokenFactory)
 	}
 	return d.managementMtaClient
 }
