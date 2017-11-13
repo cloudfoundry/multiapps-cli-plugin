@@ -20,8 +20,8 @@ type Message struct {
 	// id
 	ID int64 `json:"id,omitempty"`
 
-	// message
-	Message string `json:"message,omitempty"`
+	// text
+	Text string `json:"text,omitempty"`
 
 	// type
 	Type MessageType `json:"type,omitempty"`
@@ -29,7 +29,7 @@ type Message struct {
 
 /* polymorph Message id false */
 
-/* polymorph Message message false */
+/* polymorph Message text false */
 
 /* polymorph Message type false */
 

@@ -77,8 +77,8 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:     "ERROR",
 						Messages: []*models.Message{
 							&models.Message{
-								Type:    models.MessageTypeERROR,
-								Message: "error message",
+								Type: models.MessageTypeERROR,
+								Text: "error message",
 							},
 						},
 					}, nil).
