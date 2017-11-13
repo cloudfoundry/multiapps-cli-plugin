@@ -27,16 +27,16 @@ var SimpleOperationResult = models.Operation{
 }
 
 var SimpleMessage = models.Message{
-	ID:      0,
-	Type:    "INFO",
-	Message: "Test message",
+	ID:   0,
+	Type: "INFO",
+	Text: "Test message",
 }
 
 var GetMessage = func(id int64, message string) *models.Message {
 	return &models.Message{
-		ID:      id,
-		Type:    "INFO",
-		Message: message,
+		ID:   id,
+		Type: "INFO",
+		Text: message,
 	}
 }
 

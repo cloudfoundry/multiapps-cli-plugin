@@ -69,7 +69,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 				ui.Failed("There is not error message for operation with id %s", operation.ProcessID)
 				return Failure
 			}
-			ui.Say("Process failed: %s", messageInError.Message)
+			ui.Say("Process failed: %s", messageInError.Text)
 			m.reportAvaiableActions(operation.ProcessID)
 			m.reportCommandForDownloadOfProcessLogs(operation.ProcessID)
 			return Failure
@@ -100,7 +100,7 @@ func (m *ExecutionMonitor) reportOperationMessages(operation *models.Operation) 
 			continue
 		}
 		m.reportedMessages[message.ID] = true
-		ui.Say("%s%s", consoleOffset, message.Message)
+		ui.Say("%s%s", consoleOffset, message.Text)
 	}
 }
 
