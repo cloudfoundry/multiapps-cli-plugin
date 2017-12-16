@@ -21,9 +21,10 @@ const consoleOffset = "  "
 type ExecutionMonitor struct {
 	mtaClient          mtaclient.MtaClientOperations
 	reportedMessages   map[int64]bool
-	operationID        string
 	commandName        string
 	monitoringLocation string
+	operationID        string
+	embedMessages      string
 }
 
 //NewExecutionMonitor creates a new execution monitor
@@ -45,10 +46,12 @@ func getAlreadyReportedOperationMessages(reportedOperationMessages []*models.Mes
 }
 
 func (m *ExecutionMonitor) Monitor() ExecutionStatus {
-	ui.Say("Monitoring process execution...")
+	m.operationID, m.embedMessages, _ = getMonitoringInformation(m.monitoringLocation)
+
+	ui.Say("Monitoring process %s...", m.operationID)
 
 	for {
-		operation, err := getOperation(m.monitoringLocation, m.mtaClient)
+		operation, err := m.mtaClient.GetMtaOperation(m.operationID, m.embedMessages)
 		if err != nil {
 			ui.Failed("Could not get ongoing operation: %s", baseclient.NewClientError(err))
 			return Failure
@@ -105,15 +108,10 @@ func (m *ExecutionMonitor) reportOperationMessages(operation *models.Operation) 
 }
 
 func getMonitoringInformation(monitoringLocation string) (string, string, error) {
-	parsedUrl, _ := url.Parse(monitoringLocation)
-	path := parsedUrl.Path
-	parsedQuery, _ := url.ParseQuery(parsedUrl.RawQuery)
+	parsedURL, _ := url.Parse(monitoringLocation)
+	path := parsedURL.Path
+	parsedQuery, _ := url.ParseQuery(parsedURL.RawQuery)
 	return strings.Split(path, "operations/")[1], parsedQuery["embed"][0], nil
-}
-
-func getOperation(monitoringLocation string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
-	operationID, embedMessages, _ := getMonitoringInformation(monitoringLocation)
-	return mtaClient.GetMtaOperation(operationID, embedMessages)
 }
 
 func (m *ExecutionMonitor) reportAvaiableActions(operationID string) {
