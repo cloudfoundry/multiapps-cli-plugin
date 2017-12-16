@@ -3,15 +3,15 @@ package commands_test
 import (
 	"fmt"
 
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("MtasCommand", func() {
@@ -87,7 +87,7 @@ var _ = Describe("MtasCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 2)
 			})
 		})
 
