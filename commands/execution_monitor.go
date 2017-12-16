@@ -128,7 +128,7 @@ func (m *ExecutionMonitor) reportCommandForDownloadOfProcessLogs(operationID str
 	commandBuilder := util.NewCfCommandStringBuilder()
 	commandBuilder.SetName(downloadProcessLogsCommand.GetPluginCommand().Alias)
 	commandBuilder.AddOption(operationIDOpt, operationID)
-	ui.Say("Use \"%s\" to download the logs of the process", commandBuilder.Build())
+	ui.Say("Use \"%s\" to download the logs of the process.", commandBuilder.Build())
 }
 
 func (m *ExecutionMonitor) reportAvailableAction(action, operationID string) {
