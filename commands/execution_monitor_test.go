@@ -25,7 +25,7 @@ var _ = Describe("ExecutionMonitor", func() {
 
 		var getOutputLines = func(processStatus models.State, errorMessage string, progressMessages []string) []string {
 			var lines []string
-			lines = append(lines, "Monitoring process execution...\n")
+			lines = append(lines, fmt.Sprintf("Monitoring process %s...\n", processID))
 			if len(progressMessages) > 0 {
 				lines = append(lines, progressMessages...)
 			}

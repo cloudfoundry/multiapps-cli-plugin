@@ -73,7 +73,7 @@ var _ = Describe("DeployCommand", func() {
 			lines = append(lines,
 				"Starting deployment process...\n",
 				"OK\n",
-				"Monitoring process execution...\n",
+				"Monitoring process 1000...\n",
 				"  Test message\n",
 				"Process finished.\n")
 			return lines
