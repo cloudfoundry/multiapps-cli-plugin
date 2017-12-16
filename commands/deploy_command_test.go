@@ -75,7 +75,8 @@ var _ = Describe("DeployCommand", func() {
 				"OK\n",
 				"Monitoring process 1000...\n",
 				"  Test message\n",
-				"Process finished.\n")
+				"Process finished.\n",
+				"Use \"cf dmol -i 1000\" to download the logs of the process.\n")
 			return lines
 		}
 

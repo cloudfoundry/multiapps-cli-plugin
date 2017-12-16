@@ -32,8 +32,10 @@ var _ = Describe("ExecutionMonitor", func() {
 			switch processStatus {
 			case models.StateFINISHED:
 				lines = append(lines, "Process finished.\n")
+				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
 			case models.StateABORTED:
 				lines = append(lines, "Process was aborted.\n")
+				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
 			case models.StateACTIONREQUIRED:
 				lines = append(lines, "Process has entered validation phase. After testing your new deployment you can resume or abort the process.\n")
 				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a resume\" to resume the process.\n", commandName, processID))
@@ -47,6 +49,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				lines = append(lines, fmt.Sprintf("Process failed: %s\n", errorMessage))
 				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a retry\" to retry the process.\n", commandName, processID))
 				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a abort\" to abort the process.\n", commandName, processID))
+				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
 			}
 			return lines
 		}

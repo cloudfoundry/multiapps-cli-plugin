@@ -62,23 +62,25 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			time.Sleep(2000)
 		case models.StateFINISHED:
 			ui.Say("Process finished.")
+			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Success
 		case models.StateABORTED:
 			ui.Say("Process was aborted.")
+			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Failure
 		case models.StateERROR:
 			messageInError := findErrorMessage(operation.Messages)
 			if messageInError == nil {
-				ui.Failed("There is not error message for operation with id %s", operation.ProcessID)
+				ui.Failed("There is not error message for operation with id %s", m.operationID)
 				return Failure
 			}
 			ui.Say("Process failed: %s", messageInError.Text)
-			m.reportAvaiableActions(operation.ProcessID)
-			m.reportCommandForDownloadOfProcessLogs(operation.ProcessID)
+			m.reportAvaiableActions(m.operationID)
+			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Failure
 		case models.StateACTIONREQUIRED:
 			ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
-			m.reportAvaiableActions(operation.ProcessID)
+			m.reportAvaiableActions(m.operationID)
 			ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
 			return Success
 		default:

@@ -245,7 +245,7 @@ var _ = Describe("BaseCommand", func() {
 					return command.ExecuteAction("test-process-id", "retry", "test-host").ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, []string{"Retrying multi-target app operation with id test-process-id...\n", "OK\n",
-					"Monitoring process test-process-id...\n", "Process finished.\n"})
+					"Monitoring process test-process-id...\n", "Process finished.\n", "Use \"cf dmol -i test-process-id\" to download the logs of the process.\n"})
 			})
 		})
 	})
