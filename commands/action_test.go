@@ -73,7 +73,7 @@ var _ = Describe("Actions", func() {
 						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
 					})
 					ex.ExpectSuccessWithOutput(status, output, []string{"Retrying multi-target app operation with id test-process-id...\n", "OK\n",
-						"Monitoring process " + processID + "...\n", "Process finished.\n"})
+						"Monitoring process " + processID + "...\n", "Process finished.\n", "Use \"cf dmol -i " + processID + "\" to download the logs of the process.\n"})
 				})
 			})
 			Context("with an error returned from backend", func() {
