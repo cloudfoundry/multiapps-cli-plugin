@@ -38,6 +38,7 @@ const (
 	deleteServiceBrokersOpt       = "delete-service-brokers"
 	noRestartSubscribedAppsOpt    = "no-restart-subscribed-apps"
 	noFailOnMissingPermissionsOpt = "do-not-fail-on-missing-permissions"
+	abortOnErrorOpt               = "abort-on-error"
 )
 
 // BaseCommand represents a base command

@@ -31,7 +31,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Undeploy a multi-target app",
 		UsageDetails: plugin.Usage{
 			Usage: `Undeploy a multi-target app
-   cf undeploy MTA_ID [-u URL] [-f] [--delete-services] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions]
+   cf undeploy MTA_ID [-u URL] [-f] [--delete-services] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
 
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -44,6 +44,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete service brokers",
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
+				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 			},
 		},
 	}
@@ -61,6 +62,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	var noRestartSubscribedApps bool
 	var deleteServiceBrokers bool
 	var noFailOnMissingPermissions bool
+	var abortOnError bool
 	flags, err := c.CreateFlags(&host)
 	if err != nil {
 		ui.Failed(err.Error())
@@ -73,6 +75,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	flags.BoolVar(&noRestartSubscribedApps, noRestartSubscribedAppsOpt, false, "")
 	flags.BoolVar(&deleteServiceBrokers, deleteServiceBrokersOpt, false, "")
 	flags.BoolVar(&noFailOnMissingPermissions, noFailOnMissingPermissionsOpt, false, "")
+	flags.BoolVar(&abortOnError, abortOnErrorOpt, false, "")
 	shouldExecuteActionOnExistingProcess, _ := ContainsSpecificOptions(flags, args, map[string]string{"i": "-i", "a": "-a"})
 	var positionalArgNames []string
 	if !shouldExecuteActionOnExistingProcess {
@@ -155,6 +158,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.Parameter("deleteServices", strconv.FormatBool(deleteServices))
 	processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(deleteServiceBrokers))
 	processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(noFailOnMissingPermissions))
+	processBuilder.Parameter("abortOnError", strconv.FormatBool(abortOnError))
 	operation := processBuilder.Build()
 
 	// Create the new process

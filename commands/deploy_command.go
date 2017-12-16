@@ -49,7 +49,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -70,6 +70,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(keepFilesOpt):                  "Keep files used for deployment",
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the deployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
+				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 			},
 		},
 	}
@@ -103,6 +104,7 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[keepFilesOpt] = flags.Bool(keepFilesOpt, false, "")
 		optionValues[noRestartSubscribedAppsOpt] = flags.Bool(noRestartSubscribedAppsOpt, false, "")
 		optionValues[noFailOnMissingPermissionsOpt] = flags.Bool(noFailOnMissingPermissionsOpt, false, "")
+		optionValues[abortOnErrorOpt] = flags.Bool(abortOnErrorOpt, false, "")
 		return optionValues
 	}
 }
@@ -121,6 +123,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("keepFiles", strconv.FormatBool(GetBoolOpt(keepFilesOpt, optionValues)))
 		processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(GetBoolOpt(noRestartSubscribedAppsOpt, optionValues)))
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
+		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
 	}
 }
 
