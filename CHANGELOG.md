@@ -1,3 +1,36 @@
+## v2.0.0
+
+* Bump version to 2.0.0
+* Print dmol command for finished and aborted processes
+* Print the ID of the monitored process
+* Add support for --abort-on-error option
+* Change Message to Text in models.Message
+* Add support for retryable mta rest client
+* Introduce function for getting deploy-service URL
+* Add support for providing session tokens
+* Remove unused fakes
+* Re-generate the client for log/content
+* Refactor service id provider
+* Fix errors in commands
+* Remove non-used methods from restclient
+* Replace slmp and slpp clients with mta client in commands
+* Delete slppclient and slmpclient
+* Update version of go-openapi
+* Add implementation details to the new client
+* Add auth info
+* Add method for executing actions
+* Add mta_rest.yaml as a client definition
+* Print warning when using a custom deploy service URL
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+
 ## Initial public version 1.0.5
 
 * Supported MTA Operations:
