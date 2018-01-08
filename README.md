@@ -18,7 +18,7 @@ The latest version of the plugin can be found in the table below. Select the plu
 
 Mac OS X 64 bit | Windows 64 bit | Linux 64 bit
 --- | --- | ---
-[cf-cli-mta-plugin-2.0.0-darwin.bin](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/mta_plugin_darwin_amd64) | [cf-cli-mta-plugin-2.0.0-windows.exe](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/mta_plugin_windows_amd64.exe) | [cf-cli-mta-plugin-2.0.0-linux.bin](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/mta_plugin_linux_amd64) |
+[cf-cli-mta-plugin-2.0.0-darwin.bin](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-darwin.bin) | [cf-cli-mta-plugin-2.0.0-windows.exe](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-windows.exe) | [cf-cli-mta-plugin-2.0.0-linux.bin](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-linux.bin) |
 
 
 ## Installation
