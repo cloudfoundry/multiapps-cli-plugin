@@ -6,7 +6,7 @@ import (
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
-	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
@@ -48,7 +48,7 @@ var _ = Describe("MtaCommand", func() {
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
 			name = command.GetPluginCommand().Name
-			cliConnection = cmd_fakes.NewFakeCliConnectionBuilder().
+			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).

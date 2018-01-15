@@ -14,7 +14,7 @@ import (
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	fakes "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
-	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
@@ -39,7 +39,7 @@ var _ = Describe("BaseCommand", func() {
 	BeforeEach(func() {
 		ui.DisableTerminalOutput(true)
 		command = &commands.BaseCommand{}
-		fakeCliConnection = cmd_fakes.NewFakeCliConnectionBuilder().
+		fakeCliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 			CurrentOrg("test-org-guid", org, nil).
 			CurrentSpace("test-space-guid", space, nil).
 			Username(user, nil).
@@ -59,7 +59,7 @@ var _ = Describe("BaseCommand", func() {
 		})
 		Context("with no org returned by the CLI connection", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				fakeCliConnection := cmd_fakes.NewFakeCliConnectionBuilder().
+				fakeCliConnection := cli_fakes.NewFakeCliConnectionBuilder().
 					CurrentOrg("", "", nil).Build()
 				command.Initialize("test", fakeCliConnection)
 				_, err := command.GetOrg()
@@ -79,7 +79,7 @@ var _ = Describe("BaseCommand", func() {
 		})
 		Context("with no space returned by the CLI connection", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				fakeCliConnection := cmd_fakes.NewFakeCliConnectionBuilder().
+				fakeCliConnection := cli_fakes.NewFakeCliConnectionBuilder().
 					CurrentSpace("", "", nil).Build()
 				command.Initialize("test", fakeCliConnection)
 				_, err := command.GetSpace()
@@ -97,7 +97,7 @@ var _ = Describe("BaseCommand", func() {
 		})
 		Context("with no space returned by the CLI connection", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				fakeCliConnection := cmd_fakes.NewFakeCliConnectionBuilder().
+				fakeCliConnection := cli_fakes.NewFakeCliConnectionBuilder().
 					Username("", nil).Build()
 				command.Initialize("test", fakeCliConnection)
 				_, err := command.GetUsername()
@@ -127,7 +127,7 @@ var _ = Describe("BaseCommand", func() {
 		})
 		Context("with no API endpoint returned by the CLI connection", func() {
 			It("should print an error and exit with a non-zero status", func() {
-				fakeCliConnection := cmd_fakes.NewFakeCliConnectionBuilder().
+				fakeCliConnection := cli_fakes.NewFakeCliConnectionBuilder().
 					APIEndpoint("", nil).Build()
 				command.Initialize("test", fakeCliConnection)
 				_, err := command.GetDeployServiceURL()

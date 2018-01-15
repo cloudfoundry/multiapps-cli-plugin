@@ -5,7 +5,7 @@ package commands_test
 // 	"github.com/SAP/cf-mta-plugin/clients/models"
 // 	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
 // 	"github.com/SAP/cf-mta-plugin/commands"
-// 	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
+// 	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 // 	"github.com/SAP/cf-mta-plugin/testutil"
 // 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 // 	. "github.com/onsi/ginkgo"
@@ -68,7 +68,7 @@ package commands_test
 // 		BeforeEach(func() {
 // 			// ui.DisableTerminalOutput(true)
 // 			name = command.GetPluginCommand().Name
-// 			cliConnection = cmd_fakes.NewFakeCliConnectionBuilder().
+// 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 // 				CurrentOrg("test-org-guid", org, nil).
 // 				CurrentSpace("test-space-guid", space, nil).
 // 				Username(user, nil).
