@@ -9,9 +9,9 @@ import (
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 
 	"github.com/SAP/cf-mta-plugin/commands"
-	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
@@ -112,7 +112,7 @@ var _ = Describe("DeployCommand", func() {
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
 			name = command.GetPluginCommand().Name
-			cliConnection = cmd_fakes.NewFakeCliConnectionBuilder().
+			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).

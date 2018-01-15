@@ -2,7 +2,7 @@ package commands_test
 
 import (
 	"github.com/SAP/cf-mta-plugin/commands"
-	cmd_fakes "github.com/SAP/cf-mta-plugin/commands/fakes"
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
@@ -31,7 +31,7 @@ var _ = Describe("PurgeConfigCommand", func() {
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
 			name = "purge-mta-config"
-			cliConnection = cmd_fakes.NewFakeCliConnectionBuilder().
+			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).
