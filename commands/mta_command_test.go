@@ -3,12 +3,13 @@ package commands_test
 import (
 	"fmt"
 
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
-	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	util_fakes "github.com/SAP/cf-mta-plugin/util/fakes"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	"github.com/cloudfoundry/cli/plugin/models"
 	. "github.com/onsi/ginkgo"
@@ -53,7 +54,6 @@ var _ = Describe("MtaCommand", func() {
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).
-				APIEndpoint("https://api.test.ondemand.com", nil).
 				GetApp("", getGetAppModel("test-mta-module-1", "started", 1, 1, 512, 1024, "test-1", "bosh-lite.com", "test-service-1"), nil).
 				GetService("", getGetServiceModel("test-service-1", "test", "free", "create", "succeeded"), nil).Build()
 			mtaClient := mtafake.NewFakeMtaClientBuilder().
@@ -61,8 +61,9 @@ var _ = Describe("MtaCommand", func() {
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.MtaCommand{}
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
+			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory)
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		// wrong arguments - error

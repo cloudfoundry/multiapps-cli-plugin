@@ -1,10 +1,11 @@
 package commands_test
 
 import (
-	"github.com/SAP/cf-mta-plugin/commands"
 	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
+	"github.com/SAP/cf-mta-plugin/commands"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	util_fakes "github.com/SAP/cf-mta-plugin/util/fakes"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,14 +36,14 @@ var _ = Describe("PurgeConfigCommand", func() {
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).
-				AccessToken("bearer test-token", nil).
-				APIEndpoint("https://api.test.ondemand.com", nil).Build()
+				AccessToken("bearer test-token", nil).Build()
 
 			testTokenFactory = commands.NewTestTokenFactory(cliConnection)
 			clientFactory = commands.NewTestClientFactory(nil, nil)
+			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
 			command = &commands.PurgeConfigCommand{}
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory)
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 
 			oc = testutil.NewUIOutputCapturer()
 			ex = testutil.NewUIExpector()

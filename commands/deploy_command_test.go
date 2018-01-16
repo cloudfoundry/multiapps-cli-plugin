@@ -6,15 +6,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
-	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 
 	"github.com/SAP/cf-mta-plugin/commands"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
 	"github.com/SAP/cf-mta-plugin/util"
+	util_fakes "github.com/SAP/cf-mta-plugin/util/fakes"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -116,8 +117,7 @@ var _ = Describe("DeployCommand", func() {
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).
-				AccessToken("bearer test-token", nil).
-				APIEndpoint("https://api.test.ondemand.com", nil).Build()
+				AccessToken("bearer test-token", nil).Build()
 			mtaArchiveFile, mtaArchive := getFile(mtaArchivePath)
 			defer mtaArchiveFile.Close()
 			extDescriptorFile, extDescriptor := getFile(extDescriptorPath)
@@ -133,7 +133,8 @@ var _ = Describe("DeployCommand", func() {
 			testClientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = commands.NewDeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, testClientFactory, testTokenFactory)
+			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		// unknown flag - error
