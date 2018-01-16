@@ -3,12 +3,13 @@ package commands_test
 import (
 	"fmt"
 
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
-	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	util_fakes "github.com/SAP/cf-mta-plugin/util/fakes"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -55,7 +56,8 @@ var _ = Describe("MtasCommand", func() {
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.MtasCommand{}
 			testTokenFactory = commands.NewTestTokenFactory(cliConnection)
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory)
+			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		// unknown flag - error

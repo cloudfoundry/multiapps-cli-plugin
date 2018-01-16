@@ -52,6 +52,11 @@ func (b *FakeCliConnectionBuilder) GetService(name string, service plugin_models
 	return b
 }
 
+func (b *FakeCliConnectionBuilder) GetSpace(name string, space plugin_models.GetSpace_Model, err error) *FakeCliConnectionBuilder {
+	b.cliConn.GetSpaceReturns(space, err) // TODO
+	return b
+}
+
 // Build builds a FakeCliConnection instance
 func (b *FakeCliConnectionBuilder) Build() *fakes.FakeCliConnection {
 	return &b.cliConn

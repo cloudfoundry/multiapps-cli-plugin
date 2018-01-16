@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
-	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -22,6 +21,7 @@ import (
 	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
 	"github.com/SAP/cf-mta-plugin/log"
 	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/SAP/cf-mta-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 	"github.com/cloudfoundry/cli/plugin/models"
@@ -39,33 +39,36 @@ const (
 	noRestartSubscribedAppsOpt    = "no-restart-subscribed-apps"
 	noFailOnMissingPermissionsOpt = "do-not-fail-on-missing-permissions"
 	abortOnErrorOpt               = "abort-on-error"
+	deployServiceHost             = "deploy-service"
 )
 
 // BaseCommand represents a base command
 type BaseCommand struct {
-	name          string
-	cliConnection plugin.CliConnection
-	transport     http.RoundTripper
-	jar           http.CookieJar
-	clientFactory clients.ClientFactory
-	tokenFactory  baseclient.TokenFactory
+	name                       string
+	cliConnection              plugin.CliConnection
+	transport                  http.RoundTripper
+	jar                        http.CookieJar
+	clientFactory              clients.ClientFactory
+	tokenFactory               baseclient.TokenFactory
+	deployServiceURLCalculator util.DeployServiceURLCalculator
 }
 
 // Initialize initializes the command with the specified name and CLI connection
 func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	log.Tracef("Initializing command '%s'\n", name)
-	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), clients.NewDefaultClientFactory(), NewDefaultTokenFactory(cliConnection))
+	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), clients.NewDefaultClientFactory(), NewDefaultTokenFactory(cliConnection), util.NewDeployServiceURLCalculator(cliConnection))
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
 func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnection,
-	transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory) {
+	transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator) {
 	c.name = name
 	c.cliConnection = cliConnection
 	c.transport = transport
 	c.jar = jar
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
+	c.deployServiceURLCalculator = deployServiceURLCalculator
 }
 
 // Usage reports incorrect command usage
@@ -268,30 +271,10 @@ func (c *BaseCommand) GetUsername() (string, error) {
 func (c *BaseCommand) GetDeployServiceURL() (string, error) {
 	deployServiceURL := os.Getenv(DeployServiceURLEnv)
 	if deployServiceURL == "" {
-		return c.ComputeDeployServiceURL()
+		return c.deployServiceURLCalculator.ComputeDeployServiceURL()
 	}
 	ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the environment variable 'DEPLOY_SERVICE_URL'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", deployServiceURL))
 	return deployServiceURL, nil
-}
-
-func (c *BaseCommand) ComputeDeployServiceURL() (string, error) {
-	apiEndpoint, err := c.cliConnection.ApiEndpoint()
-	if err != nil {
-		return "", fmt.Errorf("Could not get API endpoint: %s", err)
-	}
-	if apiEndpoint == "" {
-		return "", fmt.Errorf("No api endpoint set. Use '%s' to set an endpoint.", terminal.CommandColor("cf api"))
-	}
-	url, err := url.Parse(apiEndpoint)
-	if err != nil {
-		return "", fmt.Errorf("Could not parse API endpoint %s: %s", terminal.EntityNameColor(apiEndpoint), err)
-	}
-	if strings.HasPrefix(url.Host, "api.cf.") {
-		return "deploy-service.cfapps" + url.Host[6:], nil
-	} else if strings.HasPrefix(url.Host, "api.") {
-		return "deploy-service" + url.Host[3:], nil
-	}
-	return "", nil
 }
 
 // ExecuteAction executes the action over the process specified with operationID

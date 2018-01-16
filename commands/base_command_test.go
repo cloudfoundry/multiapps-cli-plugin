@@ -4,19 +4,19 @@ package commands_test
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/cloudfoundry/cli/cf/terminal"
 
+	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
 	mtafake "github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
 	fakes "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
 	"github.com/SAP/cf-mta-plugin/commands"
-	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
 	"github.com/SAP/cf-mta-plugin/testutil"
 	"github.com/SAP/cf-mta-plugin/ui"
+	util_fakes "github.com/SAP/cf-mta-plugin/util/fakes"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -43,8 +43,7 @@ var _ = Describe("BaseCommand", func() {
 			CurrentOrg("test-org-guid", org, nil).
 			CurrentSpace("test-space-guid", space, nil).
 			Username(user, nil).
-			AccessToken("bearer test-token", nil).
-			APIEndpoint("https://api.test.ondemand.com", nil).Build()
+			AccessToken("bearer test-token", nil).Build()
 
 	})
 
@@ -106,36 +105,6 @@ var _ = Describe("BaseCommand", func() {
 		})
 	})
 
-	Describe("GetDeployServiceHost", func() {
-		Context("with an environment variable", func() {
-			BeforeEach(func() {
-				os.Setenv("DEPLOY_SERVICE_URL", "test")
-			})
-			It("should return the deploy service host set in the environment", func() {
-				command.Initialize("test", fakeCliConnection)
-				Expect(command.GetDeployServiceURL()).To(Equal("test"))
-			})
-			AfterEach(func() {
-				os.Clearenv()
-			})
-		})
-		Context("with valid API endpoint returned by the CLI connection", func() {
-			It("should return the deploy service host constructed from the API endpoint", func() {
-				command.Initialize("test", fakeCliConnection)
-				Expect(command.GetDeployServiceURL()).To(Equal("deploy-service.test.ondemand.com"))
-			})
-		})
-		Context("with no API endpoint returned by the CLI connection", func() {
-			It("should print an error and exit with a non-zero status", func() {
-				fakeCliConnection := cli_fakes.NewFakeCliConnectionBuilder().
-					APIEndpoint("", nil).Build()
-				command.Initialize("test", fakeCliConnection)
-				_, err := command.GetDeployServiceURL()
-				Expect(err).To(MatchError(fmt.Errorf("No api endpoint set. Use '%s' to set an endpoint.", terminal.CommandColor("cf api"))))
-			})
-		})
-	})
-
 	Describe("CheckOngoingOperation", func() {
 		var wasAborted bool
 		var err error
@@ -154,8 +123,9 @@ var _ = Describe("BaseCommand", func() {
 
 			testClientFactory.MtaClient = fakeMtaClientBuilder.
 				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).Build()
+			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
-			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK, nil), nil, testClientFactory, testTokenFactory)
+			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 		Context("with valid ongoing operations", func() {
 			It("should abort and exit with zero status", func() {
@@ -211,7 +181,8 @@ var _ = Describe("BaseCommand", func() {
 				GetMtaOperation("test-process-id", "mesages", &testutil.SimpleOperationResult, nil).
 				ExecuteAction("test-process-id", "abort", mtaclient.ResponseHeader{}, nil).
 				ExecuteAction("test-process-id", "retry", mtaclient.ResponseHeader{Location: "operations/test-process-id?embed=messages"}, nil).Build()
-			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200, nil), nil, testClientfactory, testTokenFactory)
+			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
+			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200, nil), nil, testClientfactory, testTokenFactory, deployServiceURLCalculator)
 		})
 		Context("with valid process id and valid action id", func() {
 			It("should abort and exit with zero status", func() {
