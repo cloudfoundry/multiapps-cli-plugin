@@ -1,3 +1,7 @@
+## v2.0.1
+
+* Fix computation of deploy service URL
+
 ## v2.0.0
 
 * Bump version to 2.0.0
