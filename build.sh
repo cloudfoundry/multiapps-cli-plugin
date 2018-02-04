@@ -27,4 +27,6 @@ function main() {
     done
 }
 
+script_dir="$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")"
+cd "${script_dir}"
 main "$@"

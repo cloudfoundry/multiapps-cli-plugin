@@ -2,6 +2,8 @@
 
 set -e
 
+
+echo "DEPCRECATED! DO NOT USE THIS SCRIPT. USE THE build.sh in the root durectory of the project!"
 echo -e "Generating binaries..."
 
 ROOT_DIR=$(cd $(dirname $(dirname $0)) && pwd)
