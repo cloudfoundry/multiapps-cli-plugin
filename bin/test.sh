@@ -30,4 +30,4 @@ echo -e "Testing packages..."
 ginkgo -r $@
 
 echo -e "Running build script to confirm everything compiles..."
-bin/build.sh
+./build.sh "0.0.$(date +%s)"
