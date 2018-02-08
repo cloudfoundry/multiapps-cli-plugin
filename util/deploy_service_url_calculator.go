@@ -8,17 +8,24 @@ import (
 )
 
 const deployServiceHost = "deploy-service"
+const defaultDeployServiceHostHttpScheme = "https"
+const defaultDeployServiceEndpoint = "/public/ping"
 
 type DeployServiceURLCalculator interface {
 	ComputeDeployServiceURL() (string, error)
 }
 
 type deployServiceURLCalculatorImpl struct {
-	cliConnection plugin.CliConnection
+	cliConnection   plugin.CliConnection
+	httpGetExecutor HttpSimpleGetExecutor
 }
 
 func NewDeployServiceURLCalculator(cliConnection plugin.CliConnection) DeployServiceURLCalculator {
-	return deployServiceURLCalculatorImpl{cliConnection: cliConnection}
+	return deployServiceURLCalculatorImpl{cliConnection: cliConnection, httpGetExecutor: NewSimpleGetExecutor()}
+}
+
+func NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection plugin.CliConnection, httpGetExecutor HttpSimpleGetExecutor) DeployServiceURLCalculator {
+	return deployServiceURLCalculatorImpl{cliConnection: cliConnection, httpGetExecutor: httpGetExecutor}
 }
 
 func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL() (string, error) {
@@ -27,7 +34,7 @@ func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL() (string, error
 		return "", err
 	}
 
-	sharedDomain, err := findSharedDomain(currentSpace)
+	sharedDomain, err := c.findSharedDomain(currentSpace)
 	if err != nil {
 		return "", err
 	}
@@ -47,11 +54,31 @@ func (c deployServiceURLCalculatorImpl) getCurrentSpace() (plugin_models.GetSpac
 	return c.cliConnection.GetSpace(currentSpace.Name)
 }
 
-func findSharedDomain(space plugin_models.GetSpace_Model) (plugin_models.GetSpace_Domains, error) {
+func (c deployServiceURLCalculatorImpl) findSharedDomain(space plugin_models.GetSpace_Model) (plugin_models.GetSpace_Domains, error) {
 	for _, domain := range space.Domains {
 		if domain.Shared {
-			return domain, nil
+			if c.isCorrectDomain(domain.Name) {
+				return domain, nil
+			}
 		}
 	}
 	return plugin_models.GetSpace_Domains{}, fmt.Errorf("Could not find any shared domains in space: %s", space.Name)
+}
+
+func (c deployServiceURLCalculatorImpl) isCorrectDomain(domainName string) bool {
+	statusCode, err := c.httpGetExecutor.ExecuteGetRequest(buildDeployServiceUrl(domainName))
+	if err != nil {
+		return false
+	}
+
+	return statusCode == 200
+}
+
+func buildDeployServiceUrl(domainName string) string {
+	uriBuilder := NewUriBuilder()
+	uri, err := uriBuilder.SetScheme(defaultDeployServiceHostHttpScheme).SetPath(defaultDeployServiceEndpoint).SetHost(deployServiceHost + "." + domainName).Build()
+	if err != nil {
+		return ""
+	}
+	return uri
 }
