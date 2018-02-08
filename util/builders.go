@@ -1,6 +1,11 @@
 package util
 
 import (
+	"bytes"
+	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/SAP/cf-mta-plugin/clients/models"
 )
 
@@ -30,4 +35,56 @@ func (pb *ProcessBuilder) Parameter(parameterID string, value string) *ProcessBu
 // Build builds the process
 func (pb *ProcessBuilder) Build() *models.Operation {
 	return &pb.operation
+}
+
+const hostAndSchemeSeparator = "://"
+
+type UriBuilder struct {
+	host   string
+	scheme string
+	path   string
+}
+
+func NewUriBuilder() *UriBuilder {
+	return &UriBuilder{host: "", scheme: "", path: ""}
+}
+
+func (builder *UriBuilder) SetScheme(scheme string) *UriBuilder {
+	builder.scheme = scheme
+	return builder
+}
+
+func (builder *UriBuilder) SetHost(host string) *UriBuilder {
+	builder.host = host
+	return builder
+}
+
+func (builder *UriBuilder) SetPath(path string) *UriBuilder {
+	builder.path = path
+	return builder
+}
+
+func (builder *UriBuilder) Build() (string, error) {
+	if builder.scheme == "" || builder.host == "" {
+		return "", fmt.Errorf("The host or scheme could not be empty")
+	}
+	stringBuilder := bytes.Buffer{}
+	stringBuilder.WriteString(builder.scheme)
+	stringBuilder.WriteString(hostAndSchemeSeparator)
+	stringBuilder.WriteString(builder.host)
+	stringBuilder.WriteString(getPath(builder.path))
+	builtUrl := stringBuilder.String()
+	parsedUrl, err := url.Parse(builtUrl)
+	if err != nil {
+		return "", err
+	}
+	return parsedUrl.String(), nil
+}
+
+func getPath(path string) string {
+	if strings.HasPrefix(path, "/") {
+		return path
+	}
+
+	return "/" + path
 }
