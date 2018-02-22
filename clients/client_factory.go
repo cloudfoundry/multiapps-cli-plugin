@@ -11,15 +11,17 @@ import (
 // ClientFactory is a factory for creating XxxClientOperations instances
 type ClientFactory interface {
 	NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
-	NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations
 	NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
+	NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations
+	NewManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations
 }
 
 // DefaultClientFactory a default implementation of the ClientFactory
 type DefaultClientFactory struct {
-	mtaClient           mtaclient.MtaClientOperations
-	managementMtaClient mtaclient.MtaClientOperations
-	restClient          restclient.RestClientOperations
+	mtaClient            mtaclient.MtaClientOperations
+	managementMtaClient  mtaclient.MtaClientOperations
+	restClient           restclient.RestClientOperations
+	managementRestClient restclient.RestClientOperations
 }
 
 // NewDefaultClientFactory a default intialization method for the factory
@@ -50,4 +52,12 @@ func (d *DefaultClientFactory) NewRestClient(host, org, space string,
 		d.restClient = restclient.NewRetryableRestClient(host, org, space, rt, jar, tokenfactory)
 	}
 	return d.restClient
+}
+
+// NewManagementRestClient used for creating or returning cached value of the rest client
+func (d *DefaultClientFactory) NewManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+	if d.managementRestClient == nil {
+		d.managementRestClient = restclient.NewRetryableManagementRestClient(host, rt, jar, tokenFactory)
+	}
+	return d.managementRestClient
 }

@@ -4,11 +4,15 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/SAP/cf-mta-plugin/clients/baseclient"
 	operations "github.com/SAP/cf-mta-plugin/clients/restclient/operations"
 )
+
+const restBaseURL string = "rest/"
+const csrfRestBaseURL string = "api/v1/"
 
 // RestClient represents a client for the MTA deployer REST protocol
 type RestClient struct {
@@ -18,13 +22,16 @@ type RestClient struct {
 
 // NewRestClient creates a new Rest client
 func NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
-	t := baseclient.NewHTTPTransport(host, getRestURL(org, space), getRestURL(baseclient.EncodeArg(org), baseclient.EncodeArg(space)), rt, jar)
+	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
+
 	client := New(t, strfmt.Default)
 	return RestClient{baseclient.BaseClient{tokenFactory}, client}
 }
 
-func getRestURL(org, space string) string {
-	return "rest/" + org + "/" + space
+func NewManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
+	t := baseclient.NewHTTPTransport(host, csrfRestBaseURL, csrfRestBaseURL, rt, jar)
+	httpRestClient := New(t, strfmt.Default)
+	return &RestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpRestClient}
 }
 
 func (c RestClient) PurgeConfiguration(org, space string) error {
@@ -33,13 +40,34 @@ func (c RestClient) PurgeConfiguration(org, space string) error {
 		Space:   space,
 		Context: context.TODO(),
 	}
-	token, err := c.TokenFactory.NewToken()
-	if err != nil {
-		return baseclient.NewClientError(err)
-	}
-	_, err = c.Client.Operations.PurgeConfiguration(params, token)
+	_, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
+		return c.Client.Operations.PurgeConfiguration(params, token)
+	})
 	if err != nil {
 		return baseclient.NewClientError(err)
 	}
 	return nil
+}
+
+func (c RestClient) getCsrfToken() error {
+	_, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
+		return c.Client.Operations.GetCsrfToken(nil, token)
+	})
+	if err != nil {
+		return baseclient.NewClientError(err)
+	}
+	return nil
+}
+
+func (c RestClient) GetSession() error {
+	c.getCsrfToken()
+	return c.getCsrfToken()
+}
+
+func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token runtime.ClientAuthInfoWriter) (interface{}, error)) (interface{}, error) {
+	token, err := tokenProvider.NewToken()
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return restOperation(token)
 }
