@@ -212,6 +212,7 @@ func (c MtaRestClient) GetCsrfToken() error {
 }
 
 func (c MtaRestClient) GetSession() error {
+	c.GetCsrfToken()
 	return c.GetCsrfToken()
 }
 

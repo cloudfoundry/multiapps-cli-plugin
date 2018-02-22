@@ -186,6 +186,10 @@ func (c *BaseCommand) NewRestClient(host string) (restclient.RestClientOperation
 	return restClient, nil
 }
 
+func (c *BaseCommand) NewManagementRestClient(host string) (restclient.RestClientOperations, error) {
+	return c.clientFactory.NewManagementRestClient(host, c.transport, c.jar, c.tokenFactory), nil
+}
+
 // NewMtaClient creates a new MTA deployer REST client
 func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, error) {
 	space, err := c.GetSpace()
