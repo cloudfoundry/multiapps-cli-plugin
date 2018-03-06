@@ -31,7 +31,7 @@ func shouldRetry(err error) bool {
 	if ok {
 		httpCode := ae.Code
 		httpCodeMajorDigit := httpCode / 100
-		if httpCodeMajorDigit == 5 {
+		if httpCodeMajorDigit == 5 || httpCodeMajorDigit == 4 {
 			return true
 		}
 	}
