@@ -276,7 +276,8 @@ func (r *Runtime) Submit(operation *runtime.ClientOperation) (interface{}, error
 	})
 
 	if r.Debug {
-		b, err2 := httputil.DumpRequestOut(req, true)
+		var isMultipartRequest = strings.Contains(req.Header.Get("Content-type"), "multipart/form-data")
+		b, err2 := httputil.DumpRequestOut(req, !isMultipartRequest)
 		if err2 != nil {
 			return nil, err2
 		}
