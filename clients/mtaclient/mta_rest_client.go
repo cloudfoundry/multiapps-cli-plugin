@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-
 	"github.com/go-errors/errors"
 
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
@@ -187,7 +186,10 @@ func (c MtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error)
 		return c.client.Operations.UploadMtaFile(params, token)
 	})
 
-	return result.(*operations.UploadMtaFileCreated).Payload, baseclient.NewClientError(err)
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return result.(*operations.UploadMtaFileCreated).Payload, nil
 }
 
 func (c MtaRestClient) GetMtaOperationLogContent(operationID, logID string) (string, error) {
