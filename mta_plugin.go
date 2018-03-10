@@ -34,6 +34,9 @@ var Commands = []commands.Command{
 // Run runs this plugin
 func (p *MtaPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	disableStdOut()
+	if args[0] == "CLI-MESSAGE-UNINSTALL" {
+		return
+	}
 	command, err := findCommand(args[0])
 	if err != nil {
 		log.Fatalln(err)
