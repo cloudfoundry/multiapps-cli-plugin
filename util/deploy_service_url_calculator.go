@@ -3,8 +3,9 @@ package util
 import (
 	"fmt"
 
+	cfrestclient "github.com/SAP/cf-mta-plugin/clients/cfrestclient"
+	"github.com/SAP/cf-mta-plugin/clients/models"
 	"github.com/cloudfoundry/cli/plugin"
-	"github.com/cloudfoundry/cli/plugin/models"
 )
 
 const deployServiceHost = "deploy-service"
@@ -16,25 +17,30 @@ type DeployServiceURLCalculator interface {
 }
 
 type deployServiceURLCalculatorImpl struct {
-	cliConnection   plugin.CliConnection
-	httpGetExecutor HttpSimpleGetExecutor
+	// TODO: remove the cliConnection dependency
+	cliConnection      plugin.CliConnection
+	cloudFoundryClient cfrestclient.CloudFoundryOperationsExtended
+	httpGetExecutor    HttpSimpleGetExecutor
 }
 
-func NewDeployServiceURLCalculator(cliConnection plugin.CliConnection) DeployServiceURLCalculator {
-	return deployServiceURLCalculatorImpl{cliConnection: cliConnection, httpGetExecutor: NewSimpleGetExecutor()}
+func NewDeployServiceURLCalculator(cliConnection plugin.CliConnection, cloudFoundryClient cfrestclient.CloudFoundryOperationsExtended) DeployServiceURLCalculator {
+	return deployServiceURLCalculatorImpl{cliConnection: cliConnection, cloudFoundryClient: cloudFoundryClient, httpGetExecutor: NewSimpleGetExecutor()}
 }
 
-func NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection plugin.CliConnection, httpGetExecutor HttpSimpleGetExecutor) DeployServiceURLCalculator {
-	return deployServiceURLCalculatorImpl{cliConnection: cliConnection, httpGetExecutor: httpGetExecutor}
+func NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection plugin.CliConnection, cloudFoundryClient cfrestclient.CloudFoundryOperationsExtended, httpGetExecutor HttpSimpleGetExecutor) DeployServiceURLCalculator {
+	return deployServiceURLCalculatorImpl{cliConnection: cliConnection, cloudFoundryClient: cloudFoundryClient, httpGetExecutor: httpGetExecutor}
 }
 
 func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL() (string, error) {
-	currentSpace, err := c.getCurrentSpace()
+	result, err := c.cloudFoundryClient.GetSharedDomains()
 	if err != nil {
-		return "", err
+		fmt.Printf("Maikooo err happened " + err.Error())
+	}
+	for _, domain := range result {
+		fmt.Println(domain.Guid + " " + domain.Name + " " + domain.Url)
 	}
 
-	sharedDomain, err := c.findSharedDomain(currentSpace)
+	sharedDomain, err := c.findSharedDomain(result)
 	if err != nil {
 		return "", err
 	}
@@ -42,27 +48,13 @@ func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL() (string, error
 	return deployServiceHost + "." + sharedDomain.Name, nil
 }
 
-func (c deployServiceURLCalculatorImpl) getCurrentSpace() (plugin_models.GetSpace_Model, error) {
-	currentSpace, err := c.cliConnection.GetCurrentSpace()
-	if err != nil {
-		return plugin_models.GetSpace_Model{}, err
-	}
-	if currentSpace.Name == "" {
-		return plugin_models.GetSpace_Model{}, fmt.Errorf("No space targeted, use 'cf target -s SPACE' to target a space.")
-	}
-	// The currentSpace object does not hold the shared domains for the space, so we must make one additional request to retrieve them:
-	return c.cliConnection.GetSpace(currentSpace.Name)
-}
-
-func (c deployServiceURLCalculatorImpl) findSharedDomain(space plugin_models.GetSpace_Model) (plugin_models.GetSpace_Domains, error) {
-	for _, domain := range space.Domains {
-		if domain.Shared {
-			if c.isCorrectDomain(domain.Name) {
-				return domain, nil
-			}
+func (c deployServiceURLCalculatorImpl) findSharedDomain(domains []models.SharedDomain) (models.SharedDomain, error) {
+	for _, domain := range domains {
+		if c.isCorrectDomain(domain.Name) {
+			return domain, nil
 		}
 	}
-	return plugin_models.GetSpace_Domains{}, fmt.Errorf("Could not find any shared domains in space: %s", space.Name)
+	return models.SharedDomain{}, fmt.Errorf("Could not find any shared domains in space: %s //TODO:/./")
 }
 
 func (c deployServiceURLCalculatorImpl) isCorrectDomain(domainName string) bool {

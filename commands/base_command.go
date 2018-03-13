@@ -15,6 +15,7 @@ import (
 
 	"github.com/SAP/cf-mta-plugin/clients"
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
+	"github.com/SAP/cf-mta-plugin/clients/cfrestclient"
 	"github.com/SAP/cf-mta-plugin/clients/csrf"
 	"github.com/SAP/cf-mta-plugin/clients/models"
 	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
@@ -56,7 +57,7 @@ type BaseCommand struct {
 // Initialize initializes the command with the specified name and CLI connection
 func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	log.Tracef("Initializing command '%s'\n", name)
-	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), clients.NewDefaultClientFactory(), NewDefaultTokenFactory(cliConnection), util.NewDeployServiceURLCalculator(cliConnection))
+	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), clients.NewDefaultClientFactory(), NewDefaultTokenFactory(cliConnection), nil)
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
@@ -68,7 +69,12 @@ func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnect
 	c.jar = jar
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
-	c.deployServiceURLCalculator = deployServiceURLCalculator
+	api, _ := cliConnection.ApiEndpoint()
+	if strings.HasPrefix(api, "https://") {
+		api = strings.Replace(api, "https://", "", -1)
+		fmt.Println("Novoto api " + api)
+	}
+	c.deployServiceURLCalculator = util.NewDeployServiceURLCalculator(cliConnection, cfrestclient.NewCloudFoundryRestClient(api, transport, jar, tokenFactory))
 }
 
 // Usage reports incorrect command usage

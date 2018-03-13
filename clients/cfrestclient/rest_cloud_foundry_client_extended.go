@@ -18,8 +18,7 @@ type CloudFoundryRestClient struct {
 }
 
 func NewCloudFoundryRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) CloudFoundryOperationsExtended {
-	restURL := host + cfBaseUrl
-	t := baseclient.NewHTTPTransport(host, restURL, restURL, rt, jar)
+	t := baseclient.NewHTTPTransport(host, cfBaseUrl, cfBaseUrl, rt, jar)
 	httpCloudFoundryClient := New(t, strfmt.Default)
 	return &CloudFoundryRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpCloudFoundryClient}
 }
