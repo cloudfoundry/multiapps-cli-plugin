@@ -29,7 +29,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 						},
 					}, nil).Build()
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(200, nil)
-				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection, fakeHttpExecutor)
+				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection, nil, fakeHttpExecutor)
 				Expect(deployServiceURLCalculator.ComputeDeployServiceURL()).To(Equal("deploy-service.test.ondemand.com"))
 			})
 		})
@@ -48,7 +48,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 						},
 					}, nil).Build()
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(200, nil)
-				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection, fakeHttpExecutor)
+				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cliConnection, nil, fakeHttpExecutor)
 				Expect(deployServiceURLCalculator.ComputeDeployServiceURL()).To(Equal("deploy-service.test1.ondemand.com"))
 			})
 		})
@@ -64,7 +64,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 							plugin_models.GetSpace_Domains{Name: "custom.test.ondemand.com", Shared: false},
 						},
 					}, nil).Build()
-				deployServiceURLCalculator := util.NewDeployServiceURLCalculator(cliConnection)
+				deployServiceURLCalculator := util.NewDeployServiceURLCalculator(cliConnection, nil)
 				_, err := deployServiceURLCalculator.ComputeDeployServiceURL()
 				Expect(err).Should(MatchError("Could not find any shared domains in space: " + spaceName))
 			})
@@ -74,7 +74,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 				cliConnection := cli_fakes.NewFakeCliConnectionBuilder().
 					CurrentSpace("", "", nil).
 					Build()
-				deployServiceURLCalculator := util.NewDeployServiceURLCalculator(cliConnection)
+				deployServiceURLCalculator := util.NewDeployServiceURLCalculator(cliConnection, nil)
 				_, err := deployServiceURLCalculator.ComputeDeployServiceURL()
 				Expect(err).Should(MatchError("No space targeted, use 'cf target -s SPACE' to target a space."))
 			})
