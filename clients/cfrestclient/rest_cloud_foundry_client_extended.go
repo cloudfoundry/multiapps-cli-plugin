@@ -70,7 +70,7 @@ func (c CloudFoundryRestClient) getSharedDomainsInternal(cloudFoundryUrlElements
 func getPathQueryElements(response *models.CloudFoundryResponse) (CloudFoundryUrlElements, error) {
 	nextUrl, err := url.Parse(response.NextURL)
 	if err != nil {
-		return CloudFoundryUrlElements{}, fmt.Errorf("Could not parse next_url for getting shared domains: ", response.NextURL)
+		return CloudFoundryUrlElements{}, fmt.Errorf("Could not parse next_url for getting shared domains: %s", response.NextURL)
 	}
 	nextUrlQuery := nextUrl.Query()
 	page := nextUrlQuery.Get("page")
