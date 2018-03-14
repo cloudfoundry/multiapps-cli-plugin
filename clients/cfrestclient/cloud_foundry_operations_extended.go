@@ -7,3 +7,9 @@ import (
 type CloudFoundryOperationsExtended interface {
 	GetSharedDomains() ([]models.SharedDomain, error)
 }
+
+type CloudFoundryUrlElements struct {
+	Page           *string
+	ResultsPerPage *string
+	OrderDirection *string
+}

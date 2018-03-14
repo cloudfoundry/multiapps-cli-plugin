@@ -2,7 +2,9 @@ package cfrestclient
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	"github.com/SAP/cf-mta-plugin/clients/cfrestclient/operations"
@@ -11,6 +13,7 @@ import (
 )
 
 const cfBaseUrl = "v2/"
+const defaultSharedDomainsPathPattern = "/shared_domains"
 
 type CloudFoundryRestClient struct {
 	baseclient.BaseClient
@@ -24,20 +27,58 @@ func NewCloudFoundryRestClient(host string, rt http.RoundTripper, jar http.Cooki
 }
 
 func (c CloudFoundryRestClient) GetSharedDomains() ([]models.SharedDomain, error) {
+	result := []models.SharedDomain{}
+	var response *models.CloudFoundryResponse
+	var err error
+	var cloudFoundryUrlElememnts CloudFoundryUrlElements
+	pathPattern := defaultSharedDomainsPathPattern
+	for pathPattern != "" {
+		response, err = c.getSharedDomainsInternal(cloudFoundryUrlElememnts)
+		if err != nil {
+			return []models.SharedDomain{}, err
+		}
+		result = append(result, toSharedDomains(response)...)
+		cloudFoundryUrlElememnts, err = getPathQueryElements(response)
+		if err != nil {
+			return []models.SharedDomain{}, baseclient.NewClientError(err)
+		}
+		pathPattern = response.NextURL
+	}
+
+	return result, err
+}
+
+func (c CloudFoundryRestClient) getSharedDomainsInternal(cloudFoundryUrlElements CloudFoundryUrlElements) (*models.CloudFoundryResponse, error) {
 	params := &operations.GetSharedDomainsParams{
-		Context: context.TODO(),
+		Page:           cloudFoundryUrlElements.Page,
+		ResultsPerPage: cloudFoundryUrlElements.ResultsPerPage,
+		OrderDirection: cloudFoundryUrlElements.OrderDirection,
+		Context:        context.TODO(),
 	}
 	token, err := c.TokenFactory.NewToken()
 	if err != nil {
-		return []models.SharedDomain{}, baseclient.NewClientError(err)
+		return nil, baseclient.NewClientError(err)
 	}
 
 	result, err := c.httpCloudFoundryClient.Operations.GetSharedDomains(params, token)
 	if err != nil {
-		return []models.SharedDomain{}, baseclient.NewClientError(err)
+		return nil, baseclient.NewClientError(err)
 	}
+	return result.Payload, nil
+}
 
-	return toSharedDomains(result.Payload), nil
+func getPathQueryElements(response *models.CloudFoundryResponse) (CloudFoundryUrlElements, error) {
+	nextUrl, err := url.Parse(response.NextURL)
+	if err != nil {
+		return CloudFoundryUrlElements{}, fmt.Errorf("Could not parse next_url for getting shared domains: ", response.NextURL)
+	}
+	nextUrlQuery := nextUrl.Query()
+	page := nextUrlQuery.Get("page")
+	resultsPerPage := nextUrlQuery.Get("results-per-page")
+	orderDirection := nextUrlQuery.Get("order-direction")
+
+	return CloudFoundryUrlElements{Page: &page, ResultsPerPage: &resultsPerPage, OrderDirection: &orderDirection}, nil
+
 }
 
 func toSharedDomains(response *models.CloudFoundryResponse) []models.SharedDomain {
