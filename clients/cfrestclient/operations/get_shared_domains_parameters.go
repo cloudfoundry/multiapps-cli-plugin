@@ -21,7 +21,7 @@ import (
 // NewGetSharedDomainsParams creates a new GetSharedDomainsParams object
 // with the default values initialized.
 func NewGetSharedDomainsParams() *GetSharedDomainsParams {
-
+	var ()
 	return &GetSharedDomainsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -31,7 +31,7 @@ func NewGetSharedDomainsParams() *GetSharedDomainsParams {
 // NewGetSharedDomainsParamsWithTimeout creates a new GetSharedDomainsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetSharedDomainsParamsWithTimeout(timeout time.Duration) *GetSharedDomainsParams {
-
+	var ()
 	return &GetSharedDomainsParams{
 
 		timeout: timeout,
@@ -41,7 +41,7 @@ func NewGetSharedDomainsParamsWithTimeout(timeout time.Duration) *GetSharedDomai
 // NewGetSharedDomainsParamsWithContext creates a new GetSharedDomainsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetSharedDomainsParamsWithContext(ctx context.Context) *GetSharedDomainsParams {
-
+	var ()
 	return &GetSharedDomainsParams{
 
 		Context: ctx,
@@ -51,7 +51,7 @@ func NewGetSharedDomainsParamsWithContext(ctx context.Context) *GetSharedDomains
 // NewGetSharedDomainsParamsWithHTTPClient creates a new GetSharedDomainsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetSharedDomainsParamsWithHTTPClient(client *http.Client) *GetSharedDomainsParams {
-
+	var ()
 	return &GetSharedDomainsParams{
 		HTTPClient: client,
 	}
@@ -61,6 +61,14 @@ func NewGetSharedDomainsParamsWithHTTPClient(client *http.Client) *GetSharedDoma
 for the get shared domains operation typically these are written to a http.Request
 */
 type GetSharedDomainsParams struct {
+
+	/*OrderDirection*/
+	OrderDirection *string
+	/*Page*/
+	Page *string
+	/*ResultsPerPage*/
+	ResultsPerPage *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -99,6 +107,39 @@ func (o *GetSharedDomainsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithOrderDirection adds the orderDirection to the get shared domains params
+func (o *GetSharedDomainsParams) WithOrderDirection(orderDirection *string) *GetSharedDomainsParams {
+	o.SetOrderDirection(orderDirection)
+	return o
+}
+
+// SetOrderDirection adds the orderDirection to the get shared domains params
+func (o *GetSharedDomainsParams) SetOrderDirection(orderDirection *string) {
+	o.OrderDirection = orderDirection
+}
+
+// WithPage adds the page to the get shared domains params
+func (o *GetSharedDomainsParams) WithPage(page *string) *GetSharedDomainsParams {
+	o.SetPage(page)
+	return o
+}
+
+// SetPage adds the page to the get shared domains params
+func (o *GetSharedDomainsParams) SetPage(page *string) {
+	o.Page = page
+}
+
+// WithResultsPerPage adds the resultsPerPage to the get shared domains params
+func (o *GetSharedDomainsParams) WithResultsPerPage(resultsPerPage *string) *GetSharedDomainsParams {
+	o.SetResultsPerPage(resultsPerPage)
+	return o
+}
+
+// SetResultsPerPage adds the resultsPerPage to the get shared domains params
+func (o *GetSharedDomainsParams) SetResultsPerPage(resultsPerPage *string) {
+	o.ResultsPerPage = resultsPerPage
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetSharedDomainsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -106,6 +147,54 @@ func (o *GetSharedDomainsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
+
+	if o.OrderDirection != nil {
+
+		// query param order-direction
+		var qrOrderDirection string
+		if o.OrderDirection != nil {
+			qrOrderDirection = *o.OrderDirection
+		}
+		qOrderDirection := qrOrderDirection
+		if qOrderDirection != "" {
+			if err := r.SetQueryParam("order-direction", qOrderDirection); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.Page != nil {
+
+		// query param page
+		var qrPage string
+		if o.Page != nil {
+			qrPage = *o.Page
+		}
+		qPage := qrPage
+		if qPage != "" {
+			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.ResultsPerPage != nil {
+
+		// query param results-per-page
+		var qrResultsPerPage string
+		if o.ResultsPerPage != nil {
+			qrResultsPerPage = *o.ResultsPerPage
+		}
+		qResultsPerPage := qrResultsPerPage
+		if qResultsPerPage != "" {
+			if err := r.SetQueryParam("results-per-page", qResultsPerPage); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
