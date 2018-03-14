@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"github.com/go-errors/errors"
 
 	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
 	models "github.com/SAP/cf-mta-plugin/clients/models"
@@ -124,7 +123,7 @@ func (c MtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models
 	}
 	resp, err := c.client.Operations.GetMtaOperations(params, token)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, baseclient.NewClientError(err)
 	}
 	return resp.Payload, nil
 }
