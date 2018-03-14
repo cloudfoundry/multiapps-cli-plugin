@@ -57,7 +57,11 @@ type BaseCommand struct {
 // Initialize initializes the command with the specified name and CLI connection
 func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	log.Tracef("Initializing command '%s'\n", name)
-	c.InitializeAll(name, cliConnection, newTransport(), newCookieJar(), clients.NewDefaultClientFactory(), NewDefaultTokenFactory(cliConnection), nil)
+	transport := newTransport()
+	jar := newCookieJar()
+	tokenFactory := NewDefaultTokenFactory(cliConnection)
+	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, jar, tokenFactory)
+	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cloudFoundryClient))
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
@@ -69,12 +73,18 @@ func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnect
 	c.jar = jar
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
-	api, _ := cliConnection.ApiEndpoint()
+	c.deployServiceURLCalculator = deployServiceURLCalculator
+}
+
+func getApiEndpoint(cliConnection plugin.CliConnection) string {
+	api, err := cliConnection.ApiEndpoint()
+	if err != nil {
+		return ""
+	}
 	if strings.HasPrefix(api, "https://") {
 		api = strings.Replace(api, "https://", "", -1)
-		fmt.Println("Novoto api " + api)
 	}
-	c.deployServiceURLCalculator = util.NewDeployServiceURLCalculator(cliConnection, cfrestclient.NewCloudFoundryRestClient(api, transport, jar, tokenFactory))
+	return api
 }
 
 // Usage reports incorrect command usage
