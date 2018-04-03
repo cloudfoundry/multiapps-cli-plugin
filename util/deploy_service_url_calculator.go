@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"strings"
 
 	cfrestclient "github.com/SAP/cf-mta-plugin/clients/cfrestclient"
 	"github.com/SAP/cf-mta-plugin/clients/models"
@@ -29,42 +30,48 @@ func NewDeployServiceURLCalculatorWithHttpExecutor(cloudFoundryClient cfrestclie
 }
 
 func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL() (string, error) {
-	result, err := c.cloudFoundryClient.GetSharedDomains()
+	sharedDomains, err := c.cloudFoundryClient.GetSharedDomains()
 	if err != nil {
 		return "", err
 	}
 
-	sharedDomain, err := c.findSharedDomain(result)
+	deployServiceURL, err := c.computeDeployServiceURL(sharedDomains)
 	if err != nil {
 		return "", err
 	}
 
-	return deployServiceHost + "." + sharedDomain.Name, nil
+	return deployServiceURL, nil
 }
 
-func (c deployServiceURLCalculatorImpl) findSharedDomain(domains []models.SharedDomain) (models.SharedDomain, error) {
-	for _, domain := range domains {
-		if c.isCorrectDomain(domain.Name) {
-			return domain, nil
+func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models.SharedDomain) (string, error) {
+	if len(domains) == 0 {
+		return "", fmt.Errorf("Could not compute the Deploy Service's URL as there are no shared domains on the landscape.")
+	}
+	possibleDeployServiceURLs := buildPossibleDeployServiceURLs(domains)
+	for _, possibleDeployServiceURL := range possibleDeployServiceURLs {
+		if c.isCorrectURL(possibleDeployServiceURL) {
+			return possibleDeployServiceURL, nil
 		}
 	}
-	return models.SharedDomain{}, fmt.Errorf("Could not find any shared domains")
+	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the DEPLOY_SERVICE_URL environment variable to specify a custom URL explicitly.")
 }
 
-func (c deployServiceURLCalculatorImpl) isCorrectDomain(domainName string) bool {
-	statusCode, err := c.httpGetExecutor.ExecuteGetRequest(buildDeployServiceUrl(domainName))
+func buildPossibleDeployServiceURLs(domains []models.SharedDomain) ([]string) {
+	var possibleDeployServiceURLs []string
+	for _, domain := range domains {
+		possibleDeployServiceURLs = append(possibleDeployServiceURLs, deployServiceHost + "." + domain.Name)
+	}
+	return possibleDeployServiceURLs
+}
+
+func (c deployServiceURLCalculatorImpl) isCorrectURL(deployServiceURL string) bool {
+	uriBuilder := NewUriBuilder()
+	uri, err := uriBuilder.SetScheme(defaultDeployServiceHostHttpScheme).SetPath(defaultDeployServiceEndpoint).SetHost(deployServiceURL).Build()
+	statusCode, err := c.httpGetExecutor.ExecuteGetRequest(uri)
 	if err != nil {
 		return false
 	}
-
 	return statusCode == 200
 }
 
-func buildDeployServiceUrl(domainName string) string {
-	uriBuilder := NewUriBuilder()
-	uri, err := uriBuilder.SetScheme(defaultDeployServiceHostHttpScheme).SetPath(defaultDeployServiceEndpoint).SetHost(deployServiceHost + "." + domainName).Build()
-	if err != nil {
-		return ""
-	}
-	return uri
-}
+

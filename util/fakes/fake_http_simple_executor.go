@@ -3,14 +3,13 @@ package fakes
 import "github.com/SAP/cf-mta-plugin/util"
 
 type fakeHttpGetExecutor struct{
-  statusCode int
-  err error
+  exchanges map[string]int
 }
 
-func NewFakeHttpGetExecutor(statusCode int, err error) util.HttpSimpleGetExecutor{
-  return &fakeHttpGetExecutor{statusCode: statusCode, err: err}
+func NewFakeHttpGetExecutor(exchanges map[string]int) util.HttpSimpleGetExecutor{
+  return &fakeHttpGetExecutor{exchanges: exchanges}
 }
 
 func (f fakeHttpGetExecutor) ExecuteGetRequest(url string) (int, error) {
-  return f.statusCode, f.err
+  return f.exchanges[url], nil
 }
