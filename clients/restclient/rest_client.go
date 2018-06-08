@@ -7,8 +7,8 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/SAP/cf-mta-plugin/clients/baseclient"
-	operations "github.com/SAP/cf-mta-plugin/clients/restclient/operations"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	operations "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/operations"
 )
 
 const restBaseURL string = "rest/"

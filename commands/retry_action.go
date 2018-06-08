@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"github.com/SAP/cf-mta-plugin/clients/baseclient"
-	"github.com/SAP/cf-mta-plugin/clients/csrf"
-	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
-	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
+	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
 )
 

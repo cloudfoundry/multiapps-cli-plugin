@@ -9,9 +9,9 @@ package restclient
 // 	"net/url"
 // 	"testing"
 //
-// 	"github.com/SAP/cf-mta-plugin/clients/models"
-// 	"github.com/SAP/cf-mta-plugin/clients/restclient/operations"
-// 	"github.com/SAP/cf-mta-plugin/clients/testutil"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/operations"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/testutil"
 // 	"github.com/go-openapi/runtime/client"
 // 	"github.com/go-openapi/strfmt"
 // 	"github.com/stretchr/testify/assert"

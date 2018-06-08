@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

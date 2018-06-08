@@ -22,7 +22,7 @@ class build(spi.BuildPlugin):
 
     #Project parameters
     self.go_project_name        =   "cf-cli-mta-plugin"
-    self.go_project_repo        =   "https://github.com/SAP/cf-mta-plugin"
+    self.go_project_repo        =   "https://github.com/cloudfoundry-incubator/multiapps-cli-plugin"
     self.go_project_build_path  =   self.gopath + "/src/" + self.go_project_repo.split(".git",1)[0].split("//")[1]
     self.go_project_version_file=   self.build_cfg.cfg_dir()  + "/VERSION"
     self.go_project_version     =   ""

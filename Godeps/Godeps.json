@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/SAP/cf-mta-plugin",
+	"ImportPath": "github.com/cloudfoundry-incubator/multiapps-cli-plugin",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
 	"Packages": [

@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 
-	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
-	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
-	"github.com/SAP/cf-mta-plugin/testutil"
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

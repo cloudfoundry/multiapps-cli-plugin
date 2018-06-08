@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/SAP/cf-mta-plugin/clients/csrf"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 )
 
 type FakeSessionProvider struct {

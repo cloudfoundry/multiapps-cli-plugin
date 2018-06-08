@@ -3,9 +3,9 @@ package commands
 import (
 	"net/http"
 
-	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
-	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
-	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 )
 
 type TestClientFactory struct {

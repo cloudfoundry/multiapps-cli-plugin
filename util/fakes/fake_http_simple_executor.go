@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/SAP/cf-mta-plugin/util"
+import "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 
 type fakeHttpGetExecutor struct{
   exchanges map[string]int

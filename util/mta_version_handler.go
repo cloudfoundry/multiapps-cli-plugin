@@ -1,6 +1,6 @@
 package util
 
-import "github.com/SAP/cf-mta-plugin/clients/models"
+import "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 
 const unknownMtaVersion string = "0.0.0-unknown"
 

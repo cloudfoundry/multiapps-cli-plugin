@@ -3,7 +3,7 @@ package mtaclient
 import (
 	"os"
 
-	models "github.com/SAP/cf-mta-plugin/clients/models"
+	models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	strfmt "github.com/go-openapi/strfmt"
 )
 

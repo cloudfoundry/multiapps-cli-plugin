@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/SAP/cf-mta-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/go-openapi/runtime"
 )
 
@@ -14,7 +14,7 @@ import (
 // 	"io"
 // 	"os"
 //
-// 	"github.com/SAP/cf-mta-plugin/clients/models"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 // 	"github.com/go-openapi/runtime"
 // 	"github.com/go-openapi/strfmt"
 // )

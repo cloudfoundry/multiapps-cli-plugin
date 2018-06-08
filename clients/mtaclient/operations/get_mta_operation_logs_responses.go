@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	"github.com/SAP/cf-mta-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
 // GetMtaOperationLogsReader is a Reader for the GetMtaOperationLogs structure.

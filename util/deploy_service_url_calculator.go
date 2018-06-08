@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	cfrestclient "github.com/SAP/cf-mta-plugin/clients/cfrestclient"
-	"github.com/SAP/cf-mta-plugin/clients/models"
+	cfrestclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
 const deployServiceHost = "deploy-service"

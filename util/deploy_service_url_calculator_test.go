@@ -1,10 +1,10 @@
 package util_test
 
 import (
-	cfrestclient_fakes "github.com/SAP/cf-mta-plugin/clients/cfrestclient/fakes"
-	"github.com/SAP/cf-mta-plugin/clients/models"
-	"github.com/SAP/cf-mta-plugin/util"
-	fakes "github.com/SAP/cf-mta-plugin/util/fakes"
+	cfrestclient_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/fakes"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

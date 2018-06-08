@@ -2,11 +2,11 @@ package commands_test
 
 //
 // import (
-// 	"github.com/SAP/cf-mta-plugin/clients/models"
-// 	restfake "github.com/SAP/cf-mta-plugin/clients/restclient/fakes"
-// 	"github.com/SAP/cf-mta-plugin/commands"
-// 	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
-// 	"github.com/SAP/cf-mta-plugin/testutil"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+// 	restfake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/fakes"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
+// 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
+// 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 // 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 // 	. "github.com/onsi/ginkgo"
 // 	. "github.com/onsi/gomega"

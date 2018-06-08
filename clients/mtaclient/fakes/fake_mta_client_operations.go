@@ -4,8 +4,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/SAP/cf-mta-plugin/clients/models"
-	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 )
 
 type FakeMtaClientOperations struct {

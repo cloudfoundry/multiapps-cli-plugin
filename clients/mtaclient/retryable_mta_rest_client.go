@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/SAP/cf-mta-plugin/clients/baseclient"
-	"github.com/SAP/cf-mta-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
 type RetryableMtaRestClient struct {

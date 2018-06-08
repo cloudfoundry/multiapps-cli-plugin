@@ -1,11 +1,11 @@
 package commands_test
 
 import (
-	cli_fakes "github.com/SAP/cf-mta-plugin/cli/fakes"
-	"github.com/SAP/cf-mta-plugin/commands"
-	"github.com/SAP/cf-mta-plugin/testutil"
-	"github.com/SAP/cf-mta-plugin/ui"
-	util_fakes "github.com/SAP/cf-mta-plugin/util/fakes"
+	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
 	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

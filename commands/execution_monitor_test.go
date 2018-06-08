@@ -3,12 +3,12 @@ package commands_test
 import (
 	"fmt"
 
-	"github.com/SAP/cf-mta-plugin/clients/models"
-	"github.com/SAP/cf-mta-plugin/clients/mtaclient"
-	"github.com/SAP/cf-mta-plugin/clients/mtaclient/fakes"
-	"github.com/SAP/cf-mta-plugin/commands"
-	"github.com/SAP/cf-mta-plugin/testutil"
-	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	. "github.com/onsi/ginkgo"
 )
 
