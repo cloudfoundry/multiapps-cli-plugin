@@ -1,4 +1,4 @@
-# CF MTA Plugin [![Build Status](https://travis-ci.org/SAP/cf-mta-plugin.svg?branch=master)](https://travis-ci.org/SAP/cf-mta-plugin)
+# CF MTA Plugin [![Build Status](https://travis-ci.org/cloudfoundry-incubator/multiapps-cli-plugin.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/multiapps-cli-plugin)
 
 
 # Description
