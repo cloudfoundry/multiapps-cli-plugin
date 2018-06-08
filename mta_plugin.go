@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/SAP/cf-mta-plugin/commands"
-	"github.com/SAP/cf-mta-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry/cli/plugin"
 )
 

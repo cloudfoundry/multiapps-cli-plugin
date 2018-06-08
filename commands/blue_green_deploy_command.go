@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strconv"
 
-	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/plugin"
 )
 

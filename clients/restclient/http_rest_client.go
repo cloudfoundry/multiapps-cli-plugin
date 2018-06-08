@@ -11,7 +11,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	"github.com/SAP/cf-mta-plugin/clients/restclient/operations"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/operations"
 )
 
 // Default rest HTTP client.

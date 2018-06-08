@@ -9,7 +9,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/SAP/cf-mta-plugin/clients/csrf"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 )
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)

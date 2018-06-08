@@ -6,13 +6,13 @@ import (
 
 	"net/url"
 
-	"github.com/SAP/cf-mta-plugin/ui"
-	"github.com/SAP/cf-mta-plugin/util"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 
-	"github.com/SAP/cf-mta-plugin/clients/baseclient"
-	"github.com/SAP/cf-mta-plugin/clients/models"
-	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 )
 
 const consoleOffset = "  "

@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/cloudfoundry/cli/plugin/fakes"
 	"github.com/go-openapi/runtime"
-	"github.com/SAP/cf-mta-plugin/testutil"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 )
 
 type TestTokenFactory struct {

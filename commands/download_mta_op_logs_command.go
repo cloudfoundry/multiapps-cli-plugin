@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/SAP/cf-mta-plugin/clients/baseclient"
-	"github.com/SAP/cf-mta-plugin/log"
-	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 )

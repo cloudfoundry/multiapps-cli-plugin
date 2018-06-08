@@ -3,9 +3,9 @@ package clients
 import (
 	"net/http"
 
-	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
-	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
-	restclient "github.com/SAP/cf-mta-plugin/clients/restclient"
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 )
 
 // ClientFactory is a factory for creating XxxClientOperations instances

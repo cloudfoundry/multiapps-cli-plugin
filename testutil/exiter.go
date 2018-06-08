@@ -2,7 +2,7 @@ package testutil
 
 import (
 	io_helpers "github.com/cloudfoundry/cli/testhelpers/io"
-	"github.com/SAP/cf-mta-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 type OutputCapturer interface {

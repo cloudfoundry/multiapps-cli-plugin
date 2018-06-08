@@ -18,7 +18,7 @@ The latest version of the plugin can be found in the table below. Select the plu
 
 Mac OS X 64 bit | Windows 64 bit | Linux 64 bit
 --- | --- | ---
-[cf-cli-mta-plugin-2.0.0-darwin.bin](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-darwin.bin) | [cf-cli-mta-plugin-2.0.0-windows.exe](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-windows.exe) | [cf-cli-mta-plugin-2.0.0-linux.bin](https://github.com/SAP/cf-mta-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-linux.bin) |
+[cf-cli-mta-plugin-2.0.0-darwin.bin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-darwin.bin) | [cf-cli-mta-plugin-2.0.0-windows.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-windows.exe) | [cf-cli-mta-plugin-2.0.0-linux.bin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-linux.bin) |
 
 
 ## Installation
@@ -95,5 +95,5 @@ Presentations, documents, and tutorials:
 
 # License
 
-This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](https://github.com/SAP/cf-mta-plugin/blob/master/LICENSE) file.
+This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/blob/master/LICENSE) file.
 

@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/SAP/cf-mta-plugin/commands"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 
 	"github.com/cloudfoundry/cli/plugin"
 )

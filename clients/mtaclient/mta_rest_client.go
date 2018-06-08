@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
-	models "github.com/SAP/cf-mta-plugin/clients/models"
-	operations "github.com/SAP/cf-mta-plugin/clients/mtaclient/operations"
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	operations "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/operations"
 	"github.com/go-openapi/runtime"
 	strfmt "github.com/go-openapi/strfmt"
 )

@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	baseclient "github.com/SAP/cf-mta-plugin/clients/baseclient"
-	"github.com/SAP/cf-mta-plugin/clients/models"
-	"github.com/SAP/cf-mta-plugin/log"
-	"github.com/SAP/cf-mta-plugin/ui"
-	"github.com/SAP/cf-mta-plugin/util"
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 )

@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/SAP/cf-mta-plugin/clients/csrf"
-	"github.com/SAP/cf-mta-plugin/clients/models"
-	mtaclient "github.com/SAP/cf-mta-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 )
 
 // Action interface representing actions to be excuted on processes
