@@ -329,6 +329,7 @@ var _ = Describe("DeployCommand", func() {
 					GetMtaOperations(nil, nil, []*models.Operation{
 						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
 					}, nil).
+					GetOperationActions("test", []string{"abort", "retry"}, nil).
 					ExecuteAction("test-process-id", "test", mtaclient.ResponseHeader{Location: ""}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test-process-id", "-a", "abort"}).ToInt()
