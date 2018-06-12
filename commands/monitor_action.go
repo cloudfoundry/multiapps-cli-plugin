@@ -9,10 +9,12 @@ import (
 )
 
 // MonitorAction monitors process execution
-type MonitorAction struct{}
+type MonitorAction struct {
+	commandName string
+}
 
 // Execute executes monitor action on process with the specified id
-func (a *MonitorAction) Execute(operationID, commandName string, mtaClient mtaclient.MtaClientOperations, sessionProvider csrf.SessionProvider) ExecutionStatus {
+func (a *MonitorAction) Execute(operationID string, mtaClient mtaclient.MtaClientOperations, sessionProvider csrf.SessionProvider) ExecutionStatus {
 
 	err := sessionProvider.GetSession()
 	if err != nil {
@@ -20,7 +22,7 @@ func (a *MonitorAction) Execute(operationID, commandName string, mtaClient mtacl
 		return Failure
 	}
 
-	responseHeader, err := mtaClient.ExecuteAction(operationID, "monitor")
+	_, err = mtaClient.ExecuteAction(operationID, "monitor")
 	if err != nil {
 		ui.Failed("Could not monitor multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), err)
 		return Failure
@@ -33,5 +35,5 @@ func (a *MonitorAction) Execute(operationID, commandName string, mtaClient mtacl
 		return Failure
 	}
 
-	return NewExecutionMonitor(commandName, responseHeader.Location.String(), operation.Messages, mtaClient).Monitor()
+	return NewExecutionMonitor(a.commandName, operationID, "messages", operation.Messages, mtaClient).Monitor()
 }

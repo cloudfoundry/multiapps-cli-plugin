@@ -65,7 +65,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:    "ABORTED",
 						Messages: []*models.Message{},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -86,7 +86,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						},
 					}, nil).
 					GetOperationActions(processID, []string{"abort"}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -100,7 +100,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:    "UnknownState",
 						Messages: []*models.Message{},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -115,7 +115,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:    "FINISHED",
 						Messages: []*models.Message{},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -135,7 +135,7 @@ var _ = Describe("ExecutionMonitor", func() {
 							testutil.GetMessage(31, "test-message-3"),
 						},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -155,7 +155,7 @@ var _ = Describe("ExecutionMonitor", func() {
 							testutil.GetMessage(4, "test-message-4"),
 						},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -171,7 +171,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						Messages: []*models.Message{},
 					}, nil).
 					GetOperationActions(processID, []string{"retry", "abort"}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitorFromLocationHeader(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
