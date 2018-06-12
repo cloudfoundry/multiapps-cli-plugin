@@ -46,7 +46,7 @@ var _ = Describe("DeployCommand", func() {
 
 		var getLinesForAbortingProcess = func() []string {
 			return []string{
-				"Aborting multi-target app operation with id test-process-id...\n",
+				"Executing action 'abort' on operation test-process-id...\n",
 				"OK\n",
 			}
 		}
@@ -57,7 +57,7 @@ var _ = Describe("DeployCommand", func() {
 				"Deploying multi-target app archive "+mtaArchivePath+" in org "+org+" / space "+space+" as "+user+"...\n")
 			if processAborted {
 				lines = append(lines,
-					"Aborting multi-target app operation with id process-id...\n",
+					"Executing action 'abort' on operation test-process-id...\n",
 					"OK\n",
 				)
 			}

@@ -134,7 +134,7 @@ var _ = Describe("BaseCommand", func() {
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
-				Expect(output).To(Equal([]string{"Aborting multi-target app operation with id test...\n", "OK\n"}))
+				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...\n", "OK\n"}))
 			})
 		})
 		Context("with one ongoing operation which does not have an MTA ID", func() {
@@ -189,7 +189,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "abort", "test-host").ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, []string{"Aborting multi-target app operation with id test-process-id...\n", "OK\n"})
+				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...\n", "OK\n"})
 			})
 		})
 		Context("with non-valid process id and valid action id", func() {
@@ -215,7 +215,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "retry", "test-host").ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, []string{"Retrying multi-target app operation with id test-process-id...\n", "OK\n",
+				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...\n", "OK\n",
 					"Monitoring process test-process-id...\n", "Process finished.\n", "Use \"cf dmol -i test-process-id\" to download the logs of the process.\n"})
 			})
 		})

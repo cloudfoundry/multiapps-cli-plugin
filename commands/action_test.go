@@ -15,9 +15,8 @@ import (
 )
 
 var _ = Describe("Actions", func() {
-	const processID = "test-process-id"
+	const operationID = "test-process-id"
 	const commandName = "deploy"
-	const actionID = "abort"
 	var mtaClient fakes.FakeMtaClientOperations
 
 	var sessionProvider csrf_fakes.FakeSessionProvider
@@ -31,61 +30,63 @@ var _ = Describe("Actions", func() {
 	})
 
 	Describe("AbortAction", func() {
+		const actionID = "abort"
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
-				action = &commands.AbortAction{}
+				action = commands.GetActionToExecute(actionID, commandName)
 				mtaClient = fakes.NewFakeMtaClientBuilder().
-					ExecuteAction(processID, "abort", mtaclient.ResponseHeader{}, nil).Build()
+					ExecuteAction(operationID, actionID, mtaclient.ResponseHeader{}, nil).Build()
 			})
 			Context("with no error returned from backend", func() {
 				It("should abort the process and exit with zero status", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
 					})
-					ex.ExpectSuccessWithOutput(status, output, []string{"Aborting multi-target app operation with id test-process-id...\n", "OK\n"})
+					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...\n", "OK\n"})
 				})
 			})
 			Context("with an error returned from backend", func() {
 				It("should return error and exit with non-zero status", func() {
 					mtaClient = fakes.NewFakeMtaClientBuilder().
-						ExecuteAction(processID, "abort", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).Build()
+						ExecuteAction(operationID, "abort", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
 					})
-					ex.ExpectFailureOnLine(status, output, "Could not abort multi-target app operation with id test-process-id: test-error", 1)
+					ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation test-process-id: test-error", 1)
 				})
 			})
 		})
 	})
 
 	Describe("RetryAction", func() {
+		const actionID = "retry"
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
-				action = &commands.RetryAction{}
+				action = commands.GetActionToExecute(actionID, commandName)
 				mtaClient = fakes.NewFakeMtaClientBuilder().
-					ExecuteAction(processID, "retry", mtaclient.ResponseHeader{Location: "operations/" + processID + "?embed=messages"}, nil).
-					GetMtaOperation(processID, "messages", &testutil.SimpleOperationResult, nil).
+					ExecuteAction(operationID, actionID, mtaclient.ResponseHeader{Location: "operations/" + operationID + "?embed=messages"}, nil).
+					GetMtaOperation(operationID, "messages", &testutil.SimpleOperationResult, nil).
 					Build()
 			})
 			Context("with no error returned from backend", func() {
 				It("should retry the process and exit with zero status", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
 					})
-					ex.ExpectSuccessWithOutput(status, output, []string{"Retrying multi-target app operation with id test-process-id...\n", "OK\n",
-						"Monitoring process " + processID + "...\n", "Process finished.\n", "Use \"cf dmol -i " + processID + "\" to download the logs of the process.\n"})
+					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...\n", "OK\n",
+						"Monitoring process " + operationID + "...\n", "Process finished.\n", "Use \"cf dmol -i " + operationID + "\" to download the logs of the process.\n"})
 				})
 			})
 			Context("with an error returned from backend", func() {
 				It("should return error and exit with non-zero status", func() {
 					mtaClient = fakes.NewFakeMtaClientBuilder().
-						ExecuteAction(processID, "retry", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).
-						GetMtaOperation(processID, "messages", &testutil.SimpleOperationResult, nil).
+						ExecuteAction(operationID, "retry", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).
+						GetMtaOperation(operationID, "messages", &testutil.SimpleOperationResult, nil).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(processID, commandName, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
 					})
-					ex.ExpectFailureOnLine(status, output, "Could not retry multi-target app operation with id test-process-id: test-error", 1)
+					ex.ExpectFailureOnLine(status, output, "Could not execute action 'retry' on operation test-process-id: test-error", 1)
 				})
 			})
 		})
@@ -94,19 +95,25 @@ var _ = Describe("Actions", func() {
 	Describe("GetActionToExecute", func() {
 		Context("with correct action id", func() {
 			It("should return abort action to execute", func() {
-				actionToExecute := commands.GetActionToExecute("abort")
+				actionToExecute := commands.GetActionToExecute("abort", "deploy")
 				Expect(actionToExecute).NotTo(BeNil())
-				Expect(actionToExecute).To(Equal(&commands.AbortAction{}))
 			})
 			It("should return retry action to execute", func() {
-				actionToExecute := commands.GetActionToExecute("retry")
+				actionToExecute := commands.GetActionToExecute("retry", "deploy")
 				Expect(actionToExecute).NotTo(BeNil())
-				Expect(actionToExecute).To(Equal(&commands.RetryAction{}))
+			})
+			It("should return resume action to execute", func() {
+				actionToExecute := commands.GetActionToExecute("resume", "deploy")
+				Expect(actionToExecute).NotTo(BeNil())
+			})
+			It("should return monitor action to execute", func() {
+				actionToExecute := commands.GetActionToExecute("monitor", "deploy")
+				Expect(actionToExecute).NotTo(BeNil())
 			})
 		})
 		Context("with incorrect action id", func() {
 			It("should return nil", func() {
-				actionToExecute := commands.GetActionToExecute("test")
+				actionToExecute := commands.GetActionToExecute("test", "deploy")
 				Expect(actionToExecute).To(BeNil())
 			})
 		})

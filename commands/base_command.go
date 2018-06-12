@@ -319,7 +319,7 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) Executio
 	}
 
 	// Finds the action specified with the actionID
-	action := GetActionToExecute(actionID)
+	action := GetActionToExecute(actionID, c.name)
 	if action == nil {
 		ui.Failed("Invalid action %s", terminal.EntityNameColor(actionID))
 		return Failure
@@ -328,7 +328,7 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) Executio
 	sessionProvider, _ := c.NewSessionProvider(host)
 
 	// Executes the action specified with actionID
-	return action.Execute(operationID, c.name, mtaClient, sessionProvider)
+	return action.Execute(operationID, mtaClient, sessionProvider)
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
@@ -346,9 +346,9 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 	if ongoingOperation != nil {
 		// Abort the conflict process if confirmed by the user
 		if c.shouldAbortConflictingOperation(mtaID, force) {
-			action := GetActionToExecute("abort")
+			action := GetActionToExecute("abort", c.name)
 			sessionProvider, _ := c.NewSessionProvider(host)
-			status := action.Execute(ongoingOperation.ProcessID, c.name, mtaClient, sessionProvider)
+			status := action.Execute(ongoingOperation.ProcessID, mtaClient, sessionProvider)
 			if status == Failure {
 				return false, nil
 			}

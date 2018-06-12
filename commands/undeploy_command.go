@@ -172,7 +172,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	sessionProvider.GetSession()
 
 	// Monitor process execution
-	return NewExecutionMonitor(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
+	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
 type undeployCommandProcessTypeProvider struct{}

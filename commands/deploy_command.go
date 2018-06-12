@@ -300,7 +300,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 	ui.Ok()
-	return NewExecutionMonitor(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
+	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
 type deployCommandProcessTypeProvider struct{}
