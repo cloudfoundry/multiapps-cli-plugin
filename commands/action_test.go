@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	csrf_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/fakes"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 
@@ -116,6 +117,50 @@ var _ = Describe("Actions", func() {
 						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
 					})
 					ex.ExpectFailureOnLine(status, output, "Could not execute action 'retry' on operation test-process-id: test-error", 1)
+				})
+			})
+		})
+	})
+
+	Describe("MonitorAction", func() {
+		const actionID = "monitor"
+		Describe("ExecuteAction", func() {
+			BeforeEach(func() {
+				action = commands.GetActionToExecute(actionID, commandName)
+			})
+			Context("when the operation finishes successfully", func() {
+				It("should monitor the operation successfully", func() {
+					mtaClient = fakes.NewFakeMtaClientBuilder().
+						GetMtaOperation(operationID, "messages", &testutil.SimpleOperationResult, nil).
+						Build()
+					output, status := oc.CaptureOutputAndStatus(func() int {
+						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+					})
+					ex.ExpectSuccessWithOutput(status, output, []string{
+						"Monitoring process " + operationID + "...\n",
+						"Process finished.\n",
+						"Use \"cf dmol -i " + operationID + "\" to download the logs of the process.\n",
+					})
+				})
+			})
+			Context("when the operation fails", func() {
+				It("should fail with an error and show the available actions", func() {
+					var errorMessage = &models.Message{
+						ID:   0,
+						Type: "ERROR",
+						Text: "Could not create application 'foo'",
+					}
+					var operation = &models.Operation{
+						State:    "ERROR",
+						Messages: []*models.Message{errorMessage},
+					}
+					mtaClient = fakes.NewFakeMtaClientBuilder().
+						GetMtaOperation(operationID, "messages", operation, nil).
+						Build()
+					output, status := oc.CaptureOutputAndStatus(func() int {
+						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+					})
+					ex.ExpectFailureOnLine(status, output, "Could not create application 'foo'", 0)
 				})
 			})
 		})

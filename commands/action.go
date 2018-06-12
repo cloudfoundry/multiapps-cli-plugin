@@ -27,7 +27,9 @@ func GetActionToExecute(actionID, commandName string) Action {
 		action := newMonitoringAction(actionID, commandName)
 		return &action
 	case "monitor":
-		return &MonitorAction{}
+		return &MonitorAction{
+			commandName: commandName,
+		}
 	}
 	return nil
 }
