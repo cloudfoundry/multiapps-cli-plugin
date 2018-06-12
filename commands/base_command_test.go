@@ -122,7 +122,9 @@ var _ = Describe("BaseCommand", func() {
 			testClientFactory = commands.NewTestClientFactory(fakeMtaClientBuilder.Build(), fakeRestClientBuilder.Build())
 
 			testClientFactory.MtaClient = fakeMtaClientBuilder.
-				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).Build()
+				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
+				GetOperationActions("test", []string{"abort", "retry"}, nil).
+				Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
 			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator)
@@ -179,6 +181,7 @@ var _ = Describe("BaseCommand", func() {
 			testClientfactory.MtaClient = fakeMtaClientBuilder.
 				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
 				GetMtaOperation("test-process-id", "mesages", &testutil.SimpleOperationResult, nil).
+				GetOperationActions("test-process-id", []string{"abort", "retry"}, nil).
 				ExecuteAction("test-process-id", "abort", mtaclient.ResponseHeader{}, nil).
 				ExecuteAction("test-process-id", "retry", mtaclient.ResponseHeader{Location: "operations/test-process-id?embed=messages"}, nil).Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")

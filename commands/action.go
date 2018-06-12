@@ -59,14 +59,32 @@ func (a *action) Execute(operationID string, mtaClient mtaclient.MtaClientOperat
 }
 
 func (a *action) executeInSession(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
+	possibleActions, err := mtaClient.GetOperationActions(operationID)
+	if err != nil {
+		ui.Failed("Could not retrieve possible actions for operation %s: %s", terminal.EntityNameColor(operationID), err)
+	}
+	if !a.actionIsPossible(possibleActions) {
+		ui.Failed("Action '%s' is not possible for operation %s", a.actionID, terminal.EntityNameColor(operationID))
+		return Failure
+	}
+
 	ui.Say("Executing action '%s' on operation %s...", a.actionID, terminal.EntityNameColor(operationID))
-	_, err := mtaClient.ExecuteAction(operationID, a.actionID)
+	_, err = mtaClient.ExecuteAction(operationID, a.actionID)
 	if err != nil {
 		ui.Failed("Could not execute action '%s' on operation %s: %s", a.actionID, terminal.EntityNameColor(operationID), err)
 		return Failure
 	}
 	ui.Ok()
 	return Success
+}
+
+func (a *action) actionIsPossible(possibleActions []string) bool {
+	for _, possibleAction := range possibleActions {
+		if possibleAction == a.actionID {
+			return true
+		}
+	}
+	return false
 }
 
 type monitoringAction struct {
