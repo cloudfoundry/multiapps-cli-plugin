@@ -18,7 +18,7 @@ The latest version of the plugin can be found in the table below. Select the plu
 
 Mac OS X 64 bit | Windows 64 bit | Linux 64 bit
 --- | --- | ---
-[cf-cli-mta-plugin-2.0.0-darwin.bin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-darwin.bin) | [cf-cli-mta-plugin-2.0.0-windows.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-windows.exe) | [cf-cli-mta-plugin-2.0.0-linux.bin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.0/cf-cli-mta-plugin-2.0.0-linux.bin) |
+[cf-cli-mta-plugin-2.0.5-darwin.bin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.5/cf-cli-mta-plugin-2.5.0-darwin.bin) | [cf-cli-mta-plugin-2.0.5-windows.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.5/cf-cli-mta-plugin-2.0.5-windows.exe) | [cf-cli-mta-plugin-2.0.5-linux.bin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.5/cf-cli-mta-plugin-2.0.5-linux.bin) |
 
 
 ## Installation
