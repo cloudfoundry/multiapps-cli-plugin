@@ -84,7 +84,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 			// Print the full path of the file
 			fullPath, err := filepath.Abs(fileToUpload.Name())
 			if err != nil {
-				ui.Failed("Could not get absolute path of file %s", terminal.EntityNameColor(fileToUpload.Name()))
+				ui.Failed("Could not get absolute path of file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
 				return nil, Failure
 			}
 			ui.Say("  " + fullPath)
@@ -98,7 +98,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 			// Upload the file
 			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.mtaClient)
 			if err != nil {
-				ui.Failed("Could not upload file %s", terminal.EntityNameColor(fileToUpload.Name()))
+				ui.Failed("Could not upload file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
 				return nil, Failure
 			}
 			uploadedFiles = append(uploadedFiles, uploaded...)
