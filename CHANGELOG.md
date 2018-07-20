@@ -1,3 +1,7 @@
+## v2.0.6
+
+* Show reason for failed uploads
+
 ## v2.0.1
 
 * Fix computation of deploy service URL
