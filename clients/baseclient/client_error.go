@@ -2,6 +2,9 @@ package baseclient
 
 import (
 	"fmt"
+	"bytes"
+
+	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/runtime"
 )
@@ -22,8 +25,45 @@ func NewClientError(err error) error {
 	}
 	ae, ok := err.(*runtime.APIError)
 	if ok {
-		resp := ae.Response.(runtime.ClientResponse)
-		return &ClientError{Code: ae.Code, Status: resp.Message(), Description: resp.Message()}
+		response := ae.Response.(runtime.ClientResponse)
+		return &ClientError{Code: ae.Code, Status: response.Message(), Description: response.Message()}
+	}
+	response, ok := err.(*ErrorResponse)
+	if ok {
+		return &ClientError{Code: response.Code, Status: response.Status, Description: response.Payload}
 	}
 	return err
+}
+
+func BuildErrorResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+	result := &ErrorResponse{
+		Code: response.Code(),
+		Status: response.Message(), // this isn't the body!
+	}
+	if err := result.readResponse(response, consumer, formats); err != nil {
+		return err
+	}
+	return result
+}
+
+// ErrorResponse handles error cases
+type ErrorResponse struct {
+	Code int
+	Status string
+	Payload string
+}
+
+func (ce *ErrorResponse) Error() string {
+	return fmt.Sprintf("%s (status %d): %v ", ce.Status, ce.Code, ce.Payload)
+}
+
+func (o *ErrorResponse) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(response.Body())
+	if err != nil {
+		return runtime.NewAPIError("unknown error", response, response.Code())
+	}
+	o.Payload = buf.String();
+
+	return nil
 }

@@ -14,6 +14,7 @@ import (
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 )
 
 // GetMtaFilesReader is a Reader for the GetMtaFiles structure.
@@ -33,7 +34,7 @@ func (o *GetMtaFilesReader) ReadResponse(response runtime.ClientResponse, consum
 		return result, nil
 
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, baseclient.BuildErrorResponse(response, consumer, o.formats)
 	}
 }
 
