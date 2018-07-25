@@ -11,6 +11,8 @@ import (
 	"github.com/go-openapi/runtime"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 )
 
 // GetCsrfTokenReader is a Reader for the GetCsrfToken structure.
@@ -30,7 +32,7 @@ func (o *GetCsrfTokenReader) ReadResponse(response runtime.ClientResponse, consu
 		return result, nil
 
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, baseclient.BuildErrorResponse(response, consumer, o.formats)
 	}
 }
 
