@@ -38,8 +38,6 @@ package commands_test
 // 					"OK\n")
 // 			}
 // 			lines = append(lines,
-// 				"Starting undeployment process...\n",
-// 				"OK\n",
 // 				"Monitoring process execution...\n",
 // 				"Process finished.\n")
 // 			return lines

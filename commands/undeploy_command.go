@@ -149,8 +149,6 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	ui.Say("Starting undeployment process...")
-
 	processBuilder := util.NewProcessBuilder()
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("mtaId", mtaID)
@@ -167,7 +165,6 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not create undeploy process: %s", err)
 		return Failure
 	}
-	ui.Ok()
 
 	sessionProvider.GetSession()
 

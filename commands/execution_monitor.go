@@ -15,8 +15,6 @@ import (
 	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 )
 
-const consoleOffset = "  "
-
 //ExecutionMonitor monitors execution of a process
 type ExecutionMonitor struct {
 	mtaClient          mtaclient.MtaClientOperations
@@ -65,8 +63,6 @@ func getAlreadyReportedOperationMessages(reportedOperationMessages []*models.Mes
 }
 
 func (m *ExecutionMonitor) Monitor() ExecutionStatus {
-	ui.Say("Monitoring process %s...", m.operationID)
-
 	for {
 		operation, err := m.mtaClient.GetMtaOperation(m.operationID, m.embed)
 		if err != nil {
@@ -122,7 +118,7 @@ func (m *ExecutionMonitor) reportOperationMessages(operation *models.Operation) 
 			continue
 		}
 		m.reportedMessages[message.ID] = true
-		ui.Say("%s%s", consoleOffset, message.Text)
+		ui.Say("%s", message.Text)
 	}
 }
 
