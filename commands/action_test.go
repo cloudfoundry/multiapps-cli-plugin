@@ -151,8 +151,7 @@ var _ = Describe("Actions", func() {
 					}
 					var operation = &models.Operation{
 						State:    "ERROR",
-						Messages: []*models.Message{
-							errorMessage},
+						Messages: []*models.Message{errorMessage},
 					}
 					mtaClient = fakes.NewFakeMtaClientBuilder().
 						GetMtaOperation(operationID, "messages", operation, nil).
