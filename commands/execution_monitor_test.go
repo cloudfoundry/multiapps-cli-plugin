@@ -25,7 +25,6 @@ var _ = Describe("ExecutionMonitor", func() {
 
 		var getOutputLines = func(processStatus models.State, errorMessage string, progressMessages []string) []string {
 			var lines []string
-			lines = append(lines, fmt.Sprintf("Monitoring process %s...\n", processID))
 			if len(progressMessages) > 0 {
 				lines = append(lines, progressMessages...)
 			}
@@ -58,8 +57,8 @@ var _ = Describe("ExecutionMonitor", func() {
 			ui.DisableTerminalOutput(true)
 		})
 
-		Context("with process task in state aborted and no progress messages in the tasklist", func() {
-			It("should print info message and exit with zero status", func() {
+		Context("with process task in state aborted", func() {
+			It("should print info message and exit with non-zero status", func() {
 				client = fakeMtaClientBuilder.
 					GetMtaOperation(processID, "messages", &models.Operation{
 						State:    "ABORTED",
@@ -69,7 +68,8 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectFailure(status, output, "Process was aborted.")
+				ex.ExpectNonZeroStatus(status)
+				ex.ExpectMessageOnLine(output, "Process was aborted.", 0)
 			})
 		})
 		Context("with process task in state error and no progress messages in the tasklist", func() {
@@ -90,7 +90,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Use \"cf deploy -i 1234 -a abort\" to abort the process.\n", 2)
+				ex.ExpectFailureOnLine(status, output, "Use \"cf deploy -i 1234 -a abort\" to abort the process.\n", 1)
 			})
 		})
 		Context("with process task in illegal state and no progress messages in the tasklist", func() {
@@ -104,7 +104,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Process is in illegal state UnknownState", 1)
+				ex.ExpectFailure(status, output, "Process is in illegal state UnknownState")
 			})
 		})
 		Context("with process task in state finished and no progress messages in the tasklist", func() {
@@ -139,7 +139,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"  test-message-1\n", "  test-message-2\n", "  test-message-3\n"}))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"test-message-1\n", "test-message-2\n", "test-message-3\n"}))
 			})
 		})
 		Context("with process task in state finished and progress messages with repeating ids in the tasklist", func() {
@@ -159,7 +159,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"  test-message-1\n", "  test-message-3\n", "  test-message-4\n"}))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"test-message-1\n", "test-message-3\n", "test-message-4\n"}))
 			})
 		})
 		Context("with process task in state action required", func() {

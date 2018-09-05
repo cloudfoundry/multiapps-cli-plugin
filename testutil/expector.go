@@ -14,6 +14,8 @@ type Expector interface {
 	ExpectSuccessAndResult(status int, output []string, result, expectedResult interface{})
 	ExpectFailure(status int, output []string, message string)
 	ExpectFailureOnLine(status int, output []string, message string, line int)
+	ExpectNonZeroStatus(status int)
+	ExpectMessageOnLine(output []string, message string, line int)
 }
 
 type BaseExpector struct{}
@@ -61,10 +63,18 @@ func (ex *UIExpector) ExpectFailure(status int, output []string, message string)
 }
 
 func (ex *UIExpector) ExpectFailureOnLine(status int, output []string, message string, line int) {
-	Expect(status).NotTo(BeZero())
+	ex.ExpectNonZeroStatus(status)
 	Expect(output[line+1]).To(ContainSubstring(message))
 	// Expect(output[line]).To(Equal("FAILED\n"))
 
+}
+
+func (ex *UIExpector) ExpectNonZeroStatus(status int) {
+	Expect(status).NotTo(BeZero())
+}
+
+func (ex *UIExpector) ExpectMessageOnLine(output []string, message string, line int) {
+	Expect(output[line]).To(ContainSubstring(message))
 }
 
 var defaultExpector = NewUIExpector()

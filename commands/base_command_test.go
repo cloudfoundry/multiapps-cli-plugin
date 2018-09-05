@@ -200,7 +200,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("not-valid-process-id", "abort", "test-host").ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Multi-target app operation with id not-valid-process-id not found", 0)
+				ex.ExpectFailure(status, output, "Multi-target app operation with id not-valid-process-id not found")
 			})
 		})
 
@@ -209,7 +209,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "not-existing-action", "test-host").ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Invalid action not-existing-action", 0)
+				ex.ExpectFailure(status, output, "Invalid action not-existing-action")
 			})
 		})
 
@@ -219,7 +219,7 @@ var _ = Describe("BaseCommand", func() {
 					return command.ExecuteAction("test-process-id", "retry", "test-host").ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...\n", "OK\n",
-					"Monitoring process test-process-id...\n", "Process finished.\n", "Use \"cf dmol -i test-process-id\" to download the logs of the process.\n"})
+					"Process finished.\n", "Use \"cf dmol -i test-process-id\" to download the logs of the process.\n"})
 			})
 		})
 	})

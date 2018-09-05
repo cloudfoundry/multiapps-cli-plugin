@@ -72,10 +72,7 @@ var _ = Describe("DeployCommand", func() {
 					"OK\n")
 			}
 			lines = append(lines,
-				"Starting deployment process...\n",
-				"OK\n",
-				"Monitoring process 1000...\n",
-				"  Test message\n",
+				"Test message\n",
 				"Process finished.\n",
 				"Use \"cf dmol -i 1000\" to download the logs of the process.\n")
 			return lines
@@ -290,7 +287,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test", "-a", "abort"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Multi-target app operation with id test not found", 0)
+				ex.ExpectFailure(status, output, "Multi-target app operation with id test not found")
 			})
 		})
 		Context("with valid operation id and non-valid action id provided", func() {
@@ -302,7 +299,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test-process-id", "-a", "test"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Invalid action test", 0)
+				ex.ExpectFailure(status, output, "Invalid action test")
 			})
 		})
 		Context("with valid operation id and no action id provided", func() {
@@ -310,7 +307,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test-process-id"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "All the a i options should be specified together", 0)
+				ex.ExpectFailure(status, output, "All the a i options should be specified together")
 			})
 		})
 
@@ -319,7 +316,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-a", "abort"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "All the a i options should be specified together", 0)
+				ex.ExpectFailure(status, output, "All the a i options should be specified together")
 			})
 		})
 

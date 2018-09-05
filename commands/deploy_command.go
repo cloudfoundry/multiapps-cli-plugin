@@ -276,7 +276,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 			uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, uploadedExtDescriptor.ID)
 		}
 	}
-	ui.Say("Starting deployment process...")
 
 	// Build the process instance
 	processBuilder := util.NewProcessBuilder()
@@ -299,7 +298,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not create operation: %s", baseclient.NewClientError(err))
 		return Failure
 	}
-	ui.Ok()
 	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
