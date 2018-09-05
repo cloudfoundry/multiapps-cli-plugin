@@ -1,3 +1,8 @@
+## v2.0.7
+* Refactor progress output
+* Display error messages from non-successful REST calls
+* Fix an issue where deployment was not possible in space with a lot of operations
+
 ## v2.0.6
 
 * Show reason for failed uploads
