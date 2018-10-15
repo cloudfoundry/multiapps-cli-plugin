@@ -1,19 +1,14 @@
+<p align="center"><img width="335" height="281" src="logo.png" alt="MultiApps logo"></p>
+
 # MultiApps CF CLI Plugin [![Build Status](https://travis-ci.org/cloudfoundry-incubator/multiapps-cli-plugin.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/multiapps-cli-plugin)
-
-
-# Description
-
-This is a Cloud Foundry CLI plugin for performing operations on [multi-target applications (MTAs)](https://www.sap.com/documents/2016/06/e2f618e4-757c-0010-82c7-eda71af511fa.html) in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the [CF MTA deploy service](https://github.com/SAP/cf-mta-deploy-service), which is an MTA deployer implementation for Cloud Foundry.
+This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing operations on [multi-target applications (MTAs)](https://www.sap.com/documents/2016/06/e2f618e4-757c-0010-82c7-eda71af511fa.html) in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) (formerly known as CF MTA deploy-service), which is an MTA deployer implementation for Cloud Foundry.
 
 # Requirements
-
 - Installed CloudFoundry CLI - ensure that CloudFoundry CLI is installed and working. For more information about installation of CloudFoundry CLI, please visit the official CloudFoundry [documentation](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html).
-- Working [CF deploy-service](https://github.com/SAP/cf-mta-deploy-service) - this a CF plugin for the deploy-service application. Thus, a working deploy-service must be available on the CF landscape
+- Working [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) - this a CF plugin for the MultiApps Controller application. Thus, a working MultiApps Controller must be available on the CF landscape
 
 # Download and Installation
-
 ## Download
-
 The latest version of the plugin can be found in the table below. Select the plugin for your platform(Darwin, Linux, Windows) and download it.
 
 Mac OS X 64 bit | Windows 64 bit | Linux 64 bit
@@ -22,19 +17,16 @@ Mac OS X 64 bit | Windows 64 bit | Linux 64 bit
 
 
 ## Installation
-
 Install the plugin, using the following command:
-
 ```
-cf install-plugin <path-to-the-downloaded-plugin> -f
+cf install-plugin <path-to-the-plugin> -f
 ```
-:rotating_light: Note: if you are running on an Unix-based system, you need to make the plugin executable before installing it. In order to achieve this, execute the following commad `chmod +x <path-to-the-downloaded-plugin>`
+:rotating_light: Note: if you are running on an Unix-based system, you need to make the plugin executable before installing it. In order to achieve this, execute the following commad `chmod +x <path-to-the-plugin>`
 
 :rotating_light: Check whether you have a previous version installed, using the command: `cf plugins`. If the MtaPlugin is already installed, you need to uninstall it first and then to install the new version. You can uninstall the plugin using command `cf uninstall-plugin MtaPlugin`.
 
 ## Usage
-
-The CF MTA plugin supports the following commands:
+The MultiApps CF plugin supports the following commands:
 
 Command Name | Command Description
 --- | ---
@@ -49,24 +41,23 @@ Command Name | Command Description
 
 For more information, see the command help output available via `cf [command] --help` or `cf help [command]`.
 
-Here is an example deployment of the open-sourced com.sap.openSAP.hana5.example:
+Here is an example deployment of the open-sourced [spring-music](https://github.com/nvvalchev/spring-music):
 ```
-$ git clone https://github.com/SAP/hana-shine-xsa.git
-// build it TODO: verify that or provide another sample
-$ cf deploy assembly/target/hana-shine-xsa.mtar
+$ git clone https://github.com/nvvalchev/spring-music.git
+$ cf deploy mta-assembly/spring-music.mtar -e config.mtaext
 ```
 
 # Configuration     
-The configuration of the CF MTA plugin is done via env variables. The following are supported:
+The configuration of the MultiApps CF plugin is done via env variables. The following are supported:
    `DEBUG=1` - prints in standart output HTTP requests, which are from CLI client to CF deploy service backend.
-   `DEPLOY_SERVICE_URL=<deploy-service-app-url>` - thehe plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via this env variable.
+   `DEPLOY_SERVICE_URL=<deploy-service-app-url>` - the plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via this env variable.
 
-# How to obtain support
-
-If you need any support, have any question or have found a bug, please report it in the [GitHub bug tracking system](TODO: point to the github.com repostory issues). We shall get back to you.
+# How to contribute
+* [Did you find a bug?](CONTRIBUTING.md#did-you-find-a-bug)
+* [Do you have a question or need support?](CONTRIBUTING.md#do-you-have-a-question-or-need-support)
+* [How to develop, test and contribute to MultiApps CF Plugin](CONTRIBUTING.md#do-you-want-to-contribute-to-the-code-base)
 
 # Development
-
 ## Building new release version
 You can automatically build new release for all supported platforms by calling the build.sh script with the version of the build.
 The version will be automatically included in the plugin, so it will be reported by `cf plugins`.
@@ -78,7 +69,7 @@ The version will be automatically included in the plugin, so it will be reported
 
 This will produce `mta_plugin_linux_amd64`, `mta_plugin_darwin_amd64` and `mta_plugin_windows_amd64` in the repo's root directory.
 
-## Adding dependency into the cf-mta-plugin
+## Adding dependency into the multiapps-cli-plugin
 #### If you want to add a dependecy which to be used later on during the build and development process, you need to follow these steps:
 1.  Make sure that you have godep installed(try to run `godep version`). If you do not have it, run the command: `go get github.com/tools/godep`. !!!IMPORTANT!!! Make sure that you are running on latest version of GO and godep!!!
 2.  Get the dependency by executing the command: `go get github.com/<package-full-name>` . If you want to update it use the -u option.
