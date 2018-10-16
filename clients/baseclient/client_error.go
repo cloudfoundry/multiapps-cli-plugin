@@ -1,8 +1,8 @@
 package baseclient
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -37,7 +37,7 @@ func NewClientError(err error) error {
 
 func BuildErrorResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 	result := &ErrorResponse{
-		Code: response.Code(),
+		Code:   response.Code(),
 		Status: response.Message(), // this isn't the body!
 	}
 	if err := result.readResponse(response, consumer, formats); err != nil {
@@ -48,8 +48,8 @@ func BuildErrorResponse(response runtime.ClientResponse, consumer runtime.Consum
 
 // ErrorResponse handles error cases
 type ErrorResponse struct {
-	Code int
-	Status string
+	Code    int
+	Status  string
 	Payload string
 }
 
@@ -63,7 +63,7 @@ func (o *ErrorResponse) readResponse(response runtime.ClientResponse, consumer r
 	if err != nil {
 		return runtime.NewAPIError("unknown error", response, response.Code())
 	}
-	o.Payload = buf.String();
+	o.Payload = buf.String()
 
 	return nil
 }
