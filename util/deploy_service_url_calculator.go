@@ -56,10 +56,10 @@ func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models
 	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the DEPLOY_SERVICE_URL environment variable to specify a custom URL explicitly.")
 }
 
-func buildPossibleDeployServiceURLs(domains []models.SharedDomain) ([]string) {
+func buildPossibleDeployServiceURLs(domains []models.SharedDomain) []string {
 	var possibleDeployServiceURLs []string
 	for _, domain := range domains {
-		possibleDeployServiceURLs = append(possibleDeployServiceURLs, deployServiceHost + "." + domain.Name)
+		possibleDeployServiceURLs = append(possibleDeployServiceURLs, deployServiceHost+"."+domain.Name)
 	}
 	return possibleDeployServiceURLs
 }
@@ -73,5 +73,3 @@ func (c deployServiceURLCalculatorImpl) isCorrectURL(deployServiceURL string) bo
 	}
 	return statusCode == 200
 }
-
-

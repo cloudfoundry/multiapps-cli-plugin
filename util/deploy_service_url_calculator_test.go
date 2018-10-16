@@ -20,7 +20,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 				domains := []models.SharedDomain{
 					models.SharedDomain{Name: "test.ondemand.com"},
 				}
-				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int {
+				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test.ondemand.com/public/ping": 200,
 				})
 				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cfrestclient_fakes.NewFakeCloudFoundryClient(domains, nil), fakeHttpExecutor)
@@ -33,7 +33,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 					models.SharedDomain{Name: "test1.ondemand.com"},
 					models.SharedDomain{Name: "test2.ondemand.com"},
 				}
-				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int {
+				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 200,
 					"https://deploy-service.test2.ondemand.com/public/ping": 404,
 				})
@@ -47,7 +47,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 					models.SharedDomain{Name: "test1.ondemand.com"},
 					models.SharedDomain{Name: "test2.ondemand.com"},
 				}
-				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int {
+				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 404,
 					"https://deploy-service.test2.ondemand.com/public/ping": 404,
 				})
@@ -62,7 +62,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 					models.SharedDomain{Name: "test1.ondemand.com"},
 					models.SharedDomain{Name: "test2.ondemand.com"},
 				}
-				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int {
+				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 404,
 					"https://deploy-service.test2.ondemand.com/public/ping": 500,
 				})

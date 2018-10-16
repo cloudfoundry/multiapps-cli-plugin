@@ -1,9 +1,9 @@
 package commands
 
 import (
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry/cli/plugin/fakes"
 	"github.com/go-openapi/runtime"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 )
 
 type TestTokenFactory struct {
