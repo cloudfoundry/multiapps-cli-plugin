@@ -43,8 +43,8 @@ For more information, see the command help output available via `cf [command] --
 
 Here is an example deployment of the open-sourced [spring-music](https://github.com/nvvalchev/spring-music):
 ```
-$ git clone https://github.com/nvvalchev/spring-music.git
-$ cf deploy mta-assembly/spring-music.mtar -e config.mtaext
+git clone https://github.com/nvvalchev/spring-music.git
+cf deploy mta-assembly/spring-music.mtar -e config.mtaext
 ```
 
 # Configuration     
@@ -58,6 +58,14 @@ The configuration of the MultiApps CF plugin is done via env variables. The foll
 * [How to develop, test and contribute to MultiApps CF Plugin](CONTRIBUTING.md#do-you-want-to-contribute-to-the-code-base)
 
 # Development
+## Cloning the repository
+To clone the project in your Go workspace `$GOPATH/src/github.com/cloudfoundry-incubator/multiapps-cli-plugin` execute the following commands:
+```
+mkdir -p $GOPATH/src/github.com/cloudfoundry-incubator
+cd $GOPATH/src/github.com/cloudfoundry-incubator
+git clone git@github.com:cloudfoundry-incubator/multiapps-cli-plugin.git
+```
+
 ## Building new release version
 You can automatically build new release for all supported platforms by calling the build.sh script with the version of the build.
 The version will be automatically included in the plugin, so it will be reported by `cf plugins`.
