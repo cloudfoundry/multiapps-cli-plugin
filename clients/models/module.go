@@ -23,9 +23,6 @@ type Module struct {
 	// created on
 	CreatedOn strfmt.Date `json:"createdOn,omitempty"`
 
-	// deploy attributes
-	DeployAttributes map[string]interface{} `json:"deployAttributes,omitempty"`
-
 	// module name
 	ModuleName string `json:"moduleName,omitempty"`
 
@@ -45,8 +42,6 @@ type Module struct {
 /* polymorph Module appName false */
 
 /* polymorph Module createdOn false */
-
-/* polymorph Module deployAttributes false */
 
 /* polymorph Module moduleName false */
 
