@@ -12,6 +12,9 @@ If you need any support or have any questions regarding the project, you can dro
 
 ## Do you want to contribute to the code base?
 
+### Starter GitHub Issues
+If you are looking for what you can contribute to the project, check the GitHub Issues labeled as [Good First Issue](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to find items that are marked as more beginner friendly.
+
 ### Fork the project
 * To develop your contribution to the project, first [fork](https://help.github.com/articles/fork-a-repo/) this repository in your own github account.
 
