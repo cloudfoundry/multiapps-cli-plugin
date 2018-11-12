@@ -415,7 +415,7 @@ func newTransport() http.RoundTripper {
 	csrfx := csrf.Csrf{Header: "", Token: ""}
 	// TODO Make sure SSL verification is only skipped if the CLI is configured this way
 	httpTransport := http.DefaultTransport.(*http.Transport)
-	// Increase tls handshake timeout because of slow internet connection
+	// Increase tls handshake timeout to cope with  of slow internet connection. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
 	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	return csrf.Transport{Transport: httpTransport, Csrf: &csrfx}
