@@ -282,7 +282,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
-	processBuilder.Parameter("targetPlatform", context.Org+" "+context.Space)
 	c.processParametersSetter(optionValues, processBuilder)
 	operation := processBuilder.Build()
 

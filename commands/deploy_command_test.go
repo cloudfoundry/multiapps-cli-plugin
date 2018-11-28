@@ -81,7 +81,6 @@ var _ = Describe("DeployCommand", func() {
 		// var getProcessParameters = func(additional bool) map[string]string {
 		// 	params := map[string]string{
 		// 		"appArchiveId":   "mtaArchive.mtar",
-		// 		"targetPlatform": "test-org test-space",
 		// 		"failOnCrashed":  "false",
 		// 	}
 		// 	if additional {
