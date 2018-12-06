@@ -25,6 +25,7 @@ const (
 	noNamespacesForServicesOpt = "no-namespaces-for-services"
 	deleteServiceKeysOpt       = "delete-service-keys"
 	keepFilesOpt               = "keep-files"
+	skipOwnershipValidationOpt = "skip-ownership-validation"
 )
 
 var reportedProgressMessages []string
@@ -49,7 +50,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -71,13 +72,14 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the deployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
+				util.GetShortOption(skipOwnershipValidationOpt):    "Skip the ownership validation that prevents the modification of entities managed by other multi-target apps",
 			},
 		},
 	}
 }
 
 // CommandFlagsDefiner is a function used during the execution of the deploy
-// command. It defines the flags supported by the comman,d and returns a map
+// command. It defines the flags supported by the command and returns a map
 // containing pointers to the parsed flags.
 type CommandFlagsDefiner func(flag *flag.FlagSet) map[string]interface{}
 
@@ -105,6 +107,7 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[noRestartSubscribedAppsOpt] = flags.Bool(noRestartSubscribedAppsOpt, false, "")
 		optionValues[noFailOnMissingPermissionsOpt] = flags.Bool(noFailOnMissingPermissionsOpt, false, "")
 		optionValues[abortOnErrorOpt] = flags.Bool(abortOnErrorOpt, false, "")
+		optionValues[skipOwnershipValidationOpt] = flags.Bool(skipOwnershipValidationOpt, false, "")
 		return optionValues
 	}
 }
@@ -124,6 +127,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(GetBoolOpt(noRestartSubscribedAppsOpt, optionValues)))
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
+		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
 	}
 }
 
