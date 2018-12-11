@@ -1,3 +1,9 @@
+## v2.0.8
+* Increase TLS Handshake timeout
+* Remove deploy attributes from /mtas API
+* Remove no-longer supported process parameter
+* Allow users to skip the ownership validation via `--skip-ownership-validation` optional parameter
+
 ## v2.0.7
 * Refactor progress output
 * Display error messages from non-successful REST calls
