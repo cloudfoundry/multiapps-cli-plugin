@@ -134,12 +134,22 @@ var _ = Describe("DeployCommand", func() {
 		})
 
 		// unknown flag - error
-		Context("with an unknown flag", func() {
+		Context("with argument that is not a directory or MTA", func() {
 			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"x", "-l"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag.")
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		Context("with argument that is a directory or MTA and with unknown flag", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "-l"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
@@ -150,29 +160,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"x", "y", "z"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Wrong arguments.")
-				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
-			})
-		})
-
-		// no arguments - error
-		Context("with no arguments", func() {
-			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
-				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{}).ToInt()
-				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument 'MTA'.")
-				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
-			})
-		})
-
-		// no MTA argument - error
-		Context("with no MTA argument", func() {
-			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
-				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"-e", "test.mtaext"}).ToInt()
-				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument 'MTA'.")
+				ex.ExpectFailure(status, output, "Incorrect usage. Wrong arguments")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
@@ -184,8 +172,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{fileName}).ToInt()
 				})
-				abs, _ := filepath.Abs(fileName)
-				ex.ExpectFailureOnLine(status, output, "Could not find file "+abs, 1)
+				ex.ExpectFailureOnLine(status, output, "Could not find MTA "+fileName, 0)
 			})
 		})
 

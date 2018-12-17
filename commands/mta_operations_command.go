@@ -48,7 +48,8 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	}
 	flags.UintVar(&last, "last", 0, "")
 	flags.BoolVar(&all, "all", false, "")
-	err = c.ParseFlags(args, nil, flags, nil)
+	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
+	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure

@@ -1,0 +1,137 @@
+package commands
+
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"strings"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+)
+
+// CommandFlagsDefiner is a function used during the execution of the deploy
+// command. It defines the flags supported by the command and returns a map
+// containing pointers to the parsed flags.
+type CommandFlagsDefiner func(flag *flag.FlagSet) map[string]interface{}
+
+// CommandFlagsParser used for parsing the arguments
+type CommandFlagsParser struct {
+	flag       *flag.FlagSet
+	parser     FlagsParser
+	validator  FlagsValidator
+	parsedArgs []string
+}
+
+// NewCommandFlagsParser creates new command flags parser
+func NewCommandFlagsParser(flag *flag.FlagSet, parser FlagsParser, validator FlagsValidator) CommandFlagsParser {
+	return CommandFlagsParser{flag: flag, parser: parser, validator: validator, parsedArgs: make([]string, 0)}
+}
+
+// Parse parsing the args
+func (p *CommandFlagsParser) Parse(args []string) error {
+	err := p.parser.ParseFlags(p.flag, args)
+	if err != nil {
+		return err
+	}
+
+	// assume that the parsing of arguments is successful - determine the arguments which are not flagged
+	p.parsedArgs = determineParsedNotFlaggedArguments(p.flag, args)
+
+	return p.validator.ValidateParsedFlags(p.flag)
+}
+
+func determineParsedNotFlaggedArguments(flag *flag.FlagSet, args []string) []string {
+	result := make([]string, 0)
+	for _, arg := range args {
+		if argument := flag.Lookup(strings.Replace(arg, "-", "", 2)); argument == nil {
+			result = append(result, arg)
+		} else {
+			break
+		}
+	}
+	return result
+}
+
+// Args returns the first parsed command line arguments WITHOUT the options
+func (p CommandFlagsParser) Args() []string {
+	return p.parsedArgs
+}
+
+// FlagsParser interface used for parsing the command line arguments using the flag library
+type FlagsParser interface {
+	ParseFlags(flags *flag.FlagSet, args []string) error
+}
+
+// FlagsValidator interface used for validating the parsed flags
+type FlagsValidator interface {
+	ValidateParsedFlags(flags *flag.FlagSet) error
+}
+
+// DefaultCommandFlagsParser defines default implementation of the parser. It uses positional arguments and assumes that the command args will contain arguments
+type DefaultCommandFlagsParser struct {
+	positionalArgNames []string
+}
+
+// NewDefaultCommandFlagsParser initializes DefaultCommandFlagsParser
+func NewDefaultCommandFlagsParser(positionalArgNames []string) DefaultCommandFlagsParser {
+	return DefaultCommandFlagsParser{positionalArgNames: positionalArgNames}
+}
+
+// ParseFlags see DefaultCommandFlagsParser
+func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
+	customDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
+	if customDeployServiceURL != "" {
+		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", customDeployServiceURL))
+	}
+
+	// Check for missing positional arguments
+	positionalArgsCount := len(p.positionalArgNames)
+	if len(args) < positionalArgsCount {
+		return fmt.Errorf(fmt.Sprintf("Missing positional argument '%s'", p.positionalArgNames[len(args)]))
+	}
+	for i := 0; i < positionalArgsCount; i++ {
+		if flags.Lookup(strings.Replace(args[i], "-", "", 1)) != nil {
+			return fmt.Errorf("Missing positional argument '%s'", p.positionalArgNames[i])
+		}
+	}
+
+	// Parse the arguments
+	err := flags.Parse(args[positionalArgsCount:])
+	if err != nil {
+		return errors.New("Unknown or wrong flag")
+	}
+
+	// Check for wrong arguments
+	if flags.NArg() > 0 {
+		return errors.New("Wrong arguments")
+	}
+	return nil
+}
+
+// DefaultCommandFlagsValidator default implementation of the FlagValidator
+type DefaultCommandFlagsValidator struct {
+	requiredFlags map[string]bool
+}
+
+// NewDefaultCommandFlagsValidator creates a default validator for flags
+func NewDefaultCommandFlagsValidator(requiredFlags map[string]bool) DefaultCommandFlagsValidator {
+	return DefaultCommandFlagsValidator{requiredFlags: requiredFlags}
+}
+
+// ValidateParsedFlags uses a required flags map in order to validate whether the arguments are valid
+func (v DefaultCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
+	var missingRequiredOptions []string
+	// Check for missing required flags
+	flags.VisitAll(func(f *flag.Flag) {
+		log.Traceln(f.Name, f.Value)
+		if v.requiredFlags[f.Name] && f.Value.String() == "" {
+			missingRequiredOptions = append(missingRequiredOptions, f.Name)
+		}
+	})
+	if len(missingRequiredOptions) != 0 {
+		return fmt.Errorf("Missing required options '%v'", missingRequiredOptions)
+	}
+
+	return nil
+}

@@ -56,7 +56,8 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	}
 	flags.StringVar(&operationID, "i", "", "")
 	flags.StringVar(&downloadDirName, "d", "", "")
-	err = c.ParseFlags(args, nil, flags, map[string]bool{"i": true})
+	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{}), NewDefaultCommandFlagsValidator(map[string]bool{"i": true}))
+	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure
