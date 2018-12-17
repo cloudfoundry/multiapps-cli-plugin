@@ -2,6 +2,7 @@ package commands
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,8 +27,31 @@ const (
 	deleteServiceKeysOpt       = "delete-service-keys"
 	keepFilesOpt               = "keep-files"
 	skipOwnershipValidationOpt = "skip-ownership-validation"
+	moduleOpt                  = "m"
+	resourceOpt                = "r"
+	allModulesOpt              = "all-modules"
+	allResourcesOpt            = "all-resources"
 )
 
+type listFlag struct {
+	elements []string
+}
+
+func (variable listFlag) getElements() []string {
+	return variable.elements
+}
+
+func (variable *listFlag) String() string {
+	return fmt.Sprint(variable.elements)
+
+}
+func (variable *listFlag) Set(value string) error {
+	variable.elements = append(variable.elements, value)
+	return nil
+}
+
+var modulesList listFlag
+var resourcesList listFlag
 var reportedProgressMessages []string
 
 // DeployCommand is a command for deploying an MTA archive
@@ -62,6 +86,8 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				operationIDOpt:                                     "Active deploy operation id",
 				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, monitor)",
 				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                                          "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                                        "Deploy list of resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(noStartOpt):                    "Do not start apps",
 				util.GetShortOption(useNamespacesOpt):              "Use namespaces in app and service names",
 				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
@@ -73,15 +99,12 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 				util.GetShortOption(skipOwnershipValidationOpt):    "Skip the ownership validation that prevents the modification of entities managed by other multi-target apps",
+				util.GetShortOption(allModulesOpt):                 "Deploy all modules which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
 			},
 		},
 	}
 }
-
-// CommandFlagsDefiner is a function used during the execution of the deploy
-// command. It defines the flags supported by the command and returns a map
-// containing pointers to the parsed flags.
-type CommandFlagsDefiner func(flag *flag.FlagSet) map[string]interface{}
 
 // ProcessParametersSetter is a function that sets the startup parameters for
 // the deploy process. It takes them from the list of parsed flags.
@@ -108,6 +131,10 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[noFailOnMissingPermissionsOpt] = flags.Bool(noFailOnMissingPermissionsOpt, false, "")
 		optionValues[abortOnErrorOpt] = flags.Bool(abortOnErrorOpt, false, "")
 		optionValues[skipOwnershipValidationOpt] = flags.Bool(skipOwnershipValidationOpt, false, "")
+		optionValues[allModulesOpt] = flags.Bool(allModulesOpt, false, "")
+		optionValues[allResourcesOpt] = flags.Bool(allResourcesOpt, false, "")
+		flags.Var(&modulesList, moduleOpt, "")
+		flags.Var(&resourcesList, resourceOpt, "")
 		return optionValues
 	}
 }
@@ -128,6 +155,8 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
+		processBuilder.Parameter("modulesForDeployment", strings.Join(modulesList.getElements(), ","))
+		processBuilder.Parameter("resourcesForDeployment", strings.Join(resourcesList.getElements(), ","))
 	}
 }
 
@@ -159,16 +188,8 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 	optionValues := c.commandFlagsDefiner(flags)
-	shouldExecuteActionOnExistingProcess, err := ContainsSpecificOptions(flags, args, map[string]string{"i": "-i", "a": "-a"})
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	var positionalArgNames []string
-	if !shouldExecuteActionOnExistingProcess {
-		positionalArgNames = []string{"MTA"}
-	}
-	err = c.ParseFlags(args, positionalArgNames, flags, nil)
+	parser := NewCommandFlagsParser(flags, newDeployCommandLineArgumentsParser(), NewDefaultCommandFlagsValidator(nil))
+	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure
@@ -189,7 +210,11 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return c.ExecuteAction(operationID, action, host)
 	}
 
-	mtaArchive := args[0]
+	mtaArchive, err := getMtaArchive(parser.Args(), optionValues)
+	if err != nil {
+		ui.Failed("Error retrieving MTA: %s", err.Error())
+		return Failure
+	}
 
 	// Print initial message
 	ui.Say("Deploying multi-target app archive %s in org %s / space %s as %s...",
@@ -202,8 +227,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not get absolute path of file '%s'", mtaArchive)
 		return Failure
 	}
-
-	// TODO: Check if the MTA archive is a directory or a file
 
 	// Get the full paths of the extension descriptors
 	var extDescriptorPaths []string
@@ -304,8 +327,114 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
+func getMtaArchive(parsedArguments []string, optionValues map[string]interface{}) (string, error) {
+	if len(parsedArguments) == 0 {
+		currentWorkingDirectory, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("Could not get the current working directory: %s", err.Error())
+		}
+		return buildMtaArchiveFromDirectory(currentWorkingDirectory, optionValues)
+	}
+
+	mtaArgument := parsedArguments[0]
+	fileInfo, err := os.Stat(mtaArgument)
+	if err != nil && os.IsNotExist(err) {
+		return "", fmt.Errorf("Could not find MTA %s", mtaArgument)
+	}
+
+	if !fileInfo.IsDir() {
+		return mtaArgument, nil
+	}
+
+	return buildMtaArchiveFromDirectory(mtaArgument, optionValues)
+}
+
+func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, optionValues map[string]interface{}) (string, error) {
+	modulesToAdd, err := getModulesToAdd(mtaDirectoryLocation, optionValues)
+	if err != nil {
+		return "", err
+	}
+
+	resourcesToAdd, err := getResourcesToAdd(mtaDirectoryLocation, optionValues)
+	if err != nil {
+		return "", err
+	}
+
+	return util.NewMtaArchiveBuilder(modulesToAdd, resourcesToAdd).Build(mtaDirectoryLocation)
+}
+
+func getModulesToAdd(mtaDirectoryLocation string, optionValues map[string]interface{}) ([]string, error) {
+
+	if optionValues == nil || GetBoolOpt(allModulesOpt, optionValues) || len(modulesList.getElements()) == 0 {
+		deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
+		if err != nil {
+			return []string{}, err
+		}
+
+		modulesToAdd := make([]string, 0)
+		for _, module := range deploymentDescriptor.Modules {
+			modulesToAdd = append(modulesToAdd, module.Name)
+		}
+		return modulesToAdd, nil
+	}
+
+	return modulesList.getElements(), nil
+}
+
+func getResourcesToAdd(mtaDirectoryLocation string, optionValues map[string]interface{}) ([]string, error) {
+
+	if optionValues == nil || GetBoolOpt(allResourcesOpt, optionValues) || len(resourcesList.getElements()) == 0 {
+		deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
+		if err != nil {
+			return []string{}, err
+		}
+
+		resourcesToAdd := make([]string, 0)
+		for _, resource := range deploymentDescriptor.Resources {
+			resourcesToAdd = append(resourcesToAdd, resource.Name)
+		}
+		return resourcesToAdd, nil
+	}
+
+	return resourcesList.getElements(), nil
+}
+
 type deployCommandProcessTypeProvider struct{}
 
 func (d deployCommandProcessTypeProvider) GetProcessType() string {
 	return "DEPLOY"
+}
+
+type deployCommandLineArgumentsParser struct {
+}
+
+func newDeployCommandLineArgumentsParser() deployCommandLineArgumentsParser {
+	return deployCommandLineArgumentsParser{}
+}
+
+func (p deployCommandLineArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
+	argument := findFirstNotFlagedArgument(flags, args)
+
+	positionalArgumentsToValidate := determinePositionalArgumentsTovalidate(argument)
+
+	return NewProcessActionExecutorCommandArgumentsParser(positionalArgumentsToValidate).ParseFlags(flags, args)
+}
+
+func findFirstNotFlagedArgument(flags *flag.FlagSet, args []string) string {
+	if len(args) == 0 {
+		return ""
+	}
+	optionFlag := flags.Lookup(strings.Replace(args[0], "-", "", 2))
+	if optionFlag == nil {
+		return args[0]
+	}
+	return ""
+}
+
+func determinePositionalArgumentsTovalidate(possitionalArgument string) []string {
+	if possitionalArgument == "" {
+		return []string{}
+	}
+
+	return []string{"MTA"}
 }

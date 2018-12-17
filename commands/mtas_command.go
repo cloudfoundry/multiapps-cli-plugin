@@ -40,7 +40,8 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed(err.Error())
 		return Failure
 	}
-	err = c.ParseFlags(args, nil, flags, nil)
+	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
+	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure

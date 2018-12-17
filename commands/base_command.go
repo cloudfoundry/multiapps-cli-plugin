@@ -2,14 +2,12 @@ package commands
 
 import (
 	"crypto/tls"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"os"
-	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -111,51 +109,6 @@ func (c *BaseCommand) CreateFlags(host *string) (*flag.FlagSet, error) {
 	return flags, nil
 }
 
-// ParseFlags parses the flags and checks for wrong arguments and missing required flags
-func (c *BaseCommand) ParseFlags(args []string, positionalArgNames []string, flags *flag.FlagSet,
-	required map[string]bool) error {
-
-	customDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
-	if customDeployServiceURL != "" {
-		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", customDeployServiceURL))
-	}
-
-	// Check for missing positional arguments
-	positionalArgsCount := len(positionalArgNames)
-	if len(args) < positionalArgsCount {
-		return fmt.Errorf(fmt.Sprintf("Missing positional argument '%s'.", positionalArgNames[len(args)]))
-	}
-	for i := 0; i < positionalArgsCount; i++ {
-		if flags.Lookup(strings.Replace(args[i], "-", "", 1)) != nil {
-			return fmt.Errorf("Missing positional argument '%s'.", positionalArgNames[i])
-		}
-	}
-
-	// Parse the arguments
-	err := flags.Parse(args[positionalArgsCount:])
-	if err != nil {
-		return errors.New("Unknown or wrong flag.")
-	}
-
-	// Check for wrong arguments
-	if flags.NArg() > 0 {
-		return errors.New("Wrong arguments.")
-	}
-
-	var missingRequiredOptions []string
-	// Check for missing required flags
-	flags.VisitAll(func(f *flag.Flag) {
-		log.Traceln(f.Name, f.Value)
-		if required[f.Name] && f.Value.String() == "" {
-			missingRequiredOptions = append(missingRequiredOptions, f.Name)
-		}
-	})
-	if len(missingRequiredOptions) != 0 {
-		return fmt.Errorf("Missing required options '%v'.", missingRequiredOptions)
-	}
-	return nil
-}
-
 func GetOptionValue(args []string, optionName string) string {
 	for index, arg := range args {
 		trimmedArg := strings.Trim(arg, "-")
@@ -164,29 +117,6 @@ func GetOptionValue(args []string, optionName string) string {
 		}
 	}
 	return ""
-}
-
-// ContainsSpecificOptions checks if the argument list contains all the specific options
-func ContainsSpecificOptions(flags *flag.FlagSet, args []string, specificOptions map[string]string) (bool, error) {
-	var matchedOptions int
-	for _, arg := range args {
-		optionFlag := flags.Lookup(strings.Replace(arg, "-", "", 1))
-		if optionFlag != nil && specificOptions[optionFlag.Name] == arg {
-			matchedOptions++
-		}
-	}
-
-	// TODO: Move this validation to the ParseFlags function.
-	if matchedOptions > 0 && matchedOptions < len(specificOptions) {
-		var keys []string
-		for key := range specificOptions {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		return false, fmt.Errorf("All the %s options should be specified together", strings.Join(keys, " "))
-	}
-
-	return matchedOptions == len(specificOptions), nil
 }
 
 // NewRestClient creates a new MTA deployer REST client

@@ -72,7 +72,7 @@ var _ = Describe("MtaCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"x", "y", "z"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Wrong arguments.")
+				ex.ExpectFailure(status, output, "Incorrect usage. Wrong arguments")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})

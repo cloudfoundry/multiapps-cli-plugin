@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -76,12 +78,9 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	flags.BoolVar(&deleteServiceBrokers, deleteServiceBrokersOpt, false, "")
 	flags.BoolVar(&noFailOnMissingPermissions, noFailOnMissingPermissionsOpt, false, "")
 	flags.BoolVar(&abortOnError, abortOnErrorOpt, false, "")
-	shouldExecuteActionOnExistingProcess, _ := ContainsSpecificOptions(flags, args, map[string]string{"i": "-i", "a": "-a"})
-	var positionalArgNames []string
-	if !shouldExecuteActionOnExistingProcess {
-		positionalArgNames = []string{"MTA_ID"}
-	}
-	err = c.ParseFlags(args, positionalArgNames, flags, nil)
+
+	parser := NewCommandFlagsParser(flags, NewProcessActionExecutorCommandArgumentsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(nil))
+	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure
@@ -176,4 +175,45 @@ type undeployCommandProcessTypeProvider struct{}
 
 func (d undeployCommandProcessTypeProvider) GetProcessType() string {
 	return "UNDEPLOY"
+}
+
+type ProcessActionExecutorCommandArgumentsParser struct {
+	positionalArgNames []string
+}
+
+func NewProcessActionExecutorCommandArgumentsParser(positionalArgNames []string) ProcessActionExecutorCommandArgumentsParser {
+	return ProcessActionExecutorCommandArgumentsParser{positionalArgNames: positionalArgNames}
+}
+
+func (p ProcessActionExecutorCommandArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
+	operationExecutorOptions := make(map[string]string)
+	for _, arg := range args {
+		optionFlag := flags.Lookup(strings.Replace(arg, "-", "", 1))
+		if optionFlag != nil && (operationIDOpt == optionFlag.Name || actionOpt == optionFlag.Name) {
+			operationExecutorOptions[optionFlag.Name] = arg
+		}
+	}
+
+	if len(operationExecutorOptions) > 2 {
+		return fmt.Errorf("Options %s and %s should be specified only once", operationIDOpt, actionOpt)
+	}
+
+	if len(operationExecutorOptions) > 0 && len(operationExecutorOptions) < len([]string{operationIDOpt, actionOpt}) {
+		var keys []string
+		for _, key := range []string{operationIDOpt, actionOpt} {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		return fmt.Errorf("All the %s options should be specified together", strings.Join(keys, " "))
+	}
+
+	return NewDefaultCommandFlagsParser(p.determinePositionalArguments(operationExecutorOptions)).ParseFlags(flags, args)
+}
+
+func (p ProcessActionExecutorCommandArgumentsParser) determinePositionalArguments(operationExecutorOptions map[string]string) []string {
+	if len(operationExecutorOptions) == 2 {
+		return []string{}
+	}
+
+	return p.positionalArgNames
 }

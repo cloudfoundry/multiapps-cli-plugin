@@ -46,12 +46,13 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed(err.Error())
 		return Failure
 	}
-	err = c.ParseFlags(args, []string{"MTA_ID"}, flags, nil)
+
+	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(map[string]bool{}))
+	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure
 	}
-
 	mtaID := args[0]
 
 	context, err := c.GetContext()

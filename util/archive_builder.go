@@ -262,7 +262,6 @@ func (builder MtaArchiveBuilder) getResourcesPaths(deploymentDescriptorResources
 	})
 
 	for _, resource := range resourcesToAdd {
-
 		result[resource.Name] = getString(resource.Parameters["path"])
 	}
 	return result, nil

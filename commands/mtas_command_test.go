@@ -66,18 +66,18 @@ var _ = Describe("MtasCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-a"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag.")
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
 
-		// wrong arguments - error
+		// wrong arguments
 		Context("with wrong arguments", func() {
 			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"x", "y", "z"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Wrong arguments.")
+				ex.ExpectFailure(status, output, "Incorrect usage. Wrong arguments")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
