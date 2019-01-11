@@ -155,9 +155,16 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
-		processBuilder.Parameter("modulesForDeployment", strings.Join(modulesList.getElements(), ","))
-		processBuilder.Parameter("resourcesForDeployment", strings.Join(resourcesList.getElements(), ","))
+		processBuilder.Parameter("modulesForDeployment", getMtaElementsList(modulesList.getElements(), optionValues, allModulesOpt))
+		processBuilder.Parameter("resourcesForDeployment", getMtaElementsList(resourcesList.getElements(), optionValues, allResourcesOpt))
 	}
+}
+
+func getMtaElementsList(mtaElements []string, optionValues map[string]interface{}, allElementsOpt string) string {
+	if GetBoolOpt(allElementsOpt, optionValues) {
+		return ""
+	}
+	return strings.Join(mtaElements, ",")
 }
 
 // GetBoolOpt gets and dereferences the pointer identified by the specified name.
