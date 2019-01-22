@@ -1,3 +1,6 @@
+## v2.0.9
+* Add support for selective deployment
+
 ## v2.0.8
 * Increase TLS Handshake timeout
 * Remove deploy attributes from /mtas API
