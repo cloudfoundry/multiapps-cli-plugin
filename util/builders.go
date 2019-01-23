@@ -32,6 +32,12 @@ func (pb *ProcessBuilder) Parameter(parameterID string, value string) *ProcessBu
 	return pb
 }
 
+// SetParameterWithoutCheck sets the parameter without checking whether it is null
+func (pb *ProcessBuilder) SetParameterWithoutCheck(parameterID string, value string) *ProcessBuilder {
+	pb.operation.Parameters[parameterID] = value
+	return pb
+}
+
 // Build builds the process
 func (pb *ProcessBuilder) Build() *models.Operation {
 	return &pb.operation

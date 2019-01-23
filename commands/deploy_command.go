@@ -41,6 +41,10 @@ func (variable listFlag) getElements() []string {
 	return variable.elements
 }
 
+func (variable listFlag) getProcessList() string {
+	return strings.Join(variable.elements, ",")
+}
+
 func (variable *listFlag) String() string {
 	return fmt.Sprint(variable.elements)
 
@@ -53,6 +57,7 @@ func (variable *listFlag) Set(value string) error {
 var modulesList listFlag
 var resourcesList listFlag
 var reportedProgressMessages []string
+var mtaElementsCalculator mtaElementsToAddCalculator
 
 // DeployCommand is a command for deploying an MTA archive
 type DeployCommand struct {
@@ -155,15 +160,10 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
-		processBuilder.Parameter("modulesForDeployment", getMtaElementsList(modulesList.getElements(), optionValues, allModulesOpt))
-		processBuilder.Parameter("resourcesForDeployment", getMtaElementsList(resourcesList.getElements(), optionValues, allResourcesOpt))
 	}
 }
 
-func getMtaElementsList(mtaElements []string, optionValues map[string]interface{}, allElementsOpt string) string {
-	if GetBoolOpt(allElementsOpt, optionValues) {
-		return ""
-	}
+func getMtaElementsList(mtaElements []string, optionValues map[string]interface{}) string {
 	return strings.Join(mtaElements, ",")
 }
 
@@ -216,8 +216,10 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	if operationID != "" || action != "" {
 		return c.ExecuteAction(operationID, action, host)
 	}
+	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
+	mtaElementsCalculator.calculateElementsToDeploy(optionValues)
 
-	mtaArchive, err := getMtaArchive(parser.Args(), optionValues)
+	mtaArchive, err := getMtaArchive(parser.Args(), mtaElementsCalculator)
 	if err != nil {
 		ui.Failed("Error retrieving MTA: %s", err.Error())
 		return Failure
@@ -316,6 +318,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
+	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
 	operation := processBuilder.Build()
 
@@ -334,13 +337,33 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
 }
 
-func getMtaArchive(parsedArguments []string, optionValues map[string]interface{}) (string, error) {
+func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, processBuilder *util.ProcessBuilder, mtaElementsCalculator mtaElementsToAddCalculator) {
+
+	if mtaElementsCalculator.shouldAddAllModules && mtaElementsCalculator.shouldAddAllResources {
+		return
+	}
+
+	if mtaElementsCalculator.shouldAddAllModules && !mtaElementsCalculator.shouldAddAllResources {
+		processBuilder.SetParameterWithoutCheck("resourcesForDeployment", resourcesList.getProcessList())
+		return
+	}
+
+	if !mtaElementsCalculator.shouldAddAllModules && mtaElementsCalculator.shouldAddAllResources {
+		processBuilder.SetParameterWithoutCheck("modulesForDeployment", modulesList.getProcessList())
+		return
+	}
+
+	processBuilder.SetParameterWithoutCheck("resourcesForDeployment", resourcesList.getProcessList())
+	processBuilder.SetParameterWithoutCheck("modulesForDeployment", modulesList.getProcessList())
+}
+
+func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsToAddCalculator) (string, error) {
 	if len(parsedArguments) == 0 {
 		currentWorkingDirectory, err := os.Getwd()
 		if err != nil {
 			return "", fmt.Errorf("Could not get the current working directory: %s", err.Error())
 		}
-		return buildMtaArchiveFromDirectory(currentWorkingDirectory, optionValues)
+		return buildMtaArchiveFromDirectory(currentWorkingDirectory, mtaElementsCalculator)
 	}
 
 	mtaArgument := parsedArguments[0]
@@ -353,16 +376,16 @@ func getMtaArchive(parsedArguments []string, optionValues map[string]interface{}
 		return mtaArgument, nil
 	}
 
-	return buildMtaArchiveFromDirectory(mtaArgument, optionValues)
+	return buildMtaArchiveFromDirectory(mtaArgument, mtaElementsCalculator)
 }
 
-func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, optionValues map[string]interface{}) (string, error) {
-	modulesToAdd, err := getModulesToAdd(mtaDirectoryLocation, optionValues)
+func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) (string, error) {
+	modulesToAdd, err := getModulesToAdd(mtaDirectoryLocation, mtaElementsCalculator)
 	if err != nil {
 		return "", err
 	}
 
-	resourcesToAdd, err := getResourcesToAdd(mtaDirectoryLocation, optionValues)
+	resourcesToAdd, err := getResourcesToAdd(mtaDirectoryLocation, mtaElementsCalculator)
 	if err != nil {
 		return "", err
 	}
@@ -370,9 +393,8 @@ func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, optionValues map[
 	return util.NewMtaArchiveBuilder(modulesToAdd, resourcesToAdd).Build(mtaDirectoryLocation)
 }
 
-func getModulesToAdd(mtaDirectoryLocation string, optionValues map[string]interface{}) ([]string, error) {
-
-	if optionValues == nil || GetBoolOpt(allModulesOpt, optionValues) || len(modulesList.getElements()) == 0 {
+func getModulesToAdd(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) ([]string, error) {
+	if mtaElementsCalculator.shouldAddAllModules {
 		deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
 		if err != nil {
 			return []string{}, err
@@ -388,9 +410,8 @@ func getModulesToAdd(mtaDirectoryLocation string, optionValues map[string]interf
 	return modulesList.getElements(), nil
 }
 
-func getResourcesToAdd(mtaDirectoryLocation string, optionValues map[string]interface{}) ([]string, error) {
-
-	if optionValues == nil || GetBoolOpt(allResourcesOpt, optionValues) || len(resourcesList.getElements()) == 0 {
+func getResourcesToAdd(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) ([]string, error) {
+	if mtaElementsCalculator.shouldAddAllResources {
 		deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
 		if err != nil {
 			return []string{}, err
@@ -404,6 +425,33 @@ func getResourcesToAdd(mtaDirectoryLocation string, optionValues map[string]inte
 	}
 
 	return resourcesList.getElements(), nil
+}
+
+type mtaElementsToAddCalculator struct {
+	shouldAddAllModules   bool
+	shouldAddAllResources bool
+}
+
+func (c *mtaElementsToAddCalculator) calculateElementsToDeploy(optionValues map[string]interface{}) {
+	allModulesSpecified := GetBoolOpt(allModulesOpt, optionValues)
+	allResourcesSpecified := GetBoolOpt(allResourcesOpt, optionValues)
+
+	if !allResourcesSpecified && len(resourcesList.getElements()) == 0 && !allModulesSpecified && len(modulesList.getElements()) == 0 {
+		// --all-resources ==false && no -r
+		c.shouldAddAllResources = true
+		c.shouldAddAllModules = true
+		return
+	}
+
+	if allModulesSpecified {
+		// --all-modules ==true , no matter if there is -m
+		c.shouldAddAllModules = true
+	}
+
+	if allResourcesSpecified {
+		// --all-modules ==true , no matter if there is -m
+		c.shouldAddAllResources = true
+	}
 }
 
 type deployCommandProcessTypeProvider struct{}
