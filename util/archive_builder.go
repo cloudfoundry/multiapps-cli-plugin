@@ -104,7 +104,7 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 		return "", err
 	}
 
-	mtaArchiveName := strings.Replace(descriptor.ID, ".", "-", -1) + ".mtar"
+	mtaArchiveName := descriptor.ID + ".mtar"
 	mtaArchiveLocation := filepath.Join(deploymentDescriptorLocation, mtaArchiveName)
 	err = CreateMtaArchive(mtaAssembly, mtaArchiveLocation)
 	if err != nil {
