@@ -1,3 +1,6 @@
+## v2.0.10
+* Add support for all-modules and all-resources
+
 ## v2.0.9
 * Add support for selective deployment
 
