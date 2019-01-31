@@ -134,10 +134,10 @@ var _ = Describe("FileUploader", func() {
 				client := fakeSlmpClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
 					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
-				var uploadedFiles []*models.FileMetadata
+				// var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, sessionProvider)
-					uploadedFiles, status = fileUploader.UploadFiles()
+					_, status = fileUploader.UploadFiles()
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))
 				// fullPath, _ := filepath.Abs(testFile.Name())
