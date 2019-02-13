@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	mtamodels "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -91,33 +92,40 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	ui.Say("Version: %s", util.GetMtaVersionAsString(mta))
 	ui.Say("\nApps:")
 	table := ui.Table([]string{"name", "requested state", "instances", "memory", "disk", "urls"})
-	serviceApps := make(map[string][]string)
-	for _, mtaModule := range mta.Modules {
-		app, err := c.cliConnection.GetApp(mtaModule.AppName)
-		if err != nil {
-			ui.Failed("Could not get app %s: %s", terminal.EntityNameColor(mtaModule.AppName), baseclient.NewClientError(err))
-			return Failure
-		}
-		table.Add(app.Name, app.State, getInstances(app), size(app.Memory), size(app.DiskQuota), getRoutes(app))
-		for _, service := range app.Services {
-			serviceApps[service.Name] = append(serviceApps[service.Name], app.Name)
+	// GetApps() is more safe than GetApp(), because it retrieves all application statistics through a single call,
+	// whereas GetApp(name) makes several calls, some of which may fail under specific conditions. For example,
+	// the call to /v2/apps/<GUID>/instances may fail if the application is not yet staged. Weirdly enough, a call
+	// to GetApps() is also faster than several calls to GetApp(name).
+	apps, err := c.cliConnection.GetApps()
+	if err != nil {
+		ui.Failed("Could not get apps: %s", baseclient.NewClientError(err))
+		return Failure
+	}
+	for _, app := range apps {
+		if isMtaAssociatedApp(mta, app) {
+			table.Add(app.Name, app.State, getInstances(app), size(app.Memory), size(app.DiskQuota), getRoutes(app))
 		}
 	}
 	table.Print()
-	if len(mta.Services) > 0 {
-		ui.Say("\nServices:")
-		table := ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
-		for _, serviceName := range mta.Services {
-			service, err := c.cliConnection.GetService(serviceName)
-			if err != nil {
-				ui.Failed("Could not get service %s: %s", terminal.EntityNameColor(serviceName), baseclient.NewClientError(err))
-				return Failure
-			}
-			table.Add(service.Name, service.ServiceOffering.Name, service.ServicePlan.Name,
-				getBoundApps(service, serviceApps), getLastOperation(service))
-		}
-		table.Print()
+
+	if len(mta.Services) == 0 {
+		return Success
 	}
+	ui.Say("\nServices:")
+	table = ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
+	// Read the comment for GetApps(). The same applies for GetServices().
+	services, err := c.cliConnection.GetServices()
+	if err != nil {
+		ui.Failed("Could not get services: %s", baseclient.NewClientError(err))
+		return Failure
+	}
+	for _, service := range services {
+		if isMtaAssociatedService(mta, service) {
+			table.Add(service.Name, service.Service.Name, service.ServicePlan.Name, strings.Join(service.ApplicationNames, ", "), getLastOperation(service))
+		}
+	}
+	table.Print()
+
 	return Success
 }
 
@@ -125,11 +133,11 @@ func size(n int64) string {
 	return formatters.ByteSize(n * formatters.MEGABYTE)
 }
 
-func getInstances(app plugin_models.GetAppModel) string {
-	return strconv.Itoa(app.RunningInstances) + "/" + strconv.Itoa(app.InstanceCount)
+func getInstances(app plugin_models.GetAppsModel) string {
+	return strconv.Itoa(app.RunningInstances) + "/" + strconv.Itoa(app.TotalInstances)
 }
 
-func getRoutes(app plugin_models.GetAppModel) string {
+func getRoutes(app plugin_models.GetAppsModel) string {
 	var urls []string
 	for _, route := range app.Routes {
 		urls = append(urls, route.Host+"."+route.Domain.Name)
@@ -137,10 +145,24 @@ func getRoutes(app plugin_models.GetAppModel) string {
 	return strings.Join(urls, ", ")
 }
 
-func getBoundApps(service plugin_models.GetService_Model, serviceApps map[string][]string) string {
-	return strings.Join(serviceApps[service.Name], ", ")
+func getLastOperation(service plugin_models.GetServices_Model) string {
+	return service.LastOperation.Type + " " + service.LastOperation.State
 }
 
-func getLastOperation(service plugin_models.GetService_Model) string {
-	return service.LastOperation.Type + " " + service.LastOperation.State
+func isMtaAssociatedApp(mta *mtamodels.Mta, app plugin_models.GetAppsModel) bool {
+	for _, module := range mta.Modules {
+		if module.AppName == app.Name {
+			return true
+		}
+	}
+	return false
+}
+
+func isMtaAssociatedService(mta *mtamodels.Mta, service plugin_models.GetServices_Model) bool {
+	for _, serviceName := range mta.Services {
+		if serviceName == service.Name {
+			return true
+		}
+	}
+	return false
 }

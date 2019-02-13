@@ -47,8 +47,18 @@ func (b *FakeCliConnectionBuilder) GetApp(name string, app plugin_models.GetAppM
 	return b
 }
 
+func (b *FakeCliConnectionBuilder) GetApps(apps []plugin_models.GetAppsModel, err error) *FakeCliConnectionBuilder {
+	b.cliConn.GetAppsReturns(apps, err)
+	return b
+}
+
 func (b *FakeCliConnectionBuilder) GetService(name string, service plugin_models.GetService_Model, err error) *FakeCliConnectionBuilder {
 	b.cliConn.GetServiceReturns(service, err) // TODO
+	return b
+}
+
+func (b *FakeCliConnectionBuilder) GetServices(services []plugin_models.GetServices_Model, err error) *FakeCliConnectionBuilder {
+	b.cliConn.GetServicesReturns(services, err)
 	return b
 }
 
