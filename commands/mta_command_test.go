@@ -54,8 +54,9 @@ var _ = Describe("MtaCommand", func() {
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).
-				GetApp("", getGetAppModel("test-mta-module-1", "started", 1, 1, 512, 1024, "test-1", "bosh-lite.com", "test-service-1"), nil).
-				GetService("", getGetServiceModel("test-service-1", "test", "free", "create", "succeeded"), nil).Build()
+				GetApps([]plugin_models.GetAppsModel{getGetAppsModel("test-mta-module-1", "started", 1, 1, 512, 1024, "test-1", "bosh-lite.com")}, nil).
+				GetServices([]plugin_models.GetServices_Model{getGetServicesModel("test-service-1", "test", "free", "create", "succeeded", []string{"test-mta-module-1"})}, nil).
+				Build()
 			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMta("test", nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
@@ -164,43 +165,39 @@ var _ = Describe("MtaCommand", func() {
 	})
 })
 
-func getGetAppModel(name, state string, runningInstances, instanceCount int,
-	memory, diskQuota int64, host, domain, serviceName string) plugin_models.GetAppModel {
-	return plugin_models.GetAppModel{
+func getGetAppsModel(name, state string, runningInstances, totalInstances int,
+	memory, diskQuota int64, host, domain string) plugin_models.GetAppsModel {
+	return plugin_models.GetAppsModel{
 		Name:             name,
 		State:            state,
 		RunningInstances: runningInstances,
-		InstanceCount:    instanceCount,
+		TotalInstances:   totalInstances,
 		Memory:           memory,
 		DiskQuota:        diskQuota,
-		Routes: []plugin_models.GetApp_RouteSummary{
-			plugin_models.GetApp_RouteSummary{
+		Routes: []plugin_models.GetAppsRouteSummary{
+			plugin_models.GetAppsRouteSummary{
 				Host: host,
-				Domain: plugin_models.GetApp_DomainFields{
+				Domain: plugin_models.GetAppsDomainFields{
 					Name: domain,
 				},
-			},
-		},
-		Services: []plugin_models.GetApp_ServiceSummary{
-			plugin_models.GetApp_ServiceSummary{
-				Name: serviceName,
 			},
 		},
 	}
 }
 
-func getGetServiceModel(name, offering, plan, opType, opState string) plugin_models.GetService_Model {
-	return plugin_models.GetService_Model{
+func getGetServicesModel(name, offering, plan, opType, opState string, boundApplications []string) plugin_models.GetServices_Model {
+	return plugin_models.GetServices_Model{
 		Name: name,
-		ServiceOffering: plugin_models.GetService_ServiceFields{
+		Service: plugin_models.GetServices_ServiceFields{
 			Name: offering,
 		},
-		ServicePlan: plugin_models.GetService_ServicePlan{
+		ServicePlan: plugin_models.GetServices_ServicePlan{
 			Name: plan,
 		},
-		LastOperation: plugin_models.GetService_LastOperation{
+		LastOperation: plugin_models.GetServices_LastOperation{
 			Type:  opType,
 			State: opState,
 		},
+		ApplicationNames: boundApplications,
 	}
 }
