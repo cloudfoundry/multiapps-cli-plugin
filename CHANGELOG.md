@@ -1,3 +1,6 @@
+## v2.0.11
+* Fix 'cf mta' command when there are non-staged apps
+
 ## v2.0.10
 * Add support for all-modules and all-resources
 
