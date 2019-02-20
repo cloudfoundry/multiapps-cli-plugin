@@ -153,6 +153,30 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
 				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
 			})
+
+		})
+		Context("With deployment descriptor which contains only valid modules with same paths", func() {
+			It("should build the MTA Archive containing the valid modules", func() {
+				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
+				os.Create(requiredDependencyContent)
+				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
+					util.Module{Name: "TestModule", Path: requiredDependencyContent},
+					util.Module{Name: "TestModule1", Path: requiredDependencyContent},
+				}}
+				generatedYamlBytes, _ := yaml.Marshal(descriptor)
+				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
+				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule", "TestModule1"}, []string{}).Build(tempDirLocation)
+				defer os.Remove(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				_, err = os.Stat(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": requiredDependencyContent}))
+			})
 		})
 		Context("With deployment descriptor which contains only valid resources", func() {
 			It("Should build the MTA Archive containing the valid resources", func() {

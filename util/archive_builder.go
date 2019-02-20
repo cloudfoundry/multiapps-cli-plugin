@@ -207,12 +207,25 @@ func copy(src, dest string) error {
 
 func buildSection(elements map[string]string, locatorName string) []ManifestSection {
 	result := make([]ManifestSection, 0)
+	for key, value := range concatenateElementsWithSameValue(elements) {
+		manifestSectionBuilder := NewMtaManifestSectionBuilder()
+		manifestSectionBuilder.Name(key)
+		manifestSectionBuilder.Attribute(locatorName, strings.Join(value, ","))
+		result = append(result, manifestSectionBuilder.Build())
+	}
+	return result
+}
+
+func concatenateElementsWithSameValue(elements map[string]string) map[string][]string {
+	result := make(map[string][]string)
 	for key, value := range elements {
-		if value != "" {
-			manifestSectionBuilder := NewMtaManifestSectionBuilder()
-			manifestSectionBuilder.Name(value)
-			manifestSectionBuilder.Attribute(locatorName, key)
-			result = append(result, manifestSectionBuilder.Build())
+		if value == "" {
+			continue
+		}
+		if len(result[value]) != 0 {
+			result[value] = append(result[value], key)
+		} else {
+			result[value] = []string{key}
 		}
 	}
 	return result
