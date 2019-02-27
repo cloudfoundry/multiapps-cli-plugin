@@ -23,7 +23,11 @@ func shouldRetry(err error) bool {
 	if err == nil {
 		return false
 	}
-	isMatching, _ := regexp.MatchString(" EOF$", err.Error())
+	isMatching := strings.Contains(err.Error(), "retry is needed")
+	if isMatching {
+		return true
+	}
+	isMatching, _ = regexp.MatchString(" EOF$", err.Error())
 	if isMatching {
 		return true
 	}

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -53,16 +52,6 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 		terminal.EntityNameColor(context.Space),
 		terminal.EntityNameColor(context.Username))
 
-	sessionProvider, err := c.NewSessionProvider(host)
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token provider for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-	err = sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
 	rc, err := c.NewRestClient(host)
 	if err != nil {
 		c.reportError(baseclient.NewClientError(err))
@@ -80,10 +69,4 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 
 func (c *PurgeConfigCommand) reportError(err error) {
 	ui.Failed("Could not purge configuration: %v\n", err)
-}
-
-// NewSessionProvider Returns a new SessionProvider - responponsible for giving a unique token each time
-func (c *PurgeConfigCommand) NewSessionProvider(host string) (csrf.SessionProvider, error) {
-	// TODO: introduce a factory for the different SessionProviders
-	return c.NewManagementRestClient(host)
 }

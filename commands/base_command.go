@@ -13,12 +13,12 @@ import (
 	"unicode"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients"
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -151,12 +151,6 @@ func (c *BaseCommand) NewManagementMtaClient(host string) (mtaclient.MtaClientOp
 	return c.clientFactory.NewManagementMtaClient(host, c.transport, c.jar, c.tokenFactory), nil
 }
 
-// NewSessionProvider Returns a new SessionProvider - responponsible for giving a unique token each time
-func (c *BaseCommand) NewSessionProvider(host string) (csrf.SessionProvider, error) {
-	// TODO: introduce a factory for the different SessionProviders
-	return c.NewManagementMtaClient(host)
-}
-
 // Context holding the username, Org and Space of the current used
 type Context struct {
 	Username string
@@ -256,10 +250,8 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) Executio
 		return Failure
 	}
 
-	sessionProvider, _ := c.NewSessionProvider(host)
-
 	// Executes the action specified with actionID
-	return action.Execute(operationID, mtaClient, sessionProvider)
+	return action.Execute(operationID, mtaClient)
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
@@ -278,8 +270,7 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 		// Abort the conflict process if confirmed by the user
 		if c.shouldAbortConflictingOperation(mtaID, force) {
 			action := GetActionToExecute("abort", c.name)
-			sessionProvider, _ := c.NewSessionProvider(host)
-			status := action.Execute(ongoingOperation.ProcessID, mtaClient, sessionProvider)
+			status := action.Execute(ongoingOperation.ProcessID, mtaClient)
 			if status == Failure {
 				return false, nil
 			}
@@ -342,13 +333,23 @@ func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) 
 }
 
 func newTransport() http.RoundTripper {
-	csrfx := csrf.Csrf{Header: "", Token: ""}
+	csrfx := csrf.Csrf{Header: "", Token: "", IsInitialized: false}
 	// TODO Make sure SSL verification is only skipped if the CLI is configured this way
 	httpTransport := http.DefaultTransport.(*http.Transport)
 	// Increase tls handshake timeout to cope with  of slow internet connection. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
 	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	return csrf.Transport{Transport: httpTransport, Csrf: &csrfx}
+	return csrf.Transport{Transport: httpTransport, Csrf: &csrfx, NonProtectedMethods: getNonProtectedMethods()}
+}
+
+func getNonProtectedMethods() map[string]bool {
+	nonProtectedMethods := make(map[string]bool)
+
+	nonProtectedMethods[http.MethodGet] = true
+	nonProtectedMethods[http.MethodHead] = true
+	nonProtectedMethods[http.MethodOptions] = true
+
+	return nonProtectedMethods
 }
 
 func newCookieJar() http.CookieJar {

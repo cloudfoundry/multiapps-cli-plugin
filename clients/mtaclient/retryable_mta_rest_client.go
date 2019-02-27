@@ -117,7 +117,9 @@ func (c RetryableMtaRestClient) StartMtaOperation(operation models.Operation) (R
 }
 func (c RetryableMtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
 	uploadMtaFileCb := func() (interface{}, error) {
-		return c.mtaClient.UploadMtaFile(file)
+		reopenedFile, _ := os.Open(file.Name())
+
+		return c.mtaClient.UploadMtaFile(*reopenedFile)
 	}
 	resp, err := baseclient.CallWithRetry(uploadMtaFileCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {
@@ -134,24 +136,4 @@ func (c RetryableMtaRestClient) GetMtaOperationLogContent(operationID, logID str
 		return "", err
 	}
 	return resp.(string), nil
-}
-func (c RetryableMtaRestClient) GetCsrfToken() error {
-	getCsrfTokenCb := func() (interface{}, error) {
-		return nil, c.mtaClient.GetCsrfToken()
-	}
-	_, err := baseclient.CallWithRetry(getCsrfTokenCb, c.MaxRetriesCount, c.RetryInterval)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (c RetryableMtaRestClient) GetSession() error {
-	getSessionCb := func() (interface{}, error) {
-		return nil, c.mtaClient.GetSession()
-	}
-	_, err := baseclient.CallWithRetry(getSessionCb, c.MaxRetriesCount, c.RetryInterval)
-	if err != nil {
-		return err
-	}
-	return nil
 }

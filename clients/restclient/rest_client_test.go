@@ -36,5 +36,5 @@ func newRestClient(statusCode int, v interface{}) restclient.RestClientOperation
 	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
 	cookieJar, _ := cookiejar.New(nil)
 	roundTripper := testutil.NewCustomTransport(statusCode, v)
-	return restclient.NewRestClient("http://localhost:1000", "test-org", "test-space", roundTripper, cookieJar, tokenFactory)
+	return restclient.NewRestClient("localhost:1000", "test-org", "test-space", roundTripper, cookieJar, tokenFactory)
 }

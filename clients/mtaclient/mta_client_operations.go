@@ -20,8 +20,6 @@ type MtaClientOperations interface {
 	StartMtaOperation(operation models.Operation) (ResponseHeader, error)
 	UploadMtaFile(file os.File) (*models.FileMetadata, error)
 	GetMtaOperationLogContent(operationID, logID string) (string, error)
-	GetCsrfToken() error
-	GetSession() error
 }
 
 // ResponseHeader response header

@@ -2,14 +2,13 @@ package mtaclient
 
 import (
 	"context"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/operations"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"net/http"
 	"os"
-
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	operations "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/operations"
-	"github.com/go-openapi/runtime"
-	strfmt "github.com/go-openapi/strfmt"
 )
 
 const spacesURL string = "spaces/"
@@ -182,12 +181,19 @@ func (c MtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error)
 	}
 
 	result, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
-		return c.client.Operations.UploadMtaFile(params, token)
+		result, err := c.client.Operations.UploadMtaFile(params, token)
+		if err != nil {
+			return nil, err
+		}
+
+		return result, nil
 	})
+
 
 	if err != nil {
 		return nil, baseclient.NewClientError(err)
 	}
+
 	return result.(*operations.UploadMtaFileCreated).Payload, nil
 }
 
@@ -203,18 +209,6 @@ func (c MtaRestClient) GetMtaOperationLogContent(operationID, logID string) (str
 	})
 
 	return result.(*operations.GetMtaOperationLogContentOK).Payload, baseclient.NewClientError(err)
-}
-
-func (c MtaRestClient) GetCsrfToken() error {
-	_, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
-		return c.client.Operations.GetCsrfToken(nil, token)
-	})
-	return err
-}
-
-func (c MtaRestClient) GetSession() error {
-	c.GetCsrfToken()
-	return c.GetCsrfToken()
 }
 
 func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token runtime.ClientAuthInfoWriter) (interface{}, error)) (interface{}, error) {

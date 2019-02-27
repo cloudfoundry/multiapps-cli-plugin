@@ -137,16 +137,6 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	sessionProvider, err := c.NewSessionProvider(host)
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token provider for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-	err = sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
 
 	processBuilder := util.NewProcessBuilder()
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
@@ -164,8 +154,6 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not create undeploy process: %s", err)
 		return Failure
 	}
-
-	sessionProvider.GetSession()
 
 	// Monitor process execution
 	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()

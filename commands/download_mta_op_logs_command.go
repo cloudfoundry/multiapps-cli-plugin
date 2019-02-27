@@ -86,16 +86,6 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 		return Failure
 	}
 
-	sessionProvider, err := c.NewSessionProvider(host)
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token provider for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-	err = sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
 	// Download all logs
 	downloadedLogs := make(map[string]*string)
 	logs, err := mtaClient.GetMtaOperationLogs(operationID)
