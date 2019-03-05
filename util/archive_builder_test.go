@@ -2,16 +2,16 @@ package util_test
 
 import (
 	"archive/zip"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var _ = Describe("ArchiveBuilder", func() {
@@ -22,8 +22,8 @@ var _ = Describe("ArchiveBuilder", func() {
 		})
 		Context("With not existing resources", func() {
 			It("should try to find the directory and fail with error", func() {
-				_, err := util.NewMtaArchiveBuilder([]string{}, []string{}).Build("not-existing-location/")
-				Expect(err).To(MatchError("Deployment descriptor location does not exist not-existing-location/"))
+				_, err := util.NewMtaArchiveBuilder([]string{}, []string{}).Build("not-existing-location")
+				Expect(err).To(MatchError("Deployment descriptor location does not exist not-existing-location"))
 			})
 			It("should try to find the deployment descriptor in the provided location and fail with error", func() {
 				_, err := util.NewMtaArchiveBuilder([]string{}, []string{}).Build(tempDirLocation)
@@ -40,7 +40,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
 				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
-				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*/not-existing-path not found"))
+				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-path not found"))
 			})
 
 			It("Try to parse the specified resources and fail as the paths are not existing", func() {
@@ -53,7 +53,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
 				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{}, []string{"foo"}).Build(tempDirLocation)
-				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*/not-existing-resource-path not found"))
+				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-resource-path not found"))
 			})
 
 			It("Try to parse the specified required dependencies config paths and fail as the paths are not existing", func() {
@@ -71,7 +71,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
 				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
-				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*/not-existing-required-dependency-path not found"))
+				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-required-dependency-path not found"))
 			})
 		})
 
@@ -286,10 +286,15 @@ func isManifestValid(manifestLocation string, searchCriteria map[string]string, 
 			manifestBytes, _ := ioutil.ReadAll(reader)
 			manifestSplittedByNewLine := strings.Split(string(manifestBytes), "\n")
 			for _, manifestSectionElement := range manifestSplittedByNewLine {
-				manifestLineElements := strings.Split(manifestSectionElement, ":")
-				if searchCriteria[manifestLineElements[0]] != "" {
-					delete(searchCriteria, manifestLineElements[0])
-					searchCriteriaResult[manifestLineElements[0]] = strings.Trim(manifestLineElements[1], " ")
+				if strings.Trim(manifestSectionElement, " ") == "" {
+					continue
+				}
+				separatorIndex := strings.Index(manifestSectionElement, ":")
+				key := manifestSectionElement[:separatorIndex]
+				value := manifestSectionElement[separatorIndex+1:]
+				if searchCriteria[key] != "" {
+					delete(searchCriteria, key)
+					searchCriteriaResult[key] = strings.Trim(value, " ")
 				}
 			}
 			break
