@@ -2,16 +2,16 @@ package util_test
 
 import (
 	"archive/zip"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var _ = Describe("ArchiveBuilder", func() {
@@ -40,7 +40,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
 				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
-				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*/not-existing-path not found"))
+				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-path not found"))
 			})
 
 			It("Try to parse the specified resources and fail as the paths are not existing", func() {
@@ -53,7 +53,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
 				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{}, []string{"foo"}).Build(tempDirLocation)
-				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*/not-existing-resource-path not found"))
+				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-resource-path not found"))
 			})
 
 			It("Try to parse the specified required dependencies config paths and fail as the paths are not existing", func() {
@@ -71,7 +71,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
 				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
-				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*/not-existing-required-dependency-path not found"))
+				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-required-dependency-path not found"))
 			})
 		})
 
@@ -149,9 +149,9 @@ var _ = Describe("ArchiveBuilder", func() {
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
 				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
 			})
 		})
 		Context("With deployment descriptor which contains only valid resources", func() {
@@ -170,9 +170,9 @@ var _ = Describe("ArchiveBuilder", func() {
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
 				Expect(isInArchive("test-resource-1-content", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": resourceContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": resourceContent}))
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": resourceContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": resourceContent}))
 				defer os.Remove(mtaArchiveLocation)
 			})
 			It("Should build the MTA Archive containing the resources and add them in the MANIFEST.MF only", func() {
@@ -187,9 +187,9 @@ var _ = Describe("ArchiveBuilder", func() {
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
 				Expect(isInArchive("test-resource-1-content", mtaArchiveLocation)).To(BeFalse())
-				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource"}, mtaArchiveLocation)).To(Equal(map[string]string{}))
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource"}, mtaArchiveLocation)).To(Equal(map[string]string{}))
 				defer os.Remove(mtaArchiveLocation)
 			})
 
@@ -219,9 +219,9 @@ var _ = Describe("ArchiveBuilder", func() {
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
 				Expect(isInArchive("test-required-dep-1-content", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
-				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": requiredDependencyContent}))
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF"+string(os.PathSeparator)+"mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF"+string(os.PathSeparator)+"MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": requiredDependencyContent}))
 			})
 		})
 
@@ -262,10 +262,15 @@ func isManifestValid(manifestLocation string, searchCriteria map[string]string, 
 			manifestBytes, _ := ioutil.ReadAll(reader)
 			manifestSplittedByNewLine := strings.Split(string(manifestBytes), "\n")
 			for _, manifestSectionElement := range manifestSplittedByNewLine {
-				manifestLineElements := strings.Split(manifestSectionElement, ":")
-				if searchCriteria[manifestLineElements[0]] != "" {
-					delete(searchCriteria, manifestLineElements[0])
-					searchCriteriaResult[manifestLineElements[0]] = strings.Trim(manifestLineElements[1], " ")
+				if strings.Trim(manifestSectionElement, " ") == "" {
+					continue
+				}
+				separatorIndex := strings.Index(manifestSectionElement, ":")
+				key := manifestSectionElement[:separatorIndex]
+				value := manifestSectionElement[separatorIndex+1:]
+				if searchCriteria[key] != "" {
+					delete(searchCriteria, key)
+					searchCriteriaResult[key] = strings.Trim(value, " ")
 				}
 			}
 			break
