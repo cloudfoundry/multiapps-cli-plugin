@@ -102,6 +102,8 @@ func CreateMtaArchive(source, target string) error {
 		}
 		header.Method = zip.Deflate
 
+		header.Name = filepath.ToSlash(header.Name)
+
 		writer, err := archive.CreateHeader(header)
 		if err != nil {
 			return err
