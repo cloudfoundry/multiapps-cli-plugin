@@ -72,7 +72,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 		m.reportOperationMessages(operation)
 		switch operation.State {
 		case models.StateRUNNING:
-			time.Sleep(2000)
+			time.Sleep(3 * time.Second)
 		case models.StateFINISHED:
 			ui.Say("Process finished.")
 			m.reportCommandForDownloadOfProcessLogs(m.operationID)
