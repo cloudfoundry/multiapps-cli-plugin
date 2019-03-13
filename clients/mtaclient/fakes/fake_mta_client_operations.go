@@ -710,14 +710,6 @@ func (fake *FakeMtaClientOperations) GetMtaOperationLogContentReturnsOnCall(i in
 	}{result1, result2}
 }
 
-func (fake FakeMtaClientOperations) GetCsrfToken() error {
-	return nil
-}
-
-func (fake FakeMtaClientOperations) GetSession() error {
-	return nil
-}
-
 func (fake *FakeMtaClientOperations) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()

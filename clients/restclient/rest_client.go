@@ -49,21 +49,6 @@ func (c RestClient) PurgeConfiguration(org, space string) error {
 	return nil
 }
 
-func (c RestClient) getCsrfToken() error {
-	_, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
-		return c.Client.Operations.GetCsrfToken(nil, token)
-	})
-	if err != nil {
-		return baseclient.NewClientError(err)
-	}
-	return nil
-}
-
-func (c RestClient) GetSession() error {
-	c.getCsrfToken()
-	return c.getCsrfToken()
-}
-
 func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token runtime.ClientAuthInfoWriter) (interface{}, error)) (interface{}, error) {
 	token, err := tokenProvider.NewToken()
 	if err != nil {

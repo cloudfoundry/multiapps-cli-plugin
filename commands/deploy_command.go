@@ -270,19 +270,8 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	if !wasAborted {
 		return Failure
 	}
-
 	// Check SLMP metadata
 	// TODO: ensure session
-	sessionProvider, err := c.NewSessionProvider(host)
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token provider for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-	err = sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		ui.Failed("Could not get space guid:", baseclient.NewClientError(err))
@@ -290,7 +279,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Upload the MTA archive file
-	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, sessionProvider)
+	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient)
 	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()
 	if status == Failure {
 		return Failure
@@ -303,7 +292,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Upload the extension descriptor files
 	var uploadedExtDescriptorIDs []string
 	if len(extDescriptorPaths) != 0 {
-		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, sessionProvider)
+		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient)
 		uploadedExtDescriptors, status := extDescriptorsUploader.UploadFiles()
 		if status == Failure {
 			return Failure
@@ -321,12 +310,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
 	operation := processBuilder.Build()
-
-	err = sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve x-csrf-token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
 
 	// Create the new process
 	responseHeader, err := mtaClient.StartMtaOperation(*operation)

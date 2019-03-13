@@ -33,14 +33,3 @@ func (c RetryableRestClient) PurgeConfiguration(org, space string) error {
 	_, err := baseclient.CallWithRetry(purgeConfigurationCb, c.MaxRetriesCount, c.RetryInterval)
 	return err
 }
-
-func (c RetryableRestClient) GetSession() error {
-	getSessionCb := func() (interface{}, error) {
-		return nil, c.RestClient.GetSession()
-	}
-	_, err := baseclient.CallWithRetry(getSessionCb, c.MaxRetriesCount, c.RetryInterval)
-	if err != nil {
-		return err
-	}
-	return nil
-}

@@ -23,8 +23,7 @@ func shouldRetry(err error) bool {
 	if err == nil {
 		return false
 	}
-	isMatching, _ := regexp.MatchString(" EOF$", err.Error())
-	if isMatching {
+	if isMatching(err) {
 		return true
 	}
 	ae, ok := err.(*ClientError)
@@ -36,6 +35,16 @@ func shouldRetry(err error) bool {
 		}
 	}
 	return false
+}
+
+func isMatching(err error) bool {
+	return strings.Contains(err.Error(), "retry is needed") || isErrorEOF(err)
+}
+
+func isErrorEOF(err error) bool {
+	isMatching, _ := regexp.MatchString(" EOF$", err.Error())
+
+	return isMatching
 }
 
 func EncodeArg(arg string) string {
