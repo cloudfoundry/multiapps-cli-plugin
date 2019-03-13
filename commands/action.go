@@ -2,16 +2,15 @@ package commands
 
 import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
 )
 
 // Action interface representing actions to be excuted on processes
 type Action interface {
-	Execute(operationID string, mtaClient mtaclient.MtaClientOperations, sessionProvider csrf.SessionProvider) ExecutionStatus
+	Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus
 }
 
 // GetActionToExecute returns the action to execute specified with action id
@@ -51,12 +50,7 @@ type action struct {
 	actionID string
 }
 
-func (a *action) Execute(operationID string, mtaClient mtaclient.MtaClientOperations, sessionProvider csrf.SessionProvider) ExecutionStatus {
-	err := sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve CSRF token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
+func (a *action) Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
 	return a.executeInSession(operationID, mtaClient)
 }
 
@@ -94,12 +88,7 @@ type monitoringAction struct {
 	commandName string
 }
 
-func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaClientOperations, sessionProvider csrf.SessionProvider) ExecutionStatus {
-	err := sessionProvider.GetSession()
-	if err != nil {
-		ui.Failed("Could not retrieve CSRF token for the current session: %s", baseclient.NewClientError(err))
-		return Failure
-	}
+func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
 
 	// Get the messages of the operation before it's retried/resumed, so that the monitor knows they're from the previous execution and
 	// should not show them again.

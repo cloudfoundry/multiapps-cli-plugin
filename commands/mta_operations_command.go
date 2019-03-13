@@ -24,7 +24,7 @@ func (c *MtaOperationsCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: "cf mta-ops [-u URL] [--last NUM] [--all]",
 			Options: map[string]string{
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				"u":                         "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				util.GetShortOption("last"): "List last NUM operations",
 				util.GetShortOption("all"):  "List all operations, not just the active ones",
 			},

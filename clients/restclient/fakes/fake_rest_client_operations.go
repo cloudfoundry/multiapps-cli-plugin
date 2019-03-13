@@ -51,8 +51,4 @@ func (fake *FakeRestClientOperations) PurgeConfigurationReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRestClientOperations) GetSession() error {
-	return nil
-}
-
 var _ restclient.RestClientOperations = new(FakeRestClientOperations)

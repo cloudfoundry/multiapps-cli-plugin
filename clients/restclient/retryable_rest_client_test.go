@@ -84,12 +84,6 @@ func (c *MockRestClient) PurgeConfiguration(org, space string) error {
 	return c.restClient.PurgeConfiguration(org, space)
 }
 
-// GetSession get session
-func (c *MockRestClient) GetSession() error {
-	c.retriesCount++
-	return c.restClient.GetSession()
-}
-
 // GetRetriesCount returns retries count
 func (c *MockRestClient) GetRetriesCount() int {
 	return c.retriesCount

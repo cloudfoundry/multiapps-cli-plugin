@@ -3,7 +3,6 @@ package commands_test
 import (
 	"fmt"
 
-	csrf_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
@@ -20,13 +19,11 @@ var _ = Describe("Actions", func() {
 	const commandName = "deploy"
 	var mtaClient fakes.FakeMtaClientOperations
 
-	var sessionProvider csrf_fakes.FakeSessionProvider
 	var action commands.Action
 	var oc = testutil.NewUIOutputCapturer()
 	var ex = testutil.NewUIExpector()
 
 	BeforeEach(func() {
-		sessionProvider = csrf_fakes.NewFakeSessionProviderBuilder().GetSession(nil).Build()
 		ui.DisableTerminalOutput(true)
 	})
 
@@ -43,7 +40,7 @@ var _ = Describe("Actions", func() {
 			Context("with no error returned from the backend", func() {
 				It("should abort the process and exit with zero status", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...\n", "OK\n"})
 				})
@@ -55,7 +52,7 @@ var _ = Describe("Actions", func() {
 						ExecuteAction(operationID, "abort", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation test-process-id: test-error", 1)
 				})
@@ -67,7 +64,7 @@ var _ = Describe("Actions", func() {
 						ExecuteAction(operationID, "abort", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectFailure(status, output, "Action 'abort' is not possible for operation test-process-id")
 				})
@@ -78,7 +75,7 @@ var _ = Describe("Actions", func() {
 						GetOperationActions(operationID, nil, fmt.Errorf("test-error")).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectFailure(status, output, "Could not retrieve possible actions for operation test-process-id: test-error")
 				})
@@ -100,7 +97,7 @@ var _ = Describe("Actions", func() {
 			Context("with no error returned from the backend", func() {
 				It("should retry the process and exit with zero status", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...\n", "OK\n",
 						"Process finished.\n", "Use \"cf dmol -i " + operationID + "\" to download the logs of the process.\n"})
@@ -114,7 +111,7 @@ var _ = Describe("Actions", func() {
 						GetMtaOperation(operationID, "messages", &testutil.SimpleOperationResult, nil).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectFailureOnLine(status, output, "Could not execute action 'retry' on operation test-process-id: test-error", 1)
 				})
@@ -134,7 +131,7 @@ var _ = Describe("Actions", func() {
 						GetMtaOperation(operationID, "messages", &testutil.SimpleOperationResult, nil).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectSuccessWithOutput(status, output, []string{
 						"Process finished.\n",
@@ -157,7 +154,7 @@ var _ = Describe("Actions", func() {
 						GetMtaOperation(operationID, "messages", operation, nil).
 						Build()
 					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient, sessionProvider).ToInt()
+						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectNonZeroStatus(status)
 					ex.ExpectMessageOnLine(output, "Could not create application 'foo'", 0)
