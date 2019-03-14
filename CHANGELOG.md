@@ -1,3 +1,9 @@
+## v2.0.12
+* Fix selective deployment on Windows
+* Fix selective deployment with modules sharing the same binary
+* Stop DDoS attacks against the multiapps-controller
+* Retry on "Invalid CSRF token" errors
+
 ## v2.0.11
 * Fix 'cf mta' command when there are non-staged apps
 
