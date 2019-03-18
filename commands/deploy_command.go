@@ -226,7 +226,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Print initial message
-	ui.Say("Deploying multi-target app archive %s in org %s / space %s as %s...",
+	ui.Say("Deploying multi-target app archive %s in org %s / space %s as %s...\n",
 		terminal.EntityNameColor(mtaArchive), terminal.EntityNameColor(context.Org),
 		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
 

@@ -15,7 +15,11 @@ func generateHash() string {
 }
 
 // SplitFile ...
-func SplitFile(filePath string) ([]string, error) {
+func SplitFile(filePath string, fileChunkSizeInMb uint64) ([]string, error) {
+	if fileChunkSizeInMb == 0 {
+		return []string{filePath}, nil
+	}
+
 	file, err := os.Open(filePath)
 
 	if err != nil {
@@ -26,13 +30,11 @@ func SplitFile(filePath string) ([]string, error) {
 
 	fileInfo, _ := file.Stat()
 
-	var fileSize = fileInfo.Size()
-
-	const fileChunk = 45 * (1 << 20) // 45 MB
+	var fileSize = uint64(fileInfo.Size())
+	var fileChunkSize = toBytes(fileChunkSizeInMb)
 
 	// calculate total number of parts the file will be chunked into
-
-	totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunk)))
+	totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunkSize)))
 
 	baseFileName := filepath.Base(filePath)
 	var fileParts []string
@@ -53,7 +55,7 @@ func SplitFile(filePath string) ([]string, error) {
 		}
 		defer filePart.Close()
 
-		partSize := int64(math.Min(fileChunk, float64(fileSize-int64(i*fileChunk))))
+		partSize := int64(minUint64(fileChunkSize, fileSize-i*fileChunkSize))
 		_, err = io.CopyN(filePart, file, partSize)
 		if err != nil {
 			return nil, err
@@ -62,4 +64,15 @@ func SplitFile(filePath string) ([]string, error) {
 		fileParts = append(fileParts, filePart.Name())
 	}
 	return fileParts, nil
+}
+
+func minUint64(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func toBytes(mb uint64) uint64 {
+	return uint64(mb) * 1024 * 1024
 }

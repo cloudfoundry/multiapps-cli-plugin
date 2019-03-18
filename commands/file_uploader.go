@@ -5,6 +5,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
@@ -15,6 +16,11 @@ import (
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	defaultChunkSizeInMb = 45
+	chunkSizeInMbEnv     = "CHUNK_SIZE_IN_MB"
 )
 
 //FileUploader uploads files for the service with the specified service ID
@@ -73,6 +79,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	uploadedFiles := []*models.FileMetadata{}
 	uploadedFiles = append(uploadedFiles, alreadyUploadedFiles...)
 	if len(filesToUpload) != 0 {
+		chunkSizeInMb := getChunkSizeInMb()
 		ui.Say("Uploading %d files...", len(filesToUpload))
 
 		// Iterate over all files to be uploaded
@@ -86,7 +93,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 			ui.Say("  " + fullPath)
 
 			// Upload the file
-			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.mtaClient)
+			uploaded, err := uploadInChunks(fullPath, fileToUpload, chunkSizeInMb, f.mtaClient)
 			if err != nil {
 				ui.Failed("Could not upload file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
 				return nil, Failure
@@ -98,9 +105,9 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	return uploadedFiles, Success
 }
 
-func uploadInChunks(fullPath string, fileToUpload os.File, mtaClient mtaclient.MtaClientOperations) ([]*models.FileMetadata, error) {
+func uploadInChunks(fullPath string, fileToUpload os.File, chunkSizeInMb uint64, mtaClient mtaclient.MtaClientOperations) ([]*models.FileMetadata, error) {
 	// Upload the file
-	fileToUploadParts, err := util.SplitFile(fullPath)
+	fileToUploadParts, err := util.SplitFile(fullPath, chunkSizeInMb)
 	if err != nil {
 		return nil, fmt.Errorf("Could not process file %q: %v", fullPath, baseclient.NewClientError(err))
 	}
@@ -193,4 +200,17 @@ func isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []
 		}
 	}
 	return false
+}
+
+func getChunkSizeInMb() uint64 {
+	chunkSizeInMb, isSet := os.LookupEnv(chunkSizeInMbEnv)
+	if isSet {
+		parsedChunkSizeInMb, err := strconv.ParseUint(chunkSizeInMb, 10, 64)
+		if err == nil && parsedChunkSizeInMb != 0 {
+			ui.Say("Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".", parsedChunkSizeInMb, chunkSizeInMbEnv)
+			return parsedChunkSizeInMb
+		}
+		ui.Warn("Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d", chunkSizeInMb, chunkSizeInMbEnv, defaultChunkSizeInMb)
+	}
+	return defaultChunkSizeInMb
 }
