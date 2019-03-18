@@ -1,3 +1,7 @@
+## v2.0.13
+* Large MTARs are not uploaded as a single unit, but are rather split up into smaller chunks that are uploaded separately. This is done in order to prevent failed uploads due to gorouter's request timeout.
+The chunk's size is now configurable through the env variable CHUNK_SIZE_IN_MB. The value of the variable must be a positive integer and the default is 45. Smaller size may be preferable for slower internet connections.
+
 ## v2.0.12
 * Fix selective deployment on Windows
 * Fix selective deployment with modules sharing the same binary
