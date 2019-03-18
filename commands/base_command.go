@@ -218,7 +218,7 @@ func (c *BaseCommand) GetDeployServiceURL() (string, error) {
 	if deployServiceURL == "" {
 		return c.deployServiceURLCalculator.ComputeDeployServiceURL()
 	}
-	ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the environment variable 'DEPLOY_SERVICE_URL'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", deployServiceURL))
+	ui.Say(fmt.Sprintf("Attention: You've specified a custom Deploy Service URL (%s) via the environment variable \"%s\". The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.\n", deployServiceURL, DeployServiceURLEnv))
 	return deployServiceURL, nil
 }
 

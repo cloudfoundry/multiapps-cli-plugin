@@ -54,7 +54,7 @@ var _ = Describe("DeployCommand", func() {
 		var getOutputLines = func(extDescriptor, processAborted bool) []string {
 			lines := []string{}
 			lines = append(lines,
-				"Deploying multi-target app archive "+mtaArchivePath+" in org "+org+" / space "+space+" as "+user+"...\n")
+				"Deploying multi-target app archive "+mtaArchivePath+" in org "+org+" / space "+space+" as "+user+"...\n\n")
 			if processAborted {
 				lines = append(lines,
 					"Executing action 'abort' on operation test-process-id...\n",
