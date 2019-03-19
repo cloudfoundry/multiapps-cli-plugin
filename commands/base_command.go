@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
-	"os"
 	"strings"
 	"time"
 	"unicode"
@@ -19,6 +18,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -214,11 +214,10 @@ func (c *BaseCommand) GetUsername() (string, error) {
 
 // GetDeployServiceURL returns the deploy service URL
 func (c *BaseCommand) GetDeployServiceURL() (string, error) {
-	deployServiceURL := os.Getenv(DeployServiceURLEnv)
+	deployServiceURL := configuration.GetTargetURL()
 	if deployServiceURL == "" {
 		return c.deployServiceURLCalculator.ComputeDeployServiceURL()
 	}
-	ui.Say(fmt.Sprintf("Attention: You've specified a custom Deploy Service URL (%s) via the environment variable \"%s\". The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.\n", deployServiceURL, DeployServiceURLEnv))
 	return deployServiceURL, nil
 }
 
