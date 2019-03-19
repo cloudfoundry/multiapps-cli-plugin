@@ -15,8 +15,8 @@ func generateHash() string {
 }
 
 // SplitFile ...
-func SplitFile(filePath string, fileChunkSizeInMb uint64) ([]string, error) {
-	if fileChunkSizeInMb == 0 {
+func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
+	if fileChunkSizeInMB == 0 {
 		return []string{filePath}, nil
 	}
 
@@ -31,7 +31,7 @@ func SplitFile(filePath string, fileChunkSizeInMb uint64) ([]string, error) {
 	fileInfo, _ := file.Stat()
 
 	var fileSize = uint64(fileInfo.Size())
-	var fileChunkSize = toBytes(fileChunkSizeInMb)
+	var fileChunkSize = toBytes(fileChunkSizeInMB)
 
 	// calculate total number of parts the file will be chunked into
 	totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunkSize)))
