@@ -49,8 +49,9 @@ cf deploy mta-assembly/spring-music.mtar -e config.mtaext
 
 # Configuration     
 The configuration of the MultiApps CF plugin is done via env variables. The following are supported:
-   `DEBUG=1` - prints in standart output HTTP requests, which are from CLI client to CF deploy service backend.
-   `DEPLOY_SERVICE_URL=<deploy-service-app-url>` - the plugin attempts to deduce the deploy service URL based on the CF API URL. In case of issues, or if you want to target a deploy service instance different from the default one, you can configure the targeted deploy service URL via this env variable.
+* `DEBUG=1` - Enables the logging of HTTP requests in `STDOUT` and `STDERRR`.
+* `DEPLOY_SERVICE_URL=<URL>` - By default, the plugin attempts to deduce the multiapps-controller URL based on the available shared domains. In case of issues, or if you want to target a non-default multiapps-controller instance, you can configure the targeted URL via this env variable.
+* `CHUNK_SIZE_IN_MB=<POSITIVE_INTEGER>` - By default, large MTARs are not uploaded as a single unit, but are split up into smaller chunks of 45 MBs that are uploaded separately. The goal is to prevent failed uploads due to [gorouter](https://github.com/cloudfoundry/gorouter)'s request timeout. In case the default chunk size is still too large, you can configure it via this environment variable.
 
 # How to contribute
 * [Did you find a bug?](CONTRIBUTING.md#did-you-find-a-bug)
