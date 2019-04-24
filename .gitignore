@@ -5,6 +5,6 @@ mta-op-*/
 .DS_Store
 */.DS_Store
 .idea
-mta_plugin_darwin_amd64
-mta_plugin_linux_amd64
-mta_plugin_windows_amd64.exe
+multiapps_plugin_darwin_amd64
+multiapps_plugin_linux_amd64
+multiapps_plugin_windows_amd64.exe

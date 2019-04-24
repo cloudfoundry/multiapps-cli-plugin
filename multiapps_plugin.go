@@ -16,8 +16,8 @@ import (
 // Version is the version of the CLI plugin. It is injected on linking time.
 var Version string = "0.0.0"
 
-// MtaPlugin represents a cf CLI plugin for executing operations on MTAs
-type MtaPlugin struct{}
+// MultiappsPlugin represents a cf CLI plugin for executing operations on MTAs
+type MultiappsPlugin struct{}
 
 // Commands contains the commands supported by this plugin
 var Commands = []commands.Command{
@@ -32,7 +32,7 @@ var Commands = []commands.Command{
 }
 
 // Run runs this plugin
-func (p *MtaPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+func (p *MultiappsPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	disableStdOut()
 	if args[0] == "CLI-MESSAGE-UNINSTALL" {
 		return
@@ -49,9 +49,9 @@ func (p *MtaPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 }
 
 // GetMetadata returns the metadata of this plugin
-func (p *MtaPlugin) GetMetadata() plugin.PluginMetadata {
+func (p *MultiappsPlugin) GetMetadata() plugin.PluginMetadata {
 	metadata := plugin.PluginMetadata{
-		Name:          "MtaPlugin",
+		Name:          "multiapps",
 		Version:       parseSemver(Version),
 		MinCliVersion: plugin.VersionType{Major: 6, Minor: 7, Build: 0},
 	}
@@ -62,7 +62,7 @@ func (p *MtaPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func main() {
-	plugin.Start(new(MtaPlugin))
+	plugin.Start(new(MultiappsPlugin))
 }
 
 func disableStdOut() {
