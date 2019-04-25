@@ -11,9 +11,9 @@ This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for perform
 ## Download
 The latest version of the plugin can be found in the table below. Select the plugin for your platform(Darwin, Linux, Windows) and download it.
 
-Mac OS X 64 bit | Windows 64 bit | Linux 64 bit
---- | --- | ---
-[mta-plugin-darwin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.13/mta_plugin_darwin_amd64) | [mta-plugin-windows.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.13/mta_plugin_windows_amd64.exe) | [mta-plugin-linux](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.0.13/mta_plugin_linux_amd64) |
+Mac OS X 64 bit | Windows 32 bit | Windows 64 bit | Linux 32 bit | Linux 64 bit
+--- | --- | --- | --- | ---
+[multiapps-plugin.osx](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.osx) | [multiapps-plugin.win32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.win32) | [multiapps-plugin.win64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.win64) | [multiapps-plugin.linux32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.linux32) | [multiapps-plugin.linux64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.linux64)
 
 
 ## Installation
