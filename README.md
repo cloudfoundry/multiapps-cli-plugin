@@ -8,22 +8,36 @@ This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for perform
 - Working [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) - this a CF plugin for the MultiApps Controller application. Thus, a working MultiApps Controller must be available on the CF landscape
 
 # Download and Installation
-## Download
+
+:rotating_light: Check whether you have a previous version installed, using the command: `cf plugins`. If the MtaPlugin is already installed, you need to uninstall it first and then to install the new version. You can uninstall the plugin using command `cf uninstall-plugin MtaPlugin`.
+
+## CF Community Plugin Repository
+
+The MultiApps CF CLI Plugin is now also available on the CF Community Repository. To install the latest available version of the MultiApps CLI Plugin execute the following:
+
+`cf install-plugin multiapps`
+
+If you do not have the community repository in your CF CLI you can add it first by executing:
+
+`cf add-plugin-repo CF-Community https://plugins.cloudfoundry.org`
+
+## Manual Installation
+
+Alternatively you can install any version of the plugin by manually downloading it from the releases page and installing the binaries for your specific operating system.
+
+### Download
 The latest version of the plugin can be found in the table below. Select the plugin for your platform(Darwin, Linux, Windows) and download it.
 
 Mac OS X 64 bit | Windows 32 bit | Windows 64 bit | Linux 32 bit | Linux 64 bit
 --- | --- | --- | --- | ---
 [multiapps-plugin.osx](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.osx) | [multiapps-plugin.win32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.win32) | [multiapps-plugin.win64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.win64) | [multiapps-plugin.linux32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.linux32) | [multiapps-plugin.linux64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/download/v2.1.0/multiapps-plugin.linux64)
 
-
-## Installation
+### Installation
 Install the plugin, using the following command:
 ```
 cf install-plugin <path-to-the-plugin> -f
 ```
 :rotating_light: Note: if you are running on an Unix-based system, you need to make the plugin executable before installing it. In order to achieve this, execute the following commad `chmod +x <path-to-the-plugin>`
-
-:rotating_light: Check whether you have a previous version installed, using the command: `cf plugins`. If the MtaPlugin is already installed, you need to uninstall it first and then to install the new version. You can uninstall the plugin using command `cf uninstall-plugin MtaPlugin`.
 
 ## Usage
 The MultiApps CF plugin supports the following commands:
