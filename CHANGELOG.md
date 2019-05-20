@@ -1,3 +1,6 @@
+## v2.1.1
+* Fixed a DNS lookup timeout issue experienced by some users
+
 ## v2.1.0
 * Prepare for adoption in [CF-Community](https://github.com/cloudfoundry/cli-plugin-repo) plugins repo
 * Rename plugin name: MtaPlugin -> multiapps
