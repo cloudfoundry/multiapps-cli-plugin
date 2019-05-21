@@ -153,11 +153,10 @@ var _ = Describe("Actions", func() {
 					mtaClient = fakes.NewFakeMtaClientBuilder().
 						GetMtaOperation(operationID, "messages", operation, nil).
 						Build()
-					output, status := oc.CaptureOutputAndStatus(func() int {
+					_, status := oc.CaptureOutputAndStatus(func() int {
 						return action.Execute(operationID, mtaClient).ToInt()
 					})
 					ex.ExpectNonZeroStatus(status)
-					ex.ExpectMessageOnLine(output, "Could not create application 'foo'", 0)
 				})
 			})
 		})

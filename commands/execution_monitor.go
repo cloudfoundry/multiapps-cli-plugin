@@ -87,7 +87,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 				ui.Failed("There is no error message for operation with id %s", m.operationID)
 				return Failure
 			}
-			ui.Say("Process failed: %s", messageInError.Text)
+			ui.Say("Process failed.")
 			m.reportAvaiableActions(m.operationID)
 			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Failure
