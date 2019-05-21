@@ -45,7 +45,7 @@ var _ = Describe("ExecutionMonitor", func() {
 			}
 
 			if errorMessage != "" {
-				lines = append(lines, fmt.Sprintf("Process failed: %s\n", errorMessage))
+				lines = append(lines, fmt.Sprintf("Process failed.\n"))
 				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a retry\" to retry the process.\n", commandName, processID))
 				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a abort\" to abort the process.\n", commandName, processID))
 				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
