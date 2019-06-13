@@ -84,7 +84,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 		case models.StateERROR:
 			messageInError := findErrorMessage(operation.Messages)
 			if messageInError == nil {
-				ui.Failed("There is not error message for operation with id %s", m.operationID)
+				ui.Failed("There is no error message for operation with id %s", m.operationID)
 				return Failure
 			}
 			ui.Say("Process failed: %s", messageInError.Text)
