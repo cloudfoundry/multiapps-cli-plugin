@@ -31,6 +31,7 @@ const (
 	resourceOpt                = "r"
 	allModulesOpt              = "all-modules"
 	allResourcesOpt            = "all-resources"
+	verifyArchiveSignatureOpt  = "verify-archive-signature"
 )
 
 type listFlag struct {
@@ -79,7 +80,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -106,6 +107,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(skipOwnershipValidationOpt):    "Skip the ownership validation that prevents the modification of entities managed by other multi-target apps",
 				util.GetShortOption(allModulesOpt):                 "Deploy all modules which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 			},
 		},
 	}
@@ -138,6 +140,7 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[skipOwnershipValidationOpt] = flags.Bool(skipOwnershipValidationOpt, false, "")
 		optionValues[allModulesOpt] = flags.Bool(allModulesOpt, false, "")
 		optionValues[allResourcesOpt] = flags.Bool(allResourcesOpt, false, "")
+		optionValues[verifyArchiveSignatureOpt] = flags.Bool(verifyArchiveSignatureOpt, false, "")
 		flags.Var(&modulesList, moduleOpt, "")
 		flags.Var(&resourcesList, resourceOpt, "")
 		return optionValues
@@ -160,6 +163,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
+		processBuilder.Parameter("verifyArchiveSignature", strconv.FormatBool(GetBoolOpt(verifyArchiveSignatureOpt, optionValues)))
 	}
 }
 
