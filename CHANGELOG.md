@@ -1,3 +1,7 @@
+## v2.1.2
+* Avoid duplication of error messages in output when process fails
+* Allow users to verify archive signature via `--verify-archive-signature` optional parameter
+
 ## v2.1.1
 * Fixed a DNS lookup timeout issue experienced by some users
 
