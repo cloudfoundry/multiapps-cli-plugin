@@ -41,15 +41,15 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 					testutil.ProcessID, org, space, user),
 				"OK\n",
 				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...\n", wd, dir),
-				fmt.Sprintf("  %s\n", testutil.LogID),
+				fmt.Sprintf("  %s\n", testutil.LogFileName),
 				"OK\n",
 			}
 		}
 
 		var expectDirWithLog = func(dir string) {
 			Expect(exists(dir)).To(Equal(true))
-			Expect(exists(dir + "/" + testutil.LogID)).To(Equal(true))
-			Expect(contentOf(dir + "/" + testutil.LogID)).To(Equal(testutil.LogContent))
+			Expect(exists(dir + "/" + testutil.LogFileName)).To(Equal(true))
+			Expect(contentOf(dir + "/" + testutil.LogFileName)).To(Equal(testutil.LogContent))
 		}
 
 		BeforeEach(func() {
