@@ -146,6 +146,8 @@ func createDownloadDirectory(downloadDirName string) (string, error) {
 }
 
 func saveLogContent(downloadDir, logID string, content *string) error {
-	ui.Say("  %s", logID)
-	return ioutil.WriteFile(downloadDir+"/"+logID, []byte(*content), 0644)
+	var suffix = ".log"
+	var fileName = logID + suffix
+	ui.Say("  %s", fileName)
+	return ioutil.WriteFile(downloadDir+"/"+fileName, []byte(*content), 0644)
 }
