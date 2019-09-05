@@ -2,10 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/cli/cf/terminal"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudfoundry/cli/cf/terminal"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
@@ -102,6 +103,10 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 
 func uploadInChunks(fullPath string, fileToUpload os.File, chunkSizeInMB uint64, mtaClient mtaclient.MtaClientOperations) ([]*models.FileMetadata, error) {
 	// Upload the file
+	err := util.ValidateChunkSize(fullPath, chunkSizeInMB)
+	if err != nil {
+		return nil, fmt.Errorf("Could not valide file %q: %v", fullPath, baseclient.NewClientError(err))
+	}
 	fileToUploadParts, err := util.SplitFile(fullPath, chunkSizeInMB)
 	if err != nil {
 		return nil, fmt.Errorf("Could not process file %q: %v", fullPath, baseclient.NewClientError(err))
