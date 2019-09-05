@@ -1,17 +1,22 @@
 package configuration
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"os"
 	"strconv"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 const (
-	ChunkSizeInMBEnv     = "CHUNK_SIZE_IN_MB"
-	TargetURLEnv         = "DEPLOY_SERVICE_URL"
+	// ChunkSizeInMBEnv Defines the chunk size of MTAR in MB
+	ChunkSizeInMBEnv = "CHUNK_SIZE_IN_MB"
+	// TargetURLEnv Defines the URL of the deploy service
+	TargetURLEnv = "DEPLOY_SERVICE_URL"
+	// DefaultChunkSizeInMB ...
 	DefaultChunkSizeInMB = uint64(45)
 )
 
+// GetChunkSizeInMB Retrieves the MTAR chunk size from environment or uses the default one
 func GetChunkSizeInMB() uint64 {
 	chunkSizeInMb, isSet := os.LookupEnv(ChunkSizeInMBEnv)
 	if isSet {
@@ -25,6 +30,7 @@ func GetChunkSizeInMB() uint64 {
 	return DefaultChunkSizeInMB
 }
 
+// GetTargetURL Retrieves the URL of the deploy service if set in the environment
 func GetTargetURL() string {
 	targetURL := os.Getenv(TargetURLEnv)
 	if targetURL != "" {

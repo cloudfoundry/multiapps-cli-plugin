@@ -1,14 +1,18 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
 
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/pborman/uuid"
 )
+
+const MaxFileChunkCount = 50
 
 func generateHash() string {
 	return uuid.New()
@@ -66,6 +70,32 @@ func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
 	return fileParts, nil
 }
 
+// ValidateChunkSize validate the chunk size
+func ValidateChunkSize(filePath string, fileChunkSizeInMB uint64) error {
+	if fileChunkSizeInMB == 0 {
+		return nil
+	}
+
+	if fileChunkSizeInMB == configuration.DefaultChunkSizeInMB {
+		return nil
+	}
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+
+	var fileSize = uint64(fileInfo.Size())
+	var fileSizeInMb = toMegabytes(fileSize)
+
+	var minFileChunkSizeInMb = uint64(math.Ceil(float64(fileSizeInMb) / float64(MaxFileChunkCount)))
+
+	if fileChunkSizeInMB < minFileChunkSizeInMb {
+		return fmt.Errorf("The specified chunk size (%d MB) is below the minimum chunk size (%d MB) for an archive with a size of %d MBs", fileChunkSizeInMB, minFileChunkSizeInMb, fileSizeInMb)
+	}
+	return nil
+}
+
 func minUint64(a, b uint64) uint64 {
 	if a < b {
 		return a
@@ -75,4 +105,8 @@ func minUint64(a, b uint64) uint64 {
 
 func toBytes(mb uint64) uint64 {
 	return uint64(mb) * 1024 * 1024
+}
+
+func toMegabytes(bytes uint64) uint64 {
+	return bytes / 1024 / 1024
 }
