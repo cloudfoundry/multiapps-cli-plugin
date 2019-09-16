@@ -24,7 +24,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
-	"github.com/cloudfoundry/cli/plugin/models"
+	plugin_models "github.com/cloudfoundry/cli/plugin/models"
 )
 
 const (
@@ -97,9 +97,9 @@ func (c *BaseCommand) Usage(message string) {
 }
 
 // CreateFlags creates a flag set to be used for parsing command arguments
-func (c *BaseCommand) CreateFlags(host *string) (*flag.FlagSet, error) {
+func (c *BaseCommand) CreateFlags(host *string, args []string) (*flag.FlagSet, error) {
 	flags := flag.NewFlagSet(c.name, flag.ContinueOnError)
-	deployServiceURL, err := c.GetDeployServiceURL()
+	deployServiceURL, err := c.GetDeployServiceURL(args)
 	if err != nil {
 		return nil, err
 	}
@@ -213,12 +213,24 @@ func (c *BaseCommand) GetUsername() (string, error) {
 }
 
 // GetDeployServiceURL returns the deploy service URL
-func (c *BaseCommand) GetDeployServiceURL() (string, error) {
-	deployServiceURL := configuration.GetTargetURL()
-	if deployServiceURL == "" {
-		return c.deployServiceURLCalculator.ComputeDeployServiceURL()
+func (c *BaseCommand) GetDeployServiceURL(args []string) (string, error) {
+	customDeployServiceURL := c.GetCustomDeployServiceURL(args)
+	if customDeployServiceURL != "" {
+		return customDeployServiceURL, nil
 	}
-	return deployServiceURL, nil
+
+	return c.deployServiceURLCalculator.ComputeDeployServiceURL()
+}
+
+// GetCustomDeployServiceURL returns custom deploy service URL
+func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
+	optionDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
+
+	if optionDeployServiceURL != "" {
+		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", optionDeployServiceURL))
+		return optionDeployServiceURL
+	}
+	return configuration.GetTargetURL()
 }
 
 // ExecuteAction executes the action over the process specified with operationID

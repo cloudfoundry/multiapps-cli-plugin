@@ -38,11 +38,11 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
-				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				operationIDOpt:      "Active undeploy operation id",
-				actionOpt:           "Action to perform on the active undeploy operation (abort, retry, monitor)",
-				forceOpt:            "Force undeploy without confirmation",
-				util.GetShortOption(deleteServicesOpt):             "Delete services",
+				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				operationIDOpt:                         "Active undeploy operation id",
+				actionOpt:                              "Action to perform on the active undeploy operation (abort, retry, monitor)",
+				forceOpt:                               "Force undeploy without confirmation",
+				util.GetShortOption(deleteServicesOpt): "Delete services",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete service brokers",
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
@@ -65,7 +65,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	var deleteServiceBrokers bool
 	var noFailOnMissingPermissions bool
 	var abortOnError bool
-	flags, err := c.CreateFlags(&host)
+	flags, err := c.CreateFlags(&host, args)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure

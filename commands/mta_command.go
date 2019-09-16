@@ -13,7 +13,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/formatters"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
-	"github.com/cloudfoundry/cli/plugin/models"
+	plugin_models "github.com/cloudfoundry/cli/plugin/models"
 )
 
 // MtaCommand is a command for listing a deployed MTA
@@ -42,7 +42,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	var host string
 
 	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host)
+	flags, err := c.CreateFlags(&host, args)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure

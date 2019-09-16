@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 // CommandFlagsDefiner is a function used during the execution of the deploy
@@ -80,11 +79,6 @@ func NewDefaultCommandFlagsParser(positionalArgNames []string) DefaultCommandFla
 
 // ParseFlags see DefaultCommandFlagsParser
 func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
-	customDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
-	if customDeployServiceURL != "" {
-		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", customDeployServiceURL))
-	}
-
 	// Check for missing positional arguments
 	positionalArgsCount := len(p.positionalArgNames)
 	if len(args) < positionalArgsCount {

@@ -41,7 +41,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	var all bool
 
 	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host)
+	flags, err := c.CreateFlags(&host, args)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure

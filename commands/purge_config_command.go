@@ -29,7 +29,7 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 	log.Tracef("Executing command %q with args %v\n", c.name, args)
 
 	var host string
-	flags, err := c.CreateFlags(&host)
+	flags, err := c.CreateFlags(&host, args)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
