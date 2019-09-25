@@ -80,7 +80,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -108,6 +108,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(allModulesOpt):                 "Deploy all modules which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
+				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
 			},
 		},
 	}
@@ -141,6 +142,7 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[allModulesOpt] = flags.Bool(allModulesOpt, false, "")
 		optionValues[allResourcesOpt] = flags.Bool(allResourcesOpt, false, "")
 		optionValues[verifyArchiveSignatureOpt] = flags.Bool(verifyArchiveSignatureOpt, false, "")
+		optionValues[retriesOpt] = flags.Uint(retriesOpt, 3, "")
 		flags.Var(&modulesList, moduleOpt, "")
 		flags.Var(&resourcesList, resourceOpt, "")
 		return optionValues
@@ -210,6 +212,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	operationID := GetStringOpt(operationIDOpt, optionValues)
 	action := GetStringOpt(actionOpt, optionValues)
 	force := GetBoolOpt(forceOpt, optionValues)
+	retries := GetUintOpt(retriesOpt, optionValues)
 
 	context, err := c.GetContext()
 	if err != nil {
@@ -218,7 +221,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	if operationID != "" || action != "" {
-		return c.ExecuteAction(operationID, action, host)
+		return c.ExecuteAction(operationID, action, retries, host)
 	}
 	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
 	mtaElementsCalculator.calculateElementsToDeploy(optionValues)
@@ -321,7 +324,8 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not create operation: %s", baseclient.NewClientError(err))
 		return Failure
 	}
-	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
+
+	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient).Monitor()
 }
 
 func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, processBuilder *util.ProcessBuilder, mtaElementsCalculator mtaElementsToAddCalculator) {

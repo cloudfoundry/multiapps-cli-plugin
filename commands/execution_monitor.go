@@ -23,9 +23,10 @@ type ExecutionMonitor struct {
 	monitoringLocation string
 	operationID        string
 	embed              string
+	retries            uint
 }
 
-func NewExecutionMonitorFromLocationHeader(commandName, location string, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
+func NewExecutionMonitorFromLocationHeader(commandName, location string, retries uint, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	operationID, embed := getMonitoringInformation(location)
 	return &ExecutionMonitor{
 		mtaClient:        mtaClient,
@@ -33,6 +34,7 @@ func NewExecutionMonitorFromLocationHeader(commandName, location string, reporte
 		commandName:      commandName,
 		operationID:      operationID,
 		embed:            embed,
+		retries:          retries,
 	}
 }
 
@@ -44,13 +46,14 @@ func getMonitoringInformation(monitoringLocation string) (string, string) {
 }
 
 //NewExecutionMonitor creates a new execution monitor
-func NewExecutionMonitor(commandName, operationID, embed string, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
+func NewExecutionMonitor(commandName, operationID, embed string, retries uint, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	return &ExecutionMonitor{
 		mtaClient:        mtaClient,
 		reportedMessages: getAlreadyReportedOperationMessages(reportedOperationMessages),
 		commandName:      commandName,
 		operationID:      operationID,
 		embed:            embed,
+		retries:          retries,
 	}
 }
 
@@ -63,6 +66,7 @@ func getAlreadyReportedOperationMessages(reportedOperationMessages []*models.Mes
 }
 
 func (m *ExecutionMonitor) Monitor() ExecutionStatus {
+	totalRetries := m.retries
 	for {
 		operation, err := m.mtaClient.GetMtaOperation(m.operationID, m.embed)
 		if err != nil {
@@ -82,6 +86,11 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Failure
 		case models.StateERROR:
+			if canRetry(m.retries, operation) {
+				ui.Say("Proceeding with automatic retry... (%d of %d attempts left)", m.retries, totalRetries)
+				executeRetryAction(m)
+				continue
+			}
 			messageInError := findErrorMessage(operation.Messages)
 			if messageInError == nil {
 				ui.Failed("There is no error message for operation with id %s", m.operationID)
@@ -101,6 +110,16 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			return Failure
 		}
 	}
+}
+
+func canRetry(retries uint, operation *models.Operation) bool {
+	return retries > 0 && operation.ErrorType != models.ErrorTypeCONTENT
+}
+
+func executeRetryAction(executionMonitor *ExecutionMonitor) {
+	retryAction := newAction("retry", VerbosityLevelSILENT)
+	retryAction.Execute(executionMonitor.operationID, executionMonitor.mtaClient)
+	executionMonitor.retries--
 }
 
 func findErrorMessage(messages models.OperationMessages) *models.Message {

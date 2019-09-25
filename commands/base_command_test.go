@@ -190,7 +190,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with valid process id and valid action id", func() {
 			It("should abort and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("test-process-id", "abort", "test-host").ToInt()
+					return command.ExecuteAction("test-process-id", "abort", 0, "test-host").ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...\n", "OK\n"})
 			})
@@ -198,7 +198,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with non-valid process id and valid action id", func() {
 			It("should return error and exit with non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("not-valid-process-id", "abort", "test-host").ToInt()
+					return command.ExecuteAction("not-valid-process-id", "abort", 0, "test-host").ToInt()
 				})
 				ex.ExpectFailure(status, output, "Multi-target app operation with id not-valid-process-id not found")
 			})
@@ -207,7 +207,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with valid process id and invalid action id", func() {
 			It("should return error and exit with non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("test-process-id", "not-existing-action", "test-host").ToInt()
+					return command.ExecuteAction("test-process-id", "not-existing-action", 0, "test-host").ToInt()
 				})
 				ex.ExpectFailure(status, output, "Invalid action not-existing-action")
 			})
@@ -216,7 +216,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with valid process id and valid action id", func() {
 			It("should retry the process and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.ExecuteAction("test-process-id", "retry", "test-host").ToInt()
+					return command.ExecuteAction("test-process-id", "retry", 0, "test-host").ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...\n", "OK\n",
 					"Process finished.\n", "Use \"cf dmol -i test-process-id\" to download the logs of the process.\n"})

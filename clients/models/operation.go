@@ -44,6 +44,9 @@ type Operation struct {
 	// state
 	State State `json:"state,omitempty"`
 
+	// error type
+	ErrorType ErrorType `json:"errorType,omitempty"`
+
 	// user
 	User string `json:"user,omitempty"`
 }
@@ -66,6 +69,8 @@ type Operation struct {
 
 /* polymorph Operation state false */
 
+/* polymorph Operation errorType false */
+
 /* polymorph Operation user false */
 
 // Validate validates this operation
@@ -74,6 +79,10 @@ func (m *Operation) Validate(formats strfmt.Registry) error {
 
 	if err := m.validateState(formats); err != nil {
 		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateErrorType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -96,6 +105,20 @@ func (m *Operation) validateState(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+func (m *Operation) validateErrorType(formats strfmt.Registry) error {
+	if swag.IsZero(m.ErrorType) {
+		return nil
+	}
+
+	if err := m.ErrorType.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("errorType")
+		}
+		return nil
+	}
 	return nil
 }
 

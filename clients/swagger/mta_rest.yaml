@@ -314,6 +314,8 @@ definitions:
         type: "boolean"
       state:
         $ref: "#/definitions/State"
+      errorType:
+        $ref: "#/definitions/ErrorType"
       messages:
         type: "array"
         items:
@@ -366,6 +368,11 @@ definitions:
     - "ERROR"
     - "ABORTED"
     - "ACTION_REQUIRED"
+  ErrorType:
+    type: "string"
+    enum:
+    - "CONTENT"
+    - "INFRASTRUCTURE"
   MessageType:
     type: "string"
     enum:

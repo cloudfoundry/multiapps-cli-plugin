@@ -14,40 +14,55 @@ type Action interface {
 }
 
 // GetActionToExecute returns the action to execute specified with action id
-func GetActionToExecute(actionID, commandName string) Action {
+func GetActionToExecute(actionID, commandName string, monitoringRetries uint) Action {
 	switch actionID {
 	case "abort":
-		action := newAction(actionID)
+		action := newAction(actionID, VerbosityLevelVERBOSE)
 		return &action
 	case "retry":
-		action := newMonitoringAction(actionID, commandName)
+		action := newMonitoringAction(actionID, commandName, VerbosityLevelVERBOSE, monitoringRetries)
 		return &action
 	case "resume":
-		action := newMonitoringAction(actionID, commandName)
+		action := newMonitoringAction(actionID, commandName, VerbosityLevelVERBOSE, monitoringRetries)
 		return &action
 	case "monitor":
 		return &MonitorAction{
-			commandName: commandName,
+			commandName:       commandName,
+			monitoringRetries: monitoringRetries,
 		}
 	}
 	return nil
 }
 
-func newMonitoringAction(actionID, commandName string) monitoringAction {
+func GetNoRetriesActionToExecute(actionID, commandName string) Action {
+	return GetActionToExecute(actionID, commandName, 0)
+}
+
+func newMonitoringAction(actionID, commandName string, verbosityLevel VerbosityLevel, monitoringRetries uint) monitoringAction {
 	return monitoringAction{
-		action:      newAction(actionID),
-		commandName: commandName,
+		action:            newAction(actionID, verbosityLevel),
+		commandName:       commandName,
+		monitoringRetries: monitoringRetries,
 	}
 }
 
-func newAction(actionID string) action {
+func newAction(actionID string, verbosityLevel VerbosityLevel) action {
 	return action{
-		actionID: actionID,
+		actionID:       actionID,
+		verbosityLevel: verbosityLevel,
 	}
 }
+
+type VerbosityLevel int
+
+const (
+	VerbosityLevelVERBOSE VerbosityLevel = 0
+	VerbosityLevelSILENT  VerbosityLevel = 1
+)
 
 type action struct {
-	actionID string
+	actionID       string
+	verbosityLevel VerbosityLevel
 }
 
 func (a *action) Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
@@ -64,13 +79,17 @@ func (a *action) executeInSession(operationID string, mtaClient mtaclient.MtaCli
 		return Failure
 	}
 
-	ui.Say("Executing action '%s' on operation %s...", a.actionID, terminal.EntityNameColor(operationID))
+	if a.verbosityLevel == VerbosityLevelVERBOSE {
+		ui.Say("Executing action '%s' on operation %s...", a.actionID, terminal.EntityNameColor(operationID))
+	}
 	_, err = mtaClient.ExecuteAction(operationID, a.actionID)
 	if err != nil {
 		ui.Failed("Could not execute action '%s' on operation %s: %s", a.actionID, terminal.EntityNameColor(operationID), err)
 		return Failure
 	}
-	ui.Ok()
+	if a.verbosityLevel == VerbosityLevelVERBOSE {
+		ui.Ok()
+	}
 	return Success
 }
 
@@ -85,7 +104,8 @@ func (a *action) actionIsPossible(possibleActions []string) bool {
 
 type monitoringAction struct {
 	action
-	commandName string
+	commandName       string
+	monitoringRetries uint
 }
 
 func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
@@ -103,7 +123,7 @@ func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaCl
 		return status
 	}
 
-	return NewExecutionMonitor(a.commandName, operationID, "messages", operation.Messages, mtaClient).Monitor()
+	return NewExecutionMonitor(a.commandName, operationID, "messages", a.monitoringRetries, operation.Messages, mtaClient).Monitor()
 }
 
 func getMonitoringOperation(operationID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {

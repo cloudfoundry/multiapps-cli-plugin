@@ -33,7 +33,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Undeploy a multi-target app",
 		UsageDetails: plugin.Usage{
 			Usage: `Undeploy a multi-target app
-   cf undeploy MTA_ID [-u URL] [-f] [--delete-services] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
+   cf undeploy MTA_ID [-u URL] [-f] [--retries RETRIES] [--delete-services] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
 
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -47,6 +47,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
+				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
 			},
 		},
 	}
@@ -65,6 +66,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	var deleteServiceBrokers bool
 	var noFailOnMissingPermissions bool
 	var abortOnError bool
+	var retries uint
 	flags, err := c.CreateFlags(&host, args)
 	if err != nil {
 		ui.Failed(err.Error())
@@ -78,6 +80,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	flags.BoolVar(&deleteServiceBrokers, deleteServiceBrokersOpt, false, "")
 	flags.BoolVar(&noFailOnMissingPermissions, noFailOnMissingPermissionsOpt, false, "")
 	flags.BoolVar(&abortOnError, abortOnErrorOpt, false, "")
+	flags.UintVar(&retries, retriesOpt, 3, "")
 
 	parser := NewCommandFlagsParser(flags, NewProcessActionExecutorCommandArgumentsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(nil))
 	err = parser.Parse(args)
@@ -93,7 +96,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	if operationID != "" || actionID != "" {
-		return c.ExecuteAction(operationID, actionID, host)
+		return c.ExecuteAction(operationID, actionID, retries, host)
 	}
 
 	mtaID := args[0]
@@ -155,7 +158,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Monitor process execution
-	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), []*models.Message{}, mtaClient).Monitor()
+	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient).Monitor()
 }
 
 type undeployCommandProcessTypeProvider struct{}
