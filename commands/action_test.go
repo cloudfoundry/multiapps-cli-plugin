@@ -31,7 +31,7 @@ var _ = Describe("Actions", func() {
 		const actionID = "abort"
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
-				action = commands.GetActionToExecute(actionID, commandName)
+				action = commands.GetNoRetriesActionToExecute(actionID, commandName)
 				mtaClient = fakes.NewFakeMtaClientBuilder().
 					GetOperationActions(operationID, []string{actionID}, nil).
 					ExecuteAction(operationID, actionID, mtaclient.ResponseHeader{}, nil).
@@ -87,7 +87,7 @@ var _ = Describe("Actions", func() {
 		const actionID = "retry"
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
-				action = commands.GetActionToExecute(actionID, commandName)
+				action = commands.GetNoRetriesActionToExecute(actionID, commandName)
 				mtaClient = fakes.NewFakeMtaClientBuilder().
 					GetOperationActions(operationID, []string{actionID}, nil).
 					ExecuteAction(operationID, actionID, mtaclient.ResponseHeader{Location: "operations/" + operationID + "?embed=messages"}, nil).
@@ -123,7 +123,7 @@ var _ = Describe("Actions", func() {
 		const actionID = "monitor"
 		Describe("ExecuteAction", func() {
 			BeforeEach(func() {
-				action = commands.GetActionToExecute(actionID, commandName)
+				action = commands.GetNoRetriesActionToExecute(actionID, commandName)
 			})
 			Context("when the operation finishes successfully", func() {
 				It("should monitor the operation successfully", func() {
@@ -162,28 +162,28 @@ var _ = Describe("Actions", func() {
 		})
 	})
 
-	Describe("GetActionToExecute", func() {
+	Describe("GetNoRetriesActionToExecute", func() {
 		Context("with correct action id", func() {
 			It("should return abort action to execute", func() {
-				actionToExecute := commands.GetActionToExecute("abort", "deploy")
+				actionToExecute := commands.GetNoRetriesActionToExecute("abort", "deploy")
 				Expect(actionToExecute).NotTo(BeNil())
 			})
 			It("should return retry action to execute", func() {
-				actionToExecute := commands.GetActionToExecute("retry", "deploy")
+				actionToExecute := commands.GetNoRetriesActionToExecute("retry", "deploy")
 				Expect(actionToExecute).NotTo(BeNil())
 			})
 			It("should return resume action to execute", func() {
-				actionToExecute := commands.GetActionToExecute("resume", "deploy")
+				actionToExecute := commands.GetNoRetriesActionToExecute("resume", "deploy")
 				Expect(actionToExecute).NotTo(BeNil())
 			})
 			It("should return monitor action to execute", func() {
-				actionToExecute := commands.GetActionToExecute("monitor", "deploy")
+				actionToExecute := commands.GetNoRetriesActionToExecute("monitor", "deploy")
 				Expect(actionToExecute).NotTo(BeNil())
 			})
 		})
 		Context("with incorrect action id", func() {
 			It("should return nil", func() {
-				actionToExecute := commands.GetActionToExecute("test", "deploy")
+				actionToExecute := commands.GetNoRetriesActionToExecute("test", "deploy")
 				Expect(actionToExecute).To(BeNil())
 			})
 		})

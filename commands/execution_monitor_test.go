@@ -64,7 +64,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:    "ABORTED",
 						Messages: []*models.Message{},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", 0, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -72,8 +72,8 @@ var _ = Describe("ExecutionMonitor", func() {
 				ex.ExpectMessageOnLine(output, "Process was aborted.", 0)
 			})
 		})
-		Context("with process task in state error and no progress messages in the tasklist", func() {
-			It("should return error and exit with non-zero status", func() {
+		Context("with process task in state error and no progress messages in the tasklist, retrying 4 times", func() {
+			It("should retry 4 times, return error and exit with non-zero status", func() {
 				client = fakeMtaClientBuilder.
 					GetMtaOperation(processID, "messages", &models.Operation{
 						ProcessID: processID,
@@ -85,12 +85,16 @@ var _ = Describe("ExecutionMonitor", func() {
 							},
 						},
 					}, nil).
-					GetOperationActions(processID, []string{"abort"}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
+					GetOperationActions(processID, []string{"abort", "retry"}, nil).Build()
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", 4, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Use \"cf deploy -i 1234 -a abort\" to abort the process.\n", 1)
+				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (4 of 4 attempts left)", 1)
+				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (3 of 4 attempts left)", 2)
+				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (2 of 4 attempts left)", 3)
+				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (1 of 4 attempts left)", 4)
+				ex.ExpectFailureOnLine(status, output, "Use \"cf deploy -i 1234 -a abort\" to abort the process.\n", 5)
 			})
 		})
 		Context("with process task in illegal state and no progress messages in the tasklist", func() {
@@ -100,7 +104,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:    "UnknownState",
 						Messages: []*models.Message{},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", 0, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -115,7 +119,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						State:    "FINISHED",
 						Messages: []*models.Message{},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", 0, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -135,7 +139,7 @@ var _ = Describe("ExecutionMonitor", func() {
 							testutil.GetMessage(31, "test-message-3"),
 						},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", 0, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -155,7 +159,7 @@ var _ = Describe("ExecutionMonitor", func() {
 							testutil.GetMessage(4, "test-message-4"),
 						},
 					}, nil).Build()
-				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitor(commandName, processID, "messages", 0, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
@@ -171,7 +175,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						Messages: []*models.Message{},
 					}, nil).
 					GetOperationActions(processID, []string{"retry", "abort"}, nil).Build()
-				monitor = commands.NewExecutionMonitorFromLocationHeader(commandName, "operations/"+processID+"?embed=messages", []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitorFromLocationHeader(commandName, "operations/"+processID+"?embed=messages", 0, []*models.Message{}, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})

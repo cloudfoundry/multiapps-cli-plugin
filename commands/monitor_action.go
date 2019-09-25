@@ -8,7 +8,8 @@ import (
 
 // MonitorAction monitors process execution
 type MonitorAction struct {
-	commandName string
+	commandName       string
+	monitoringRetries uint
 }
 
 // Execute executes monitor action on process with the specified id
@@ -19,5 +20,5 @@ func (a *MonitorAction) Execute(operationID string, mtaClient mtaclient.MtaClien
 		return Failure
 	}
 
-	return NewExecutionMonitor(a.commandName, operationID, "messages", operation.Messages, mtaClient).Monitor()
+	return NewExecutionMonitor(a.commandName, operationID, "messages", a.monitoringRetries, operation.Messages, mtaClient).Monitor()
 }

@@ -40,6 +40,7 @@ const (
 	noFailOnMissingPermissionsOpt = "do-not-fail-on-missing-permissions"
 	abortOnErrorOpt               = "abort-on-error"
 	deployServiceHost             = "deploy-service"
+	retriesOpt                    = "retries"
 )
 
 // BaseCommand represents a base command
@@ -234,7 +235,7 @@ func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
 }
 
 // ExecuteAction executes the action over the process specified with operationID
-func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) ExecutionStatus {
+func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, host string) ExecutionStatus {
 	// Create REST client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
@@ -255,7 +256,7 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID, host string) Executio
 	}
 
 	// Finds the action specified with the actionID
-	action := GetActionToExecute(actionID, c.name)
+	action := GetActionToExecute(actionID, c.name, retries)
 	if action == nil {
 		ui.Failed("Invalid action %s", terminal.EntityNameColor(actionID))
 		return Failure
@@ -280,7 +281,7 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 	if ongoingOperation != nil {
 		// Abort the conflict process if confirmed by the user
 		if c.shouldAbortConflictingOperation(mtaID, force) {
-			action := GetActionToExecute("abort", c.name)
+			action := GetNoRetriesActionToExecute("abort", c.name)
 			status := action.Execute(ongoingOperation.ProcessID, mtaClient)
 			if status == Failure {
 				return false, nil
