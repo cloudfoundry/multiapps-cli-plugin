@@ -1,3 +1,6 @@
+## v2.2.0
+* Introduce configurable retry on operation failure
+
 ## v2.1.3
 * Add validation for env variable `CHUNK_SIZE_IN_MB`. The minimum value is computed based on the formula: `MIN = MTAR_SIZE / 50`. The maximum value is 50
 * Fix backend URL discovery when `-u` option is used
