@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"flag"
 	"strconv"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -17,7 +16,7 @@ type BlueGreenDeployCommand struct {
 
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
-	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, blueGreenDeployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}}
+	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}}
 }
 
 // GetPluginCommand returns more information for the blue green deploy command.
@@ -58,20 +57,12 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 	}
 }
 
-// BlueGreenDeployCommandFlagsDefiner returns a new CommandFlagsDefiner.
-func blueGreenDeployCommandFlagsDefiner() CommandFlagsDefiner {
-	return func(flags *flag.FlagSet) map[string]interface{} {
-		optionValues := deployCommandFlagsDefiner()(flags)
-		optionValues[noConfirmOpt] = flags.Bool(noConfirmOpt, false, "")
-		return optionValues
-	}
-}
-
 // BlueGreenDeployProcessParametersSetter returns a new ProcessParametersSetter.
 func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
 	return func(optionValues map[string]interface{}, processBuilder *util.ProcessBuilder) {
 		deployProcessParametersSetter()(optionValues, processBuilder)
 		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, optionValues)))
+		processBuilder.Parameter("keepExistingAppNames", strconv.FormatBool(false))
 	}
 }
 
