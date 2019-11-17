@@ -29,7 +29,6 @@ import (
 
 const (
 	// DeployServiceURLEnv is the deploy service URL environment variable
-	DeployServiceURLEnv           = "DEPLOY_SERVICE_URL"
 	deployServiceURLOpt           = "u"
 	operationIDOpt                = "i"
 	actionOpt                     = "a"
@@ -39,7 +38,6 @@ const (
 	noRestartSubscribedAppsOpt    = "no-restart-subscribed-apps"
 	noFailOnMissingPermissionsOpt = "do-not-fail-on-missing-permissions"
 	abortOnErrorOpt               = "abort-on-error"
-	deployServiceHost             = "deploy-service"
 	retriesOpt                    = "retries"
 )
 

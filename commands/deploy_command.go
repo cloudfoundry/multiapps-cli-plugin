@@ -32,6 +32,7 @@ const (
 	allModulesOpt              = "all-modules"
 	allResourcesOpt            = "all-resources"
 	verifyArchiveSignatureOpt  = "verify-archive-signature"
+	strategyOpt                = "strategy"
 )
 
 type listFlag struct {
@@ -57,8 +58,6 @@ func (variable *listFlag) Set(value string) error {
 
 var modulesList listFlag
 var resourcesList listFlag
-var reportedProgressMessages []string
-var mtaElementsCalculator mtaElementsToAddCalculator
 
 // DeployCommand is a command for deploying an MTA archive
 type DeployCommand struct {
@@ -80,7 +79,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature] [--strategy blue-green] [--no-confirm]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -94,6 +93,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				forceOpt:                              "Force deploy without confirmation for aborting conflicting processes",
 				moduleOpt:                             "Deploy list of modules which are contained in the deployment descriptor, in the current location",
 				resourceOpt:                           "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				strategyOpt:						   "Specify the deployment strategy when updating an mta (blue-green)",
 				util.GetShortOption(noStartOpt):       "Do not start apps",
 				util.GetShortOption(useNamespacesOpt): "Use namespaces in app and service names",
 				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
@@ -109,6 +109,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
+				util.GetShortOption(noConfirmOpt):                  "Do not require confirmation for deleting the previously deployed MTA apps",
 			},
 		},
 	}
@@ -143,6 +144,8 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[allResourcesOpt] = flags.Bool(allResourcesOpt, false, "")
 		optionValues[verifyArchiveSignatureOpt] = flags.Bool(verifyArchiveSignatureOpt, false, "")
 		optionValues[retriesOpt] = flags.Uint(retriesOpt, 3, "")
+		optionValues[strategyOpt] = flags.String(strategyOpt, "", "")
+		optionValues[noConfirmOpt] = flags.Bool(noConfirmOpt, false, "")
 		flags.Var(&modulesList, moduleOpt, "")
 		flags.Var(&resourcesList, resourceOpt, "")
 		return optionValues
@@ -167,10 +170,6 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
 		processBuilder.Parameter("verifyArchiveSignature", strconv.FormatBool(GetBoolOpt(verifyArchiveSignatureOpt, optionValues)))
 	}
-}
-
-func getMtaElementsList(mtaElements []string, optionValues map[string]interface{}) string {
-	return strings.Join(mtaElements, ",")
 }
 
 // GetBoolOpt gets and dereferences the pointer identified by the specified name.
@@ -317,6 +316,14 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.Parameter("mtaId", mtaID)
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
+
+	strategy := GetStringOpt(strategyOpt, optionValues)
+	if strategy == "blue-green" {
+		processBuilder.ProcessType(blueGreenDeployCommandProcessTypeProvider{}.GetProcessType())
+		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, optionValues)))
+		processBuilder.Parameter("keepExistingAppNames", strconv.FormatBool(true))
+	}
+
 	operation := processBuilder.Build()
 
 	// Create the new process
