@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -258,24 +259,28 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		}
 	}
 
-	// Extract mta id from archive file
-	mtaID, err := util.GetMtaIDFromArchive(mtaArchivePath)
-	if os.IsNotExist(err) {
-		ui.Failed("Could not find file %s", terminal.EntityNameColor(mtaArchivePath))
-		return Failure
-	} else if err != nil {
-		ui.Failed("Could not get MTA id from deployment descriptor: %s", err)
-		return Failure
-	}
+	streaming := configuration.IsStreamingFlagSet()
 
-	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(mtaID, host, force)
-	if err != nil {
-		ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-	if !wasAborted {
-		return Failure
+	if !streaming { //TODO extract to a function - check for and resolve conflict
+		// Extract mta id from archive file
+		mtaID, err := util.GetMtaIDFromArchive(mtaArchivePath)
+		if os.IsNotExist(err) {
+			ui.Failed("Could not find file %s", terminal.EntityNameColor(mtaArchivePath))
+			return Failure
+		} else if err != nil {
+			ui.Failed("Could not get MTA id from deployment descriptor: %s", err)
+			return Failure
+		}
+
+		// Check for an ongoing operation for this MTA ID and abort it
+		wasAborted, err := c.CheckOngoingOperation(mtaID, host, force)
+		if err != nil {
+			ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
+			return Failure
+		}
+		if !wasAborted {
+			return Failure
+		}
 	}
 	// Check SLMP metadata
 	// TODO: ensure session
@@ -284,7 +289,6 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not get space guid:", baseclient.NewClientError(err))
 		return Failure
 	}
-
 	// Upload the MTA archive file
 	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient)
 	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()

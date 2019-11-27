@@ -28,8 +28,6 @@ import (
 )
 
 const (
-	// DeployServiceURLEnv is the deploy service URL environment variable
-	DeployServiceURLEnv           = "DEPLOY_SERVICE_URL"
 	deployServiceURLOpt           = "u"
 	operationIDOpt                = "i"
 	actionOpt                     = "a"

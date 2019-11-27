@@ -7,7 +7,7 @@ function build() {
     local plugin_name=$4
 
     echo calling to build for $platform $arch
-    GOOS=$platform GOARCH=$arch go build \
+    CGO_ENABLED=0 GOOS=$platform GOARCH=$arch go build \
         -ldflags "-X main.Version=${version}" \
         -o ${plugin_name}
 }
@@ -34,8 +34,10 @@ function createBuildMetadataFiles() {
 	grep -Pzoa "(?s)## v${version}(.*?)##" CHANGELOG.md | grep -va "##" | tr -s '\n' '\n' > ${folder}/changelog
 }
 
-script_dir="$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")"
-cd "${script_dir}"
+if [ ! -f "build.sh" ] | [ ! -f "LICENSE" ]; then
+   echo "Please run with the project root as working directory";
+   exit 1 ; 
+fi
 
 BUILD_FOLDER=build
 PLUGIN_NAME_WIN_32=multiapps-plugin.win32
@@ -54,8 +56,9 @@ build $version windows 386 $PLUGIN_NAME_WIN_32
 build $version windows amd64 $PLUGIN_NAME_WIN_64
 build $version darwin amd64 $PLUGIN_NAME_OSX
 
-mkdir $BUILD_FOLDER -p
+mkdir -p $BUILD_FOLDER
 createBuildMetadataFiles $version $BUILD_FOLDER
 movePluginsToBuildFolder $BUILD_FOLDER
+cp Dockerfile $BUILD_FOLDER/
 cd $BUILD_FOLDER
 copyPluginsWithOldNames
