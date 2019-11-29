@@ -314,6 +314,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
+	processBuilder.Parameter("mtaId", mtaID)
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
 	operation := processBuilder.Build()
