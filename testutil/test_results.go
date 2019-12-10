@@ -233,6 +233,16 @@ func (r RuntimeResponse) Body() io.ReadCloser {
 	return nil
 }
 
+// generate a custom APIError for mocking test failures
+func NewCustomError(customCode int, opName, customMessage string) *runtime.APIError {
+	var customResponse = RuntimeResponse{
+		code:    customCode,
+		message: customMessage,
+	}
+
+	return runtime.NewAPIError(opName, customResponse, customCode)
+}
+
 //
 var notFoundResponse = RuntimeResponse{
 	code:    404,
@@ -254,6 +264,7 @@ var SimpleFile = models.FileMetadata{
 	Name:            "test.mtar",
 	DigestAlgorithm: "MD5",
 	Space:           "test-space",
+	Namespace:       "namespace",
 }
 
 //
@@ -334,12 +345,13 @@ var SimpleFile = models.FileMetadata{
 // }
 
 //
-func GetFile(file os.File, digest string) *models.FileMetadata {
+func GetFile(file os.File, digest string, namespace string) *models.FileMetadata {
 	stat, _ := os.Stat(file.Name())
 	return &models.FileMetadata{
 		ID:              stat.Name(),
 		Space:           "test-space",
 		Name:            stat.Name(),
+		Namespace:       namespace,
 		Digest:          digest,
 		DigestAlgorithm: "MD5",
 	}
@@ -359,7 +371,7 @@ func GetFile(file os.File, digest string) *models.FileMetadata {
 // }
 //
 
-func GetOperation(processID, spaceID string, mtaID string, processType string, state string, acquiredLock bool) *models.Operation {
+func GetOperation(processID, spaceID string, mtaID string, namespace string, processType string, state string, acquiredLock bool) *models.Operation {
 	return &models.Operation{
 		ProcessID:    processID,
 		ProcessType:  processType,
@@ -369,15 +381,17 @@ func GetOperation(processID, spaceID string, mtaID string, processType string, s
 		State:        models.State(state),
 		AcquiredLock: acquiredLock,
 		MtaID:        mtaID,
+		Namespace:    namespace,
 	}
 }
 
 //
-func GetMta(id, version string, modules []*models.Module, services []string) *models.Mta {
+func GetMta(id, version string, namespace string, modules []*models.Module, services []string) *models.Mta {
 	return &models.Mta{
 		Metadata: &models.Metadata{
-			ID:      id,
-			Version: version,
+			ID:        id,
+			Version:   version,
+			Namespace: namespace,
 		},
 		Modules:  modules,
 		Services: services,

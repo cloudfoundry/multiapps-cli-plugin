@@ -61,6 +61,11 @@ func NewGetMtaFilesParamsWithHTTPClient(client *http.Client) *GetMtaFilesParams 
 for the get mta files operation typically these are written to a http.Request
 */
 type GetMtaFilesParams struct {
+	/*Namespace
+	  Filter mtas by namespace
+
+	*/
+	Namespace *string
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -99,6 +104,17 @@ func (o *GetMtaFilesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithNamespace adds the namespace to the get mta files params
+func (o *GetMtaFilesParams) WithNamespace(namespace *string) *GetMtaFilesParams {
+	o.SetNamespace(namespace)
+	return o
+}
+
+// SetNamespace adds the namespace to the get mta files params
+func (o *GetMtaFilesParams) SetNamespace(namespace *string) {
+	o.Namespace = namespace
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetMtaFilesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -106,6 +122,22 @@ func (o *GetMtaFilesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
+	
+	if o.Namespace != nil {
+
+		// query param namespace
+		var qrNamespace string
+		if o.Namespace != nil {
+			qrNamespace = *o.Namespace
+		}
+		qNamespace := qrNamespace
+		if qNamespace != "" {
+			if err := r.SetQueryParam("namespace", qNamespace); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

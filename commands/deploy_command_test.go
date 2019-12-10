@@ -26,6 +26,7 @@ var _ = Describe("DeployCommand", func() {
 	Describe("Execute", func() {
 		const org = "test-org"
 		const space = "test-space"
+		const namespace = "namespace"
 		const user = "test-user"
 		const testFilesLocation = "../test_resources/commands/"
 		const testArchive = "mtaArchive.mtar"
@@ -96,7 +97,7 @@ var _ = Describe("DeployCommand", func() {
 		var getFile = func(path string) (*os.File, *models.FileMetadata) {
 			file, _ := os.Open(path)
 			digest, _ := util.ComputeFileChecksum(path, "MD5")
-			f := testutil.GetFile(*file, strings.ToUpper(digest))
+			f := testutil.GetFile(*file, strings.ToUpper(digest), namespace)
 			return file, f
 		}
 
@@ -128,7 +129,7 @@ var _ = Describe("DeployCommand", func() {
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
 				GetMtaOperations(nil, nil, nil, []*models.Operation{&testutil.OperationResult}, nil).Build()
-			testClientFactory = commands.NewTestClientFactory(mtaClient, nil)
+			testClientFactory = commands.NewTestClientFactory(mtaClient, nil, nil)
 			command = commands.NewDeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
@@ -257,6 +258,18 @@ var _ = Describe("DeployCommand", func() {
 		// 	})
 		// })
 
+		Context("with namespace starting with whitespace and ongoing operations", func() {
+			It("should correctly detect a conflict with ongoing operation and result in error", func() {
+				conflictingOperation := testutil.GetOperation("test", "test-space-guid", "test", "test", "deploy", "ERROR", true)
+				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperations(nil, nil, nil, []*models.Operation{conflictingOperation}, nil).Build()
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--namespace", "    test   "}).ToInt()
+				})
+				ex.ExpectFailureOnLine(status, output, "There is an ongoing operation for multi-target app test", 1)
+			})
+		})
+
 		// existing ongoing operations and force option not supplied - success
 		Context("with correct mta id from archive, with ongoing operations provided and no force option", func() {
 			It("should not try to abort confliction operations", func() {
@@ -305,7 +318,7 @@ var _ = Describe("DeployCommand", func() {
 			It("should return error and exit with non-zero status", func() {
 				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
 					GetMtaOperations(nil, nil, nil, []*models.Operation{
-						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
+						testutil.GetOperation("test-process-id", space, "test-mta-id", namespace, "deploy", "ERROR", true),
 					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test-process-id", "-a", "test"}).ToInt()
@@ -335,7 +348,7 @@ var _ = Describe("DeployCommand", func() {
 			It("should execute action on the process specified with process id and exit with zero status", func() {
 				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
 					GetMtaOperations(nil, nil, nil, []*models.Operation{
-						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
+						testutil.GetOperation("test-process-id", space, "test-mta-id", namespace, "deploy", "ERROR", true),
 					}, nil).
 					GetOperationActions("test", []string{"abort", "retry"}, nil).
 					ExecuteAction("test-process-id", "test", mtaclient.ResponseHeader{Location: ""}, nil).Build()

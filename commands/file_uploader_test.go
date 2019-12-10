@@ -20,6 +20,7 @@ import (
 var _ = Describe("FileUploader", func() {
 	Describe("UploadFiles", func() {
 		const testFileName = "test.mtar"
+		const namespace = "namespace"
 
 		var fileUploader *commands.FileUploader
 		var testFile *os.File
@@ -44,7 +45,7 @@ var _ = Describe("FileUploader", func() {
 				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
 
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{}, client, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{}, client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
@@ -57,7 +58,7 @@ var _ = Describe("FileUploader", func() {
 				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{}, client, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{}, client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
@@ -67,13 +68,13 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with non-existing service files and one file to upload", func() {
 			It("should return the uploaded file", func() {
-				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest)}
+				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest, namespace)}
 				client := fakeSlmpClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
-					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest), nil).Build()
+					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, namespace), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -89,13 +90,13 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with existing service files and one file to upload", func() {
 			It("should display a message that the file upload will be skipped", func() {
-				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest)}
+				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest, "namespace")}
 				client := fakeSlmpClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
-					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest), nil).Build()
+					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, "namespace"), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
@@ -107,13 +108,13 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with non-existing service files and one file to upload and service versions returned from the backend", func() {
 			It("should return the uploaded file", func() {
-				fileMetadata := testutil.GetFile(*testFile, testFileDigest)
+				fileMetadata := testutil.GetFile(*testFile, testFileDigest, namespace)
 				client := fakeSlmpClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
 					UploadMtaFile(*testFile, fileMetadata, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -135,7 +136,7 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
 				// var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
 					_, status = fileUploader.UploadFiles()
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))

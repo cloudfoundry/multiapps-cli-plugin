@@ -82,13 +82,13 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	ui.Ok()
 
 	if len(operationsToPrint) > 0 {
-		table := ui.Table([]string{"id", "type", "mta id", "status", "started at", "started by"})
+		table := ui.Table([]string{"id", "type", "mta id", "namespace", "status", "started at", "started by"})
 		for _, operation := range operationsToPrint {
 			var mtaid string = operation.MtaID
 			if operation.MtaID == "" {
 				mtaid = "N/A"
 			}
-			table.Add(operation.ProcessID, string(operation.ProcessType), mtaid, string(operation.State), operation.StartedAt, operation.User)
+			table.Add(operation.ProcessID, string(operation.ProcessType), mtaid, operation.Namespace, string(operation.State), operation.StartedAt, operation.User)
 		}
 		table.Print()
 	} else {

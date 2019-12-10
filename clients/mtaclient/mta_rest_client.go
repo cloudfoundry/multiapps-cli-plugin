@@ -2,13 +2,14 @@ package mtaclient
 
 import (
 	"context"
+	"net/http"
+	"os"
+
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/operations"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"net/http"
-	"os"
 )
 
 const spacesURL string = "spaces/"
@@ -65,9 +66,10 @@ func (c MtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 	return result.(*operations.GetMtaOK).Payload, nil
 }
 
-func (c MtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
+func (c MtaRestClient) GetMtaFiles(namespace *string) ([]*models.FileMetadata, error) {
 	params := &operations.GetMtaFilesParams{
-		Context: context.TODO(),
+		Context:   context.TODO(),
+		Namespace: namespace,
 	}
 	token, err := c.TokenFactory.NewToken()
 	if err != nil {
@@ -175,10 +177,11 @@ func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHe
 	return ResponseHeader{Location: resp.Location}, nil
 }
 
-func (c MtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
+func (c MtaRestClient) UploadMtaFile(file os.File, namespace *string) (*models.FileMetadata, error) {
 	params := &operations.UploadMtaFileParams{
-		Context: context.TODO(),
-		File:    file,
+		Context:   context.TODO(),
+		File:      file,
+		Namespace: namespace,
 	}
 
 	result, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {

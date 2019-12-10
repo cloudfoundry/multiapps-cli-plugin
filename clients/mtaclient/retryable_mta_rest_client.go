@@ -45,9 +45,9 @@ func (c RetryableMtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 	}
 	return resp.(*models.Mta), nil
 }
-func (c RetryableMtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
+func (c RetryableMtaRestClient) GetMtaFiles(namespace *string) ([]*models.FileMetadata, error) {
 	getMtaFilesCb := func() (interface{}, error) {
-		return c.mtaClient.GetMtaFiles()
+		return c.mtaClient.GetMtaFiles(namespace)
 	}
 	resp, err := baseclient.CallWithRetry(getMtaFilesCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {
@@ -115,14 +115,14 @@ func (c RetryableMtaRestClient) StartMtaOperation(operation models.Operation) (R
 	}
 	return resp.(ResponseHeader), nil
 }
-func (c RetryableMtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
+func (c RetryableMtaRestClient) UploadMtaFile(file os.File, namespace *string) (*models.FileMetadata, error) {
 	uploadMtaFileCb := func() (interface{}, error) {
 		reopenedFile, err := os.Open(file.Name())
 		if err != nil {
 			return nil, err
 		}
 
-		return c.mtaClient.UploadMtaFile(*reopenedFile)
+		return c.mtaClient.UploadMtaFile(*reopenedFile, namespace)
 	}
 	resp, err := baseclient.CallWithRetry(uploadMtaFileCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {

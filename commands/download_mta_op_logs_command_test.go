@@ -73,7 +73,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				GetMtaOperationLogs(testutil.ProcessID, []*models.Log{&testutil.SimpleMtaLog}, nil).
 				GetMtaOperations(&[]string{mtaId}[0], &[]int64{1}[0], nil, operations[:1], nil).
 				GetMtaOperationLogContent(testutil.ProcessID, testutil.LogID, testutil.LogContent, nil).Build()
-			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
+			clientFactory = commands.NewTestClientFactory(mtaClient, nil, nil)
 			command = &commands.DownloadMtaOperationLogsCommand{}
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")

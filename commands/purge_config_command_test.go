@@ -40,7 +40,7 @@ var _ = Describe("PurgeConfigCommand", func() {
 				AccessToken("bearer test-token", nil).Build()
 
 			testTokenFactory = commands.NewTestTokenFactory(cliConnection)
-			clientFactory = commands.NewTestClientFactory(nil, nil)
+			clientFactory = commands.NewTestClientFactory(nil, nil, nil)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
 			command = &commands.PurgeConfigCommand{}

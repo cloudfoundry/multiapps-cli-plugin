@@ -56,6 +56,12 @@ for the upload mta file operation typically these are written to a http.Request
 */
 type UploadMtaFileParams struct {
 
+	/*Namespace
+	  file namespace
+
+	*/
+	Namespace *string
+
 	/*File*/
 	File os.File
 
@@ -97,6 +103,17 @@ func (o *UploadMtaFileParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithNamespace adds the namespace to the upload mta file params
+func (o *UploadMtaFileParams) WithNamespace(namespace *string) *UploadMtaFileParams {
+	o.SetNamespace(namespace)
+	return o
+}
+
+// SetNamespace adds the namespace to the upload mta file params
+func (o *UploadMtaFileParams) SetNamespace(namespace *string) {
+	o.Namespace = namespace
+}
+
 // WithFile adds the file to the upload mta file params
 func (o *UploadMtaFileParams) WithFile(file os.File) *UploadMtaFileParams {
 	o.SetFile(file)
@@ -115,6 +132,22 @@ func (o *UploadMtaFileParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		return err
 	}
 	var res []error
+
+	if o.Namespace != nil {
+
+		// query param namespace
+		var qrNamespace string
+		if o.Namespace != nil {
+			qrNamespace = *o.Namespace
+		}
+		qNamespace := qrNamespace
+		if qNamespace != "" {
+			if err := r.SetQueryParam("namespace", qNamespace); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	// form file param file
 	if err := r.SetFileParam("file", &o.File); err != nil {
