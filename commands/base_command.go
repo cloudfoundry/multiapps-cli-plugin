@@ -17,6 +17,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
@@ -39,6 +40,7 @@ const (
 	noFailOnMissingPermissionsOpt = "do-not-fail-on-missing-permissions"
 	abortOnErrorOpt               = "abort-on-error"
 	retriesOpt                    = "retries"
+	namespaceOpt                  = "namespace"
 )
 
 // BaseCommand represents a base command
@@ -142,6 +144,16 @@ func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, 
 
 func (c *BaseCommand) NewManagementMtaClient(host string) (mtaclient.MtaClientOperations, error) {
 	return c.clientFactory.NewManagementMtaClient(host, c.transport, c.jar, c.tokenFactory), nil
+}
+
+// NewMtaV2Client creates a new MTAV2 deployer REST client
+func (c *BaseCommand) NewMtaV2Client(host string) (mtaclient_v2.MtaV2ClientOperations, error) {
+	space, err := c.GetSpace()
+	if err != nil {
+		return nil, err
+	}
+
+	return c.clientFactory.NewMtaV2Client(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
 }
 
 // Context holding the username, Org and Space of the current used
@@ -259,14 +271,14 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, 
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
-func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force bool) (bool, error) {
+func (c *BaseCommand) CheckOngoingOperation(mtaID string, namespace string, host string, force bool) (bool, error) {
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		return false, err
 	}
 
 	// Check if there is an ongoing operation for this MTA ID
-	ongoingOperation, err := c.findOngoingOperation(mtaID, mtaClient)
+	ongoingOperation, err := c.findOngoingOperation(mtaID, namespace, mtaClient)
 	if err != nil {
 		return false, err
 	}
@@ -302,14 +314,14 @@ func (c *BaseCommand) findOngoingOperationByID(processID string, mtaClient mtacl
 }
 
 // FindOngoingOperation finds ongoing operation for mta with the specified id
-func (c *BaseCommand) findOngoingOperation(mtaID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+func (c *BaseCommand) findOngoingOperation(mtaID string, namespace string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
 	activeStatesList := []string{"RUNNING", "ERROR", "ACTION_REQUIRED"}
 	ongoingOperations, err := mtaClient.GetMtaOperations(&mtaID, nil, activeStatesList)
 	if err != nil {
 		return nil, fmt.Errorf("Could not get ongoing operations for multi-target app %s: %s", terminal.EntityNameColor(mtaID), err)
 	}
 	for _, ongoingOperation := range ongoingOperations {
-		isConflicting, err := c.isConflicting(ongoingOperation, mtaID)
+		isConflicting, err := c.isConflicting(ongoingOperation, mtaID, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -320,12 +332,13 @@ func (c *BaseCommand) findOngoingOperation(mtaID string, mtaClient mtaclient.Mta
 	return nil, nil
 }
 
-func (c *BaseCommand) isConflicting(operation *models.Operation, mtaID string) (bool, error) {
+func (c *BaseCommand) isConflicting(operation *models.Operation, mtaID string, namespace string) (bool, error) {
 	space, err := c.GetSpace()
 	if err != nil {
 		return false, err
 	}
-	return operation.MtaID == mtaID && operation.SpaceID == space.Guid && operation.AcquiredLock, nil
+
+	return operation.MtaID == mtaID && operation.SpaceID == space.Guid && operation.Namespace == namespace && operation.AcquiredLock, nil
 }
 
 func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) bool {

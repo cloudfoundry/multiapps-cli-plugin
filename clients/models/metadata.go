@@ -8,7 +8,6 @@ package models
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
 )
 
@@ -20,6 +19,10 @@ type Metadata struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// namespace
+	// Read Only: true
+	Namespace string `json:"namespace,omitempty"`
+
 	// version
 	Version string `json:"version,omitempty"`
 }
@@ -30,11 +33,6 @@ type Metadata struct {
 
 // Validate validates this metadata
 func (m *Metadata) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
 	return nil
 }
 

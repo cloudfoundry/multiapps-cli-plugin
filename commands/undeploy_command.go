@@ -33,22 +33,23 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Undeploy a multi-target app",
 		UsageDetails: plugin.Usage{
 			Usage: `Undeploy a multi-target app
-   cf undeploy MTA_ID [-u URL] [-f] [--retries RETRIES] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
+   cf undeploy MTA_ID [-u URL] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
 
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
-				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				operationIDOpt:      "Active undeploy operation ID",
-				actionOpt:           "Action to perform on the active undeploy operation (abort, retry, monitor)",
-				forceOpt:            "Force undeploy without confirmation",
-				util.GetShortOption(deleteServicesOpt):             "Delete services",
+				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				operationIDOpt:                         "Active undeploy operation ID",
+				actionOpt:                              "Action to perform on the active undeploy operation (abort, retry, monitor)",
+				forceOpt:                               "Force undeploy without confirmation",
+				util.GetShortOption(deleteServicesOpt): "Delete services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete service brokers",
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
+				util.GetShortOption(namespaceOpt):                  "(EXPERIMENTAL) Specify the (optional) namespace the target mta is in",
 			},
 		},
 	}
@@ -60,6 +61,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 
 	var host string
 	var operationID string
+	var namespace string
 	var actionID string
 	var force bool
 	var deleteServices bool
@@ -76,6 +78,8 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 	flags.BoolVar(&force, forceOpt, false, "")
 	flags.StringVar(&operationID, operationIDOpt, "", "")
+	flags.StringVar(&namespace, namespaceOpt, "", "")
+	namespace = strings.TrimSpace(namespace)
 	flags.StringVar(&actionID, actionOpt, "", "")
 	flags.BoolVar(&deleteServices, deleteServicesOpt, false, "")
 	flags.BoolVar(&deleteServiceKeys, deleteServiceKeysOpt, false, "")
@@ -120,21 +124,31 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
+	// Create new REST client for mtas V2 api
+	mtaV2Client, err := c.NewMtaV2Client(host)
+	if err != nil {
+		ui.Failed(err.Error())
+		return Failure
+	}
+
 	// Check if a deployed MTA with the specified ID exists
-	_, err = mtaClient.GetMta(mtaID)
+	_, err = mtaV2Client.GetMtasForThisSpace(&mtaID, &namespace)
 	if err != nil {
 		ce, ok := err.(*baseclient.ClientError)
 		if ok && ce.Code == 404 && strings.Contains(fmt.Sprint(ce.Description), mtaID) {
-			ui.Failed("Multi-target app %s not found", terminal.EntityNameColor(mtaID))
+			if util.DiscardIfEmpty(namespace) != nil {
+				ui.Failed("Multi-target app %s with namespace %s not found", terminal.EntityNameColor(mtaID), terminal.EntityNameColor(namespace))
+			} else {
+				ui.Failed("Multi-target app %s not found", terminal.EntityNameColor(mtaID))
+			}
 			return Failure
 		}
 		ui.Failed("Could not get multi-target app %s: %s", terminal.EntityNameColor(mtaID), baseclient.NewClientError(err))
 		return Failure
-
 	}
 
 	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(mtaID, host, force)
+	wasAborted, err := c.CheckOngoingOperation(mtaID, namespace, host, force)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
@@ -152,6 +166,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(deleteServiceBrokers))
 	processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(noFailOnMissingPermissions))
 	processBuilder.Parameter("abortOnError", strconv.FormatBool(abortOnError))
+	processBuilder.Parameter("namespace", namespace)
 	operation := processBuilder.Build()
 
 	// Create the new process

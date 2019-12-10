@@ -27,7 +27,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a multi-target app using blue-green deployment",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app using blue-green deployment
-   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f]  [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps]  [--no-confirm] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature]
+   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f]  [--retries RETRIES] [--no-start]  [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps]  [--no-confirm] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -40,8 +40,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, monitor)",
 				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
 				util.GetShortOption(noStartOpt):                    "Do not start apps",
-				util.GetShortOption(useNamespacesOpt):              "Use namespaces in app and service names",
-				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
+				util.GetShortOption(namespaceOpt):                  "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
 				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",

@@ -2,11 +2,14 @@ package commands_test
 
 import (
 	"fmt"
+
 	cliFakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	mtaFake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
+	mtaV2Fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
+	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
@@ -85,7 +88,9 @@ var _ = Describe("UndeployCommand", func() {
 				GetMtaOperations(&[]string{mtaID}[0], nil, nil, nil, nil).
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation(testutil.ProcessID, "messages", &undeployOperation, nil).Build()
-			testClientFactory = commands.NewTestClientFactory(mtaClient, nil)
+			mtaV2Client := mtaV2fake.NewFakeMtaV2ClientBuilder().
+				GetMtasForThisSpace(mtaID, nil, nil, nil).Build()
+			testClientFactory = commands.NewTestClientFactory(mtaClient, mtaV2Client, nil)
 			command = commands.NewUndeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := utilFakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
@@ -140,8 +145,8 @@ var _ = Describe("UndeployCommand", func() {
 		Context("with an incorrect mta id provided", func() {
 			It("should display error and exit with non-zero status", func() {
 				var clientError = baseclient.NewClientError(testutil.ClientError)
-				testClientFactory.MtaClient = mtaFake.NewFakeMtaClientBuilder().
-					GetMta("test-non-existing-id", nil, clientError).Build()
+				testClientFactory.MtaV2Client = mtaV2Fake.NewFakeMtaV2ClientBuilder().
+					GetMtasForThisSpace("test-non-existing-id", nil, nil, clientError).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-non-existing-id", "-f"}).ToInt()
 				})
@@ -149,14 +154,31 @@ var _ = Describe("UndeployCommand", func() {
 			})
 		})
 
+		// non-existing MTA_ID and namespace commbination - failure
+		Context("with an incorrect mta id and namespace provided", func() {
+			It("should display error and exit with non-zero status", func() {
+				mta_id := "non-existing-mta"
+				namespace := "with-a-namespace"
+				custom_error := testutil.NewCustomError(404, "mtas", "MTA with name \""+mta_id+"\" and namespace \""+namespace+"\" does not exist")
+				var clientError = baseclient.NewClientError(custom_error)
+				testClientFactory.MtaV2Client = mtaV2Fake.NewFakeMtaV2ClientBuilder().
+					GetMtasForThisSpace(mta_id, &namespace, nil, clientError).Build()
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mta_id, "-f", "--namespace", namespace}).ToInt()
+				})
+				ex.ExpectFailureOnLine(status, output, "Multi-target app "+mta_id+" with namespace "+namespace+" not found", 1)
+			})
+		})
+
 		// existing MTA_ID and ongoing operations and force option
 		Context("with a correct mta id provided and ongoing operation found and force option provided", func() {
 			It("should try to abort the conflicting process and fail it", func() {
 				testClientFactory.MtaClient = mtaFake.NewFakeMtaClientBuilder().
-					GetMta(mtaID, nil, nil).
 					GetMtaOperations(&[]string{mtaID}[0], nil, nil, ongoingOperations, nil).
 					GetOperationActions(ongoingOperationId, []string{"abort"}, nil).
 					ExecuteAction(ongoingOperationId, "abort", mtaclient.ResponseHeader{Location: "operations/999?embed=messages"}, fmt.Errorf("test-error")).Build()
+				testClientFactory.MtaV2Client = mtaV2Fake.NewFakeMtaV2ClientBuilder().
+					GetMtasForThisSpace(mtaID, nil, nil, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaID, "-f"}).ToInt()
 				})
@@ -165,12 +187,13 @@ var _ = Describe("UndeployCommand", func() {
 
 			It("should try to abort the conflicting process and success", func() {
 				testClientFactory.MtaClient = mtaFake.NewFakeMtaClientBuilder().
-					GetMta(mtaID, nil, nil).
 					GetMtaOperations(&[]string{mtaID}[0], nil, nil, ongoingOperations, nil).
 					GetOperationActions(ongoingOperationId, []string{"abort"}, nil).
 					ExecuteAction(ongoingOperationId, "abort", mtaclient.ResponseHeader{Location: "operations/999?embed=messages"}, nil).
 					StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 					GetMtaOperation(testutil.ProcessID, "messages", &undeployOperation, nil).Build()
+				testClientFactory.MtaV2Client = mtaV2Fake.NewFakeMtaV2ClientBuilder().
+					GetMtasForThisSpace(mtaID, nil, nil, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaID, "-f"}).ToInt()
 				})
@@ -199,10 +222,10 @@ var _ = Describe("UndeployCommand", func() {
 		Context("with a correct mta id provided and failing start of operation", func() {
 			It("should display error and exit with non-zero status", func() {
 				testClientFactory.MtaClient = mtaFake.NewFakeMtaClientBuilder().
-					GetMta(mtaID, nil, nil).
 					GetMtaOperations(&[]string{mtaID}[0], nil, nil, nil, nil).
 					StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, fmt.Errorf("test-error")).Build()
-
+				testClientFactory.MtaV2Client = mtaV2Fake.NewFakeMtaV2ClientBuilder().
+					GetMtasForThisSpace(mtaID, nil, nil, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{testutil.ProcessID, "-f"}).ToInt()
 				})

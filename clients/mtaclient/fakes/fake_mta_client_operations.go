@@ -260,7 +260,7 @@ func (fake *FakeMtaClientOperations) GetMtaReturnsOnCall(i int, result1 *models.
 	}{result1, result2}
 }
 
-func (fake FakeMtaClientOperations) GetMtaFiles() ([]*models.FileMetadata, error) {
+func (fake FakeMtaClientOperations) GetMtaFiles(namespace *string) ([]*models.FileMetadata, error) {
 	fake.getMtaFilesMutex.Lock()
 	ret, specificReturn := fake.getMtaFilesReturnsOnCall[len(fake.getMtaFilesArgsForCall)]
 	fake.getMtaFilesArgsForCall = append(fake.getMtaFilesArgsForCall, struct{}{})
@@ -609,7 +609,7 @@ func (fake *FakeMtaClientOperations) StartMtaOperationReturnsOnCall(i int, resul
 	}{result1, result2}
 }
 
-func (fake FakeMtaClientOperations) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
+func (fake FakeMtaClientOperations) UploadMtaFile(file os.File, namespace *string) (*models.FileMetadata, error) {
 	fake.uploadMtaFileMutex.Lock()
 	ret, specificReturn := fake.uploadMtaFileReturnsOnCall[len(fake.uploadMtaFileArgsForCall)]
 	fake.uploadMtaFileArgsForCall = append(fake.uploadMtaFileArgsForCall, struct {

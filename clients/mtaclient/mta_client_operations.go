@@ -11,14 +11,14 @@ import (
 type MtaClientOperations interface {
 	ExecuteAction(operationID, actionID string) (ResponseHeader, error)
 	GetMta(mtaID string) (*models.Mta, error)
-	GetMtaFiles() ([]*models.FileMetadata, error)
+	GetMtaFiles(namespace *string) ([]*models.FileMetadata, error)
 	GetMtaOperation(operationID, embed string) (*models.Operation, error)
 	GetMtaOperationLogs(operationID string) ([]*models.Log, error)
 	GetMtaOperations(mtaId *string, last *int64, status []string) ([]*models.Operation, error)
 	GetMtas() ([]*models.Mta, error)
 	GetOperationActions(operationID string) ([]string, error)
 	StartMtaOperation(operation models.Operation) (ResponseHeader, error)
-	UploadMtaFile(file os.File) (*models.FileMetadata, error)
+	UploadMtaFile(file os.File, namespace *string) (*models.FileMetadata, error)
 	GetMtaOperationLogContent(operationID, logID string) (string, error)
 }
 

@@ -23,8 +23,6 @@ const (
 	timeoutOpt                 = "t"
 	versionRuleOpt             = "version-rule"
 	noStartOpt                 = "no-start"
-	useNamespacesOpt           = "use-namespaces"
-	noNamespacesForServicesOpt = "no-namespaces-for-services"
 	deleteServiceKeysOpt       = "delete-service-keys"
 	keepFilesOpt               = "keep-files"
 	skipOwnershipValidationOpt = "skip-ownership-validation"
@@ -81,24 +79,23 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
-				extDescriptorsOpt:                                  "Extension descriptors",
-				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                                         "Start timeout in seconds",
-				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                                     "Active deploy operation ID",
-				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, monitor)",
-				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
-				moduleOpt:                                          "Deploy list of modules which are contained in the deployment descriptor, in the current location",
-				resourceOpt:                                        "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(noStartOpt):                    "Do not start apps",
-				util.GetShortOption(useNamespacesOpt):              "Use namespaces in app and service names",
-				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
-				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
+				extDescriptorsOpt:                      "Extension descriptors",
+				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				timeoutOpt:                             "Start timeout in seconds",
+				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
+				operationIDOpt:                         "Active deploy operation ID",
+				actionOpt:                              "Action to perform on active deploy operation (abort, retry, monitor)",
+				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                              "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                            "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(noStartOpt):        "Do not start apps",
+				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
+				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
 				util.GetShortOption(keepFilesOpt):                  "Keep files used for deployment",
@@ -132,8 +129,7 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[versionRuleOpt] = flags.String(versionRuleOpt, "", "")
 		optionValues[deleteServicesOpt] = flags.Bool(deleteServicesOpt, false, "")
 		optionValues[noStartOpt] = flags.Bool(noStartOpt, false, "")
-		optionValues[useNamespacesOpt] = flags.Bool(useNamespacesOpt, false, "")
-		optionValues[noNamespacesForServicesOpt] = flags.Bool(noNamespacesForServicesOpt, false, "")
+		optionValues[namespaceOpt] = flags.String(namespaceOpt, "", "")
 		optionValues[deleteServiceKeysOpt] = flags.Bool(deleteServiceKeysOpt, false, "")
 		optionValues[deleteServiceBrokersOpt] = flags.Bool(deleteServiceBrokersOpt, false, "")
 		optionValues[keepFilesOpt] = flags.Bool(keepFilesOpt, false, "")
@@ -159,8 +155,6 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(GetBoolOpt(deleteServiceKeysOpt, optionValues)))
 		processBuilder.Parameter("deleteServices", strconv.FormatBool(GetBoolOpt(deleteServicesOpt, optionValues)))
 		processBuilder.Parameter("noStart", strconv.FormatBool(GetBoolOpt(noStartOpt, optionValues)))
-		processBuilder.Parameter("useNamespaces", strconv.FormatBool(GetBoolOpt(useNamespacesOpt, optionValues)))
-		processBuilder.Parameter("useNamespacesForServices", strconv.FormatBool(!GetBoolOpt(noNamespacesForServicesOpt, optionValues)))
 		processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(GetBoolOpt(deleteServiceBrokersOpt, optionValues)))
 		processBuilder.Parameter("startTimeout", GetStringOpt(timeoutOpt, optionValues))
 		processBuilder.Parameter("versionRule", GetStringOpt(versionRuleOpt, optionValues))
@@ -213,6 +207,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	action := GetStringOpt(actionOpt, optionValues)
 	force := GetBoolOpt(forceOpt, optionValues)
 	retries := GetUintOpt(retriesOpt, optionValues)
+	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, optionValues))
 
 	context, err := c.GetContext()
 	if err != nil {
@@ -259,7 +254,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Extract mta id from archive file
-	mtaID, err := util.GetMtaIDFromArchive(mtaArchivePath)
+	descriptor, err := util.GetMtaDescriptorFromArchive(mtaArchivePath)
 	if os.IsNotExist(err) {
 		ui.Failed("Could not find file %s", terminal.EntityNameColor(mtaArchivePath))
 		return Failure
@@ -269,7 +264,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(mtaID, host, force)
+	wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, host, force)
 	if err != nil {
 		ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
 		return Failure
@@ -287,7 +282,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 
 	uploadChunkSizeInMB := c.configurationSnapshot.GetUploadChunkSizeInMB()
 	// Upload the MTA archive file
-	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, uploadChunkSizeInMB)
+	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, namespace, uploadChunkSizeInMB)
 	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()
 	if status == Failure {
 		return Failure
@@ -300,7 +295,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Upload the extension descriptor files
 	var uploadedExtDescriptorIDs []string
 	if len(extDescriptorPaths) != 0 {
-		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, uploadChunkSizeInMB)
+		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, namespace, uploadChunkSizeInMB)
 		uploadedExtDescriptors, status := extDescriptorsUploader.UploadFiles()
 		if status == Failure {
 			return Failure
@@ -312,9 +307,10 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 
 	// Build the process instance
 	processBuilder := NewDeploymentStrategy(optionValues, c.processTypeProvider).CreateProcessBuilder()
+	processBuilder.Namespace(namespace)
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
-	processBuilder.Parameter("mtaId", mtaID)
+	processBuilder.Parameter("mtaId", descriptor.ID)
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
 

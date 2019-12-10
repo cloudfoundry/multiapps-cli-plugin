@@ -26,6 +26,10 @@ type Operation struct {
 	// mta Id
 	MtaID string `json:"mtaId,omitempty"`
 
+	// namespace
+	// Read Only: true
+	Namespace string `json:"namespace,omitempty"`
+
 	// parameters
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
 

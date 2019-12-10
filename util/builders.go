@@ -24,6 +24,11 @@ func (pb *ProcessBuilder) ProcessType(processType string) *ProcessBuilder {
 	return pb
 }
 
+func (pb *ProcessBuilder) Namespace(namespace string) *ProcessBuilder {
+	pb.operation.Namespace = namespace
+	return pb
+}
+
 // Parameter adds a parameter to the process if it is set
 func (pb *ProcessBuilder) Parameter(parameterID string, value string) *ProcessBuilder {
 	if value != "" {

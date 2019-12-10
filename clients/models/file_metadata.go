@@ -34,6 +34,9 @@ type FileMetadata struct {
 
 	// space
 	Space string `json:"space,omitempty"`
+
+	// namespace
+	Namespace string `json:"namespace,omitempty"`
 }
 
 /* polymorph FileMetadata digest false */
