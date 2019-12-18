@@ -390,7 +390,7 @@ func GetMtaModule(name string, services []string, providedDependencies []string)
 		ModuleName:            name,
 		AppName:               name,
 		Services:              services,
-		ProvidedDendencyNames: providedDependencies,
+		ProvidedDependencyNames: providedDependencies,
 	}
 }
 

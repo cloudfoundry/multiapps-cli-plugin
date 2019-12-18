@@ -26,8 +26,8 @@ type Module struct {
 	// module name
 	ModuleName string `json:"moduleName,omitempty"`
 
-	// provided dendency names
-	ProvidedDendencyNames []string `json:"providedDendencyNames"`
+	// provided dependency names
+	ProvidedDependencyNames []string `json:"providedDependencyNames"`
 
 	// services
 	Services []string `json:"services"`
@@ -45,7 +45,7 @@ type Module struct {
 
 /* polymorph Module moduleName false */
 
-/* polymorph Module providedDendencyNames false */
+/* polymorph Module providedDependencyNames false */
 
 /* polymorph Module services false */
 
@@ -57,7 +57,7 @@ type Module struct {
 func (m *Module) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateProvidedDendencyNames(formats); err != nil {
+	if err := m.validateProvidedDependencyNames(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -78,9 +78,9 @@ func (m *Module) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Module) validateProvidedDendencyNames(formats strfmt.Registry) error {
+func (m *Module) validateProvidedDependencyNames(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.ProvidedDendencyNames) { // not required
+	if swag.IsZero(m.ProvidedDependencyNames) { // not required
 		return nil
 	}
 
