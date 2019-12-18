@@ -1,3 +1,5 @@
+## v2.2.1
+* Send mtaId when deployment starts
 ## v2.2.0
 * Introduce configurable retry on operation failure
 
