@@ -8,7 +8,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	operations "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/operations"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/operations"
 )
 
 const restBaseURL string = "rest/"
@@ -21,7 +21,7 @@ type RestClient struct {
 }
 
 // NewRestClient creates a new Rest client
-func NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
+func NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
 	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
 
 	client := New(t, strfmt.Default)

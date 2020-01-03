@@ -12,7 +12,7 @@ import (
 type ClientFactory interface {
 	NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
 	NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
-	NewRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations
+	NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations
 	NewManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations
 }
 
@@ -46,10 +46,10 @@ func (d *DefaultClientFactory) NewManagementMtaClient(host string, rt http.Round
 }
 
 // NewRestClient used for creating or returning cached value of the rest client
-func (d *DefaultClientFactory) NewRestClient(host, org, space string,
-	rt http.RoundTripper, jar http.CookieJar, tokenfactory baseclient.TokenFactory) restclient.RestClientOperations {
+func (d *DefaultClientFactory) NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar,
+	tokenfactory baseclient.TokenFactory) restclient.RestClientOperations {
 	if d.restClient == nil {
-		d.restClient = restclient.NewRetryableRestClient(host, org, space, rt, jar, tokenfactory)
+		d.restClient = restclient.NewRetryableRestClient(host, rt, jar, tokenfactory)
 	}
 	return d.restClient
 }

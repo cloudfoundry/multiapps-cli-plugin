@@ -5,7 +5,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
-// TODO: use counterfeiter if the client becomes more suffisticated
+// TODO: use counterfeiter if the client becomes more sophisticated
 
 type FakeCloudFoundryClient struct {
 	domains []models.SharedDomain

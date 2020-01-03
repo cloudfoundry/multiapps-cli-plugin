@@ -3,9 +3,9 @@ package commands
 import (
 	"net/http"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 )
 
 type TestClientFactory struct {
@@ -25,8 +25,7 @@ func (f *TestClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTrip
 	return f.MtaClient
 }
 
-func (f *TestClientFactory) NewRestClient(host, org, space string,
-	rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+func (f *TestClientFactory) NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
 	return f.RestClient
 }
 

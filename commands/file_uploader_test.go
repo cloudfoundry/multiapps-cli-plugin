@@ -47,7 +47,7 @@ var _ = Describe("FileUploader", func() {
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
-				Expect(uploadedFiles).To(Equal([]*models.FileMetadata{}))
+				Expect(uploadedFiles).To(BeNil())
 			})
 		})
 
@@ -60,7 +60,7 @@ var _ = Describe("FileUploader", func() {
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
-				Expect(uploadedFiles).To(Equal([]*models.FileMetadata{}))
+				Expect(uploadedFiles).To(BeNil())
 			})
 		})
 

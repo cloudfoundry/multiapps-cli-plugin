@@ -44,9 +44,9 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 		return nil, Failure
 	}
 
-	// Determine which files to uplaod
-	filesToUpload := []os.File{}
-	alreadyUploadedFiles := []*models.FileMetadata{}
+	// Determine which files to upload
+	var filesToUpload []os.File
+	var alreadyUploadedFiles []*models.FileMetadata
 	for _, file := range f.files {
 		// Check if the file exists
 		fileInfo, err := os.Stat(file)
@@ -62,17 +62,17 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 		if !isFileAlreadyUploaded(file, fileInfo, uploadedMtaFiles, &alreadyUploadedFiles) {
 			// If not, add it to the list of uploaded files
 			fileToUpload, err := os.Open(file)
-			defer fileToUpload.Close()
 			if err != nil {
 				ui.Failed("Could not open file %s", terminal.EntityNameColor(file))
 				return nil, Failure
 			}
+			defer fileToUpload.Close()
 			filesToUpload = append(filesToUpload, *fileToUpload)
 		}
 	}
 
 	// If there are new files to upload, upload them
-	uploadedFiles := []*models.FileMetadata{}
+	var uploadedFiles []*models.FileMetadata
 	uploadedFiles = append(uploadedFiles, alreadyUploadedFiles...)
 	if len(filesToUpload) != 0 {
 		chunkSizeInMB := configuration.GetChunkSizeInMB()
@@ -130,7 +130,7 @@ func uploadInChunks(fullPath string, fileToUpload os.File, chunkSizeInMB uint64,
 			return nil
 		})
 	}
-	uploadedFileParts := []*models.FileMetadata{}
+	var uploadedFileParts []*models.FileMetadata
 	var retrieverGroup errgroup.Group
 	retrieverGroup.Go(func() error {
 		for uploadedFile := range uploadedFilesChannel {
@@ -156,16 +156,17 @@ func uploadInChunks(fullPath string, fileToUpload os.File, chunkSizeInMB uint64,
 func attemptToRemoveFileParts(fileParts []string) {
 	// If more than one file parts exists, then remove them.
 	// If there is only one, then this is the archive itself
-	if len(fileParts) > 1 {
-		for _, filePart := range fileParts {
-			filePartAbsPath, err := filepath.Abs(filePart)
-			if err != nil {
-				ui.Warn("Error retrieving absolute file path of %q", filePart)
-			}
-			err = os.Remove(filePartAbsPath)
-			if err != nil {
-				ui.Warn("Error cleaning up temporary files")
-			}
+	if len(fileParts) <= 1 {
+		return
+	}
+	for _, filePart := range fileParts {
+		filePartAbsPath, err := filepath.Abs(filePart)
+		if err != nil {
+			ui.Warn("Error retrieving absolute file path of %q", filePart)
+		}
+		err = os.Remove(filePartAbsPath)
+		if err != nil {
+			ui.Warn("Error cleaning up temporary files")
 		}
 	}
 }

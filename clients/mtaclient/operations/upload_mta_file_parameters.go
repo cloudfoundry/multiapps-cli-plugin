@@ -22,9 +22,7 @@ import (
 // NewUploadMtaFileParams creates a new UploadMtaFileParams object
 // with the default values initialized.
 func NewUploadMtaFileParams() *UploadMtaFileParams {
-	var ()
 	return &UploadMtaFileParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
@@ -32,9 +30,7 @@ func NewUploadMtaFileParams() *UploadMtaFileParams {
 // NewUploadMtaFileParamsWithTimeout creates a new UploadMtaFileParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewUploadMtaFileParamsWithTimeout(timeout time.Duration) *UploadMtaFileParams {
-	var ()
 	return &UploadMtaFileParams{
-
 		timeout: timeout,
 	}
 }
@@ -42,9 +38,7 @@ func NewUploadMtaFileParamsWithTimeout(timeout time.Duration) *UploadMtaFilePara
 // NewUploadMtaFileParamsWithContext creates a new UploadMtaFileParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewUploadMtaFileParamsWithContext(ctx context.Context) *UploadMtaFileParams {
-	var ()
 	return &UploadMtaFileParams{
-
 		Context: ctx,
 	}
 }
@@ -52,7 +46,6 @@ func NewUploadMtaFileParamsWithContext(ctx context.Context) *UploadMtaFileParams
 // NewUploadMtaFileParamsWithHTTPClient creates a new UploadMtaFileParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewUploadMtaFileParamsWithHTTPClient(client *http.Client) *UploadMtaFileParams {
-	var ()
 	return &UploadMtaFileParams{
 		HTTPClient: client,
 	}

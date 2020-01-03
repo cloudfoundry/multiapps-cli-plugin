@@ -79,6 +79,7 @@ func (c MtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
 	}
 	return resp.Payload, nil
 }
+
 func (c MtaRestClient) GetMtaOperation(operationID, embed string) (*models.Operation, error) {
 	params := &operations.GetMtaOperationParams{
 		Context:     context.TODO(),
@@ -95,6 +96,7 @@ func (c MtaRestClient) GetMtaOperation(operationID, embed string) (*models.Opera
 	}
 	return resp.Payload, nil
 }
+
 func (c MtaRestClient) GetMtaOperationLogs(operationID string) ([]*models.Log, error) {
 	params := &operations.GetMtaOperationLogsParams{
 		Context:     context.TODO(),
@@ -110,6 +112,7 @@ func (c MtaRestClient) GetMtaOperationLogs(operationID string) ([]*models.Log, e
 	}
 	return resp.Payload, nil
 }
+
 func (c MtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models.Operation, error) {
 	params := &operations.GetMtaOperationsParams{
 		Context: context.TODO(),
@@ -126,13 +129,7 @@ func (c MtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models
 	}
 	return resp.Payload, nil
 }
-func parseOperation(payload models.GetMtaOperationsOKBody) []*models.Operation {
-	var resultOperations []*models.Operation
-	for _, p := range payload {
-		resultOperations = append(resultOperations, p)
-	}
-	return resultOperations
-}
+
 func (c MtaRestClient) GetMtas() ([]*models.Mta, error) {
 	token, err := c.TokenFactory.NewToken()
 	if err != nil {
@@ -144,6 +141,7 @@ func (c MtaRestClient) GetMtas() ([]*models.Mta, error) {
 	}
 	return resp.Payload, nil
 }
+
 func (c MtaRestClient) GetOperationActions(operationID string) ([]string, error) {
 	params := &operations.GetOperationActionsParams{
 		Context:     context.TODO(),
@@ -159,6 +157,7 @@ func (c MtaRestClient) GetOperationActions(operationID string) ([]string, error)
 	}
 	return resp.Payload, nil
 }
+
 func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHeader, error) {
 	params := &operations.StartMtaOperationParams{
 		Context:   context.TODO(),
@@ -174,6 +173,7 @@ func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHe
 	}
 	return ResponseHeader{Location: resp.Location}, nil
 }
+
 func (c MtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
 	params := &operations.UploadMtaFileParams{
 		Context: context.TODO(),
