@@ -19,7 +19,7 @@ func NewDefaultCsrfTokenUpdater(transport *Transport, request *http.Request, csr
 }
 
 func (c *DefaultCsrfTokenUpdater) updateCsrfToken() error {
-	if !c.shouldInitialize(c.request) {
+	if !c.shouldInitialize() {
 		return nil
 	}
 	err := c.initializeToken(false, getCsrfTokenUrl(c.request))
@@ -80,6 +80,6 @@ func (c *DefaultCsrfTokenUpdater) isProtectionRequired(req *http.Request, t *Tra
 	return !t.Csrf.NonProtectedMethods[req.Method]
 }
 
-func (c *DefaultCsrfTokenUpdater) shouldInitialize(request *http.Request) bool {
+func (c *DefaultCsrfTokenUpdater) shouldInitialize() bool {
 	return c.request != nil && c.isProtectionRequired(c.request, c.transport)
 }

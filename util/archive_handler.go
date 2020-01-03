@@ -14,7 +14,6 @@ import (
 )
 
 const defaultDescriptorLocation string = "META-INF/mtad.yaml"
-const defaultDescriptorName string = "mtad.yaml"
 
 type mtaDescriptor struct {
 	SchemaVersion string `yaml:"_schema-version,omitempty"`
@@ -23,9 +22,9 @@ type mtaDescriptor struct {
 }
 
 // GetMtaIDFromArchive retrieves MTA ID from MTA archive
-func GetMtaIDFromArchive(mtaArchveFilePath string) (string, error) {
+func GetMtaIDFromArchive(mtaArchiveFilePath string) (string, error) {
 	// Open the mta archive
-	mtaArchiveReader, err := zip.OpenReader(mtaArchveFilePath)
+	mtaArchiveReader, err := zip.OpenReader(mtaArchiveFilePath)
 	if err != nil {
 		return "", err
 	}

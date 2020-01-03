@@ -8,11 +8,11 @@ import (
 	"github.com/cloudfoundry/cli/cf/terminal"
 
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
-	fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/fakes"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
@@ -26,7 +26,6 @@ var _ = Describe("BaseCommand", func() {
 	const org = "test-org"
 	const space = "test-space"
 	const user = "test-user"
-	const deployID = "DEPLOY"
 
 	var fakeCliConnection *plugin_fakes.FakeCliConnection
 	var command *commands.BaseCommand

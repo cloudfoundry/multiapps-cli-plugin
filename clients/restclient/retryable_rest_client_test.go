@@ -58,12 +58,12 @@ func newRetryableRestClient(statusCode int, v interface{}) restclient.RestClient
 	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
 	cookieJar, _ := cookiejar.New(nil)
 	roundTripper := testutil.NewCustomTransport(statusCode, v)
-	return NewMockRetryableRestClient("http://localhost:1000", "test-org", "test-space", roundTripper, cookieJar, tokenFactory)
+	return NewMockRetryableRestClient("http://localhost:1000", roundTripper, cookieJar, tokenFactory)
 }
 
 // NewRetryableRestClient creates a new retryable REST client
-func NewMockRetryableRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
-	restClient := NewMockRestClient(host, org, space, rt, jar, tokenFactory)
+func NewMockRetryableRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+	restClient := NewMockRestClient(host, rt, jar, tokenFactory)
 	return restclient.RetryableRestClient{RestClient: restClient, MaxRetriesCount: 3, RetryInterval: time.Microsecond * 1}
 }
 
@@ -73,8 +73,8 @@ type MockRestClient struct {
 }
 
 // NewMockRestClient creates a new Rest client
-func NewMockRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
-	restClient := restclient.NewRestClient(host, org, space, rt, jar, tokenFactory)
+func NewMockRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+	restClient := restclient.NewRestClient(host, rt, jar, tokenFactory)
 	return &MockRestClient{restClient, 0}
 }
 

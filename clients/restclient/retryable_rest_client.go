@@ -15,8 +15,8 @@ type RetryableRestClient struct {
 }
 
 // NewRetryableRestClient creates a new retryable REST client
-func NewRetryableRestClient(host, org, space string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
-	restClient := NewRestClient(host, org, space, rt, jar, tokenFactory)
+func NewRetryableRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
+	restClient := NewRestClient(host, rt, jar, tokenFactory)
 	return RetryableRestClient{restClient, 3, time.Second * 3}
 }
 

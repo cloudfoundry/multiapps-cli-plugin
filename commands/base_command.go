@@ -120,15 +120,7 @@ func GetOptionValue(args []string, optionName string) string {
 
 // NewRestClient creates a new MTA deployer REST client
 func (c *BaseCommand) NewRestClient(host string) (restclient.RestClientOperations, error) {
-	space, err := c.GetSpace()
-	if err != nil {
-		return nil, err
-	}
-	org, err := c.GetOrg()
-	if err != nil {
-		return nil, err
-	}
-	restClient := c.clientFactory.NewRestClient(host, org.Name, space.Name, c.transport, c.jar, c.tokenFactory)
+	restClient := c.clientFactory.NewRestClient(host, c.transport, c.jar, c.tokenFactory)
 	return restClient, nil
 }
 
@@ -285,7 +277,7 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 				return false, nil
 			}
 		} else {
-			ui.Warn("%s cancelled", capitalizeFirst(string(ongoingOperation.ProcessType)))
+			ui.Warn("%s cancelled", capitalizeFirst(ongoingOperation.ProcessType))
 			return false, nil
 		}
 	}

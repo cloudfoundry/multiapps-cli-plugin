@@ -24,13 +24,6 @@ func (c *BaseClient) SetTokenFactory(tokenFactory TokenFactory) {
 	c.TokenFactory = tokenFactory
 }
 
-//NewBaseClient creates a new client with the specified authentication info
-func NewBaseClient(tokenFactory TokenFactory) *BaseClient {
-	return &BaseClient{
-		TokenFactory: tokenFactory,
-	}
-}
-
 // NewHTTPTransport creates a new HTTP transport
 func NewHTTPTransport(host, url, encodedUrl string, rt http.RoundTripper, jar http.CookieJar) *client.Runtime {
 	// TODO: apply the changes made by Boyan here, as after the update of the dependencies the changes are not available

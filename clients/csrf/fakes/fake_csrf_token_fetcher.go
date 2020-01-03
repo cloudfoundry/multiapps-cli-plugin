@@ -11,7 +11,7 @@ const FakeCsrfTokenValue = "fake-xcsrf-token-value"
 type FakeCsrfTokenFetcher struct {
 }
 
-func (c *FakeCsrfTokenFetcher) FetchCsrfToken(url string, currentRequest *http.Request) (*csrf_paramters.CsrfRequestHeader, error) {
+func (c *FakeCsrfTokenFetcher) FetchCsrfToken(string, *http.Request) (*csrf_paramters.CsrfRequestHeader, error) {
 	return &csrf_paramters.CsrfRequestHeader{FakeCsrfTokenHeader, FakeCsrfTokenValue}, nil
 }
 
