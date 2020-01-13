@@ -79,7 +79,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						ProcessID: processID,
 						State:     "ERROR",
 						Messages: []*models.Message{
-							&models.Message{
+							{
 								Type: models.MessageTypeERROR,
 								Text: "error message",
 							},
@@ -175,7 +175,7 @@ var _ = Describe("ExecutionMonitor", func() {
 						Messages: []*models.Message{},
 					}, nil).
 					GetOperationActions(processID, []string{"retry", "abort"}, nil).Build()
-				monitor = commands.NewExecutionMonitorFromLocationHeader(commandName, "operations/"+processID+"?embed=messages", 0, []*models.Message{}, client)
+				monitor = commands.NewExecutionMonitorFromLocationHeader(commandName, "operations/" + processID + "?embed=messages", 0, client)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})

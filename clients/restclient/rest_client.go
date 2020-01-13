@@ -12,7 +12,6 @@ import (
 )
 
 const restBaseURL string = "rest/"
-const csrfRestBaseURL string = "api/v1/"
 
 // RestClient represents a client for the MTA deployer REST protocol
 type RestClient struct {
@@ -23,15 +22,8 @@ type RestClient struct {
 // NewRestClient creates a new Rest client
 func NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
 	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
-
 	client := New(t, strfmt.Default)
-	return RestClient{baseclient.BaseClient{tokenFactory}, client}
-}
-
-func NewManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
-	t := baseclient.NewHTTPTransport(host, csrfRestBaseURL, csrfRestBaseURL, rt, jar)
-	httpRestClient := New(t, strfmt.Default)
-	return &RestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpRestClient}
+	return RestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, client}
 }
 
 func (c RestClient) PurgeConfiguration(org, space string) error {

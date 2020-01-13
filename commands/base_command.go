@@ -4,13 +4,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/http/cookiejar"
-	"strings"
-	"time"
-	"unicode"
-
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
@@ -18,17 +11,19 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
-	plugin_models "github.com/cloudfoundry/cli/plugin/models"
+	"io/ioutil"
+	"net/http"
+	"net/http/cookiejar"
+	"strings"
+	"time"
 )
 
 const (
-	// DeployServiceURLEnv is the deploy service URL environment variable
 	deployServiceURLOpt           = "u"
 	operationIDOpt                = "i"
 	actionOpt                     = "a"
@@ -50,6 +45,10 @@ type BaseCommand struct {
 	clientFactory              clients.ClientFactory
 	tokenFactory               baseclient.TokenFactory
 	deployServiceURLCalculator util.DeployServiceURLCalculator
+
+	optionParser OptionParser
+	options      map[string]CommandOption
+	flags        *flag.FlagSet
 }
 
 // Initialize initializes the command with the specified name and CLI connection
@@ -59,6 +58,8 @@ func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection
 	jar := newCookieJar()
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
 	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, jar, tokenFactory)
+	c.createFlags()
+	c.defineOptions()
 	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cloudFoundryClient))
 }
 
@@ -95,133 +96,40 @@ func (c *BaseCommand) Usage(message string) {
 	}
 }
 
-// CreateFlags creates a flag set to be used for parsing command arguments
-func (c *BaseCommand) CreateFlags(host *string, args []string) (*flag.FlagSet, error) {
-	flags := flag.NewFlagSet(c.name, flag.ContinueOnError)
-	deployServiceURL, err := c.GetDeployServiceURL(args)
-	if err != nil {
-		return nil, err
-	}
-
-	flags.StringVar(host, deployServiceURLOpt, deployServiceURL, "")
-	flags.SetOutput(ioutil.Discard)
-	return flags, nil
+func (c *BaseCommand) createFlags() {
+	c.flags = flag.NewFlagSet(c.name, flag.ContinueOnError)
+	c.flags.SetOutput(ioutil.Discard)
 }
 
-func GetOptionValue(args []string, optionName string) string {
-	for index, arg := range args {
-		trimmedArg := strings.Trim(arg, "-")
-		if optionName == trimmedArg && len(args) > index+1 {
-			return args[index+1]
-		}
-	}
-	return ""
+func deployServiceUrlOption() CommandOption {
+	return CommandOption{new(string), "", "Deploy service URL, by default 'deploy-service.<system-domain>'", true}
+}
+
+func (c *BaseCommand) computeDeployServiceUrl() (string, error) {
+	return c.deployServiceURLCalculator.ComputeDeployServiceURL(getStringOpt(deployServiceURLOpt, c.options))
 }
 
 // NewRestClient creates a new MTA deployer REST client
-func (c *BaseCommand) NewRestClient(host string) (restclient.RestClientOperations, error) {
-	restClient := c.clientFactory.NewRestClient(host, c.transport, c.jar, c.tokenFactory)
-	return restClient, nil
-}
-
-func (c *BaseCommand) NewManagementRestClient(host string) (restclient.RestClientOperations, error) {
-	return c.clientFactory.NewManagementRestClient(host, c.transport, c.jar, c.tokenFactory), nil
+func (c *BaseCommand) NewRestClient(host string) restclient.RestClientOperations {
+	return c.clientFactory.NewRestClient(host, c.transport, c.jar, c.tokenFactory)
 }
 
 // NewMtaClient creates a new MTA deployer REST client
 func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, error) {
-	space, err := c.GetSpace()
+	space, err := GetSpace(c.cliConnection)
 	if err != nil {
 		return nil, err
 	}
-
-	return c.clientFactory.NewMtaClient(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
+	mtaClient := c.clientFactory.NewMtaClient(host, space.Guid, c.transport, c.jar, c.tokenFactory)
+	return mtaClient, nil
 }
 
-func (c *BaseCommand) NewManagementMtaClient(host string) (mtaclient.MtaClientOperations, error) {
-	return c.clientFactory.NewManagementMtaClient(host, c.transport, c.jar, c.tokenFactory), nil
-}
-
-// Context holding the username, Org and Space of the current used
-type Context struct {
-	Username string
-	Org      string
-	Space    string
-}
-
-// GetContext initializes and retrieves the Context
 func (c *BaseCommand) GetContext() (Context, error) {
-	username, err := c.GetUsername()
+	context, err := CreateContext(c.cliConnection)
 	if err != nil {
 		return Context{}, err
 	}
-	org, err := c.GetOrg()
-	if err != nil {
-		return Context{}, err
-	}
-	space, err := c.GetSpace()
-	if err != nil {
-		return Context{}, err
-	}
-	return Context{Org: org.Name, Space: space.Name, Username: username}, nil
-}
-
-// GetOrg gets the current org name from the CLI connection
-func (c *BaseCommand) GetOrg() (plugin_models.Organization, error) {
-	org, err := c.cliConnection.GetCurrentOrg()
-	if err != nil {
-		return plugin_models.Organization{}, fmt.Errorf("Could not get current org: %s", err)
-	}
-	if org.Name == "" {
-		return plugin_models.Organization{}, fmt.Errorf("No org and space targeted, use '%s' to target an org and a space", terminal.CommandColor("cf target -o ORG -s SPACE"))
-	}
-	return org, nil
-}
-
-// GetSpace gets the current space name from the CLI connection
-func (c *BaseCommand) GetSpace() (plugin_models.Space, error) {
-	space, err := c.cliConnection.GetCurrentSpace()
-	if err != nil {
-		return plugin_models.Space{}, fmt.Errorf("Could not get current space: %s", err)
-	}
-
-	if space.Name == "" || space.Guid == "" {
-		return plugin_models.Space{}, fmt.Errorf("No space targeted, use '%s' to target a space", terminal.CommandColor("cf target -s"))
-	}
-	return space, nil
-}
-
-// GetUsername gets the username from the CLI connection
-func (c *BaseCommand) GetUsername() (string, error) {
-	username, err := c.cliConnection.Username()
-	if err != nil {
-		return "", fmt.Errorf("Could not get username: %s", err)
-	}
-	if username == "" {
-		return "", fmt.Errorf("Not logged in. Use '%s' to log in.", terminal.CommandColor("cf login"))
-	}
-	return username, nil
-}
-
-// GetDeployServiceURL returns the deploy service URL
-func (c *BaseCommand) GetDeployServiceURL(args []string) (string, error) {
-	customDeployServiceURL := c.GetCustomDeployServiceURL(args)
-	if customDeployServiceURL != "" {
-		return customDeployServiceURL, nil
-	}
-
-	return c.deployServiceURLCalculator.ComputeDeployServiceURL()
-}
-
-// GetCustomDeployServiceURL returns custom deploy service URL
-func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
-	optionDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
-
-	if optionDeployServiceURL != "" {
-		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", optionDeployServiceURL))
-		return optionDeployServiceURL
-	}
-	return configuration.GetBackendURL()
+	return context, nil
 }
 
 // ExecuteAction executes the action over the process specified with operationID
@@ -257,7 +165,7 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, 
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
-func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force bool) (bool, error) {
+func (c *BaseCommand) CheckOngoingOperation(mtaID string, force bool, host string) (bool, error) {
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
 		return false, err
@@ -268,20 +176,18 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 	if err != nil {
 		return false, err
 	}
-	if ongoingOperation != nil {
-		// Abort the conflict process if confirmed by the user
-		if c.shouldAbortConflictingOperation(mtaID, force) {
-			action := GetNoRetriesActionToExecute("abort", c.name)
-			status := action.Execute(ongoingOperation.ProcessID, mtaClient)
-			if status == Failure {
-				return false, nil
-			}
-		} else {
-			ui.Warn("%s cancelled", capitalizeFirst(ongoingOperation.ProcessType))
-			return false, nil
-		}
+	if ongoingOperation == nil {
+		return true, nil
 	}
-
+	if !c.shouldAbortConflictingOperation(mtaID, force) {
+		ui.Warn("%s cancelled", strings.Title(ongoingOperation.ProcessType))
+		return false, nil
+	}
+	action := GetNoRetriesActionToExecute("abort", c.name)
+	status := action.Execute(ongoingOperation.ProcessID, mtaClient)
+	if status == Failure {
+		return false, nil
+	}
 	return true, nil
 }
 
@@ -319,7 +225,7 @@ func (c *BaseCommand) findOngoingOperation(mtaID string, mtaClient mtaclient.Mta
 }
 
 func (c *BaseCommand) isConflicting(operation *models.Operation, mtaID string) (bool, error) {
-	space, err := c.GetSpace()
+	space, err := GetSpace(c.cliConnection)
 	if err != nil {
 		return false, err
 	}
@@ -334,6 +240,45 @@ func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) 
 		terminal.EntityNameColor(mtaID))
 }
 
+func (c *BaseCommand) defineOptions() {
+	optionParser := c.optionParser
+	if c.optionParser == nil {
+		optionParser = DefaultOptionParser{AbstractOptionParser{}}
+	}
+	for name, option := range c.options {
+		if parsed := optionParser.parseOption(name, option, c.flags); !parsed {
+			optionParser.additionalParse(name, option, c.flags)
+		}
+	}
+}
+
+func getBoolOpt(name string, options map[string]CommandOption) bool {
+	return *options[name].Value.(*bool)
+}
+
+func getStringOpt(name string, options map[string]CommandOption) string {
+	return *options[name].Value.(*string)
+}
+
+func getUintOpt(name string, options map[string]CommandOption) uint {
+	return *options[name].Value.(*uint)
+}
+
+func (c *BaseCommand) getOptionsForPluginCommand() map[string]string {
+	options := make(map[string]string, len(c.options))
+	for name, option := range c.options {
+		options[formatOptionName(name, option.IsShortOpt)] = option.Usage
+	}
+	return options
+}
+
+func formatOptionName(name string, isShortOpt bool) string {
+	if !isShortOpt {
+		return util.GetShortOption(name)
+	}
+	return name
+}
+
 func newTransport() http.RoundTripper {
 	csrfx := csrf.Csrf{Header: "", Token: "", IsInitialized: false, NonProtectedMethods: getNonProtectedMethods()}
 	// TODO Make sure SSL verification is only skipped if the CLI is configured this way
@@ -341,7 +286,7 @@ func newTransport() http.RoundTripper {
 	// Increase tls handshake timeout to cope with  of slow internet connection. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
 	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	return csrf.Transport{Transport: httpTransport, Csrf: &csrfx, Cookies: &csrf.Cookies{[]*http.Cookie{}}}
+	return csrf.Transport{Transport: httpTransport, Csrf: &csrfx, Cookies: &csrf.Cookies{Cookies: []*http.Cookie{}}}
 }
 
 func getNonProtectedMethods() map[string]bool {
@@ -365,13 +310,4 @@ func newCookieJar() http.CookieJar {
 func getTokenValue(tokenString string) string {
 	// TODO(ivan): check whether there are >1 elements
 	return strings.Fields(tokenString)[1]
-}
-
-func capitalizeFirst(s string) string {
-	if s == "" {
-		return s
-	}
-	a := []rune(s)
-	a[0] = unicode.ToUpper(a[0])
-	return string(a)
 }

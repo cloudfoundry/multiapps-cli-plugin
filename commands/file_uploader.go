@@ -27,10 +27,7 @@ type FileUploader struct {
 
 //NewFileUploader creates a new file uploader for the specified service ID, files, and SLMP client
 func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations) *FileUploader {
-	return &FileUploader{
-		files:     files,
-		mtaClient: mtaClient,
-	}
+	return &FileUploader{files, mtaClient}
 }
 
 //UploadFiles uploads the files

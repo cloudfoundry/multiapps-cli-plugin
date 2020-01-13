@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"net/url"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/operations"
-	models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/go-openapi/strfmt"
 )
 
 const cfBaseUrl = "v2/"
@@ -27,18 +27,18 @@ func NewCloudFoundryRestClient(host string, rt http.RoundTripper, jar http.Cooki
 }
 
 func (c CloudFoundryRestClient) GetSharedDomains() ([]models.SharedDomain, error) {
-	result := []models.SharedDomain{}
+	var result []models.SharedDomain
 	var response *models.CloudFoundryResponse
 	var err error
-	var cloudFoundryUrlElememnts CloudFoundryUrlElements
+	var cloudFoundryUrlElements CloudFoundryUrlElements
 	pathPattern := defaultSharedDomainsPathPattern
 	for pathPattern != "" {
-		response, err = c.getSharedDomainsInternal(cloudFoundryUrlElememnts)
+		response, err = c.getSharedDomainsInternal(cloudFoundryUrlElements)
 		if err != nil {
 			return []models.SharedDomain{}, err
 		}
 		result = append(result, toSharedDomains(response)...)
-		cloudFoundryUrlElememnts, err = getPathQueryElements(response)
+		cloudFoundryUrlElements, err = getPathQueryElements(response)
 		if err != nil {
 			return []models.SharedDomain{}, baseclient.NewClientError(err)
 		}

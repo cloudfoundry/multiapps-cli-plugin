@@ -20,7 +20,7 @@ type MtaArchiveBuilder struct {
 	resources []string
 }
 
-// NewMtaArchiveBuilder constrcuts new MtaArchiveBuilder
+// NewMtaArchiveBuilder constructs new MtaArchiveBuilder
 func NewMtaArchiveBuilder(modules, resources []string) MtaArchiveBuilder {
 	return MtaArchiveBuilder{
 		modules:   modules,
@@ -49,7 +49,7 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 	resourcesSections := buildSection(resourcesPaths, MtaResource)
 	bindingParametersSections := buildSection(bindingParametersPaths, MtaRequires)
 
-	manifestBuilder := NewMtaManifestBuilder()
+	manifestBuilder := MtaManifestBuilder{}
 	manifestBuilder.ManifestSections(modulesSections)
 	manifestBuilder.ManifestSections(resourcesSections)
 	manifestBuilder.ManifestSections(bindingParametersSections)
@@ -78,12 +78,12 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 		return "", err
 	}
 
-	err = copy(manifestLocation, filepath.Join(metaInfLocation, manifestInfo.Name()))
+	err = copyFile(manifestLocation, filepath.Join(metaInfLocation, manifestInfo.Name()))
 	if err != nil {
 		return "", err
 	}
 
-	err = copy(deploymentDescriptorFile, filepath.Join(metaInfLocation, "mtad.yaml"))
+	err = copyFile(deploymentDescriptorFile, filepath.Join(metaInfLocation, "mtad.yaml"))
 	if err != nil {
 		return "", err
 	}
@@ -121,9 +121,9 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 
 func getPaths(elementsPaths map[string]string) []string {
 	var result []string
-	for _, path := range elementsPaths {
-		if path != "" {
-			result = append(result, path)
+	for _, elementPath := range elementsPaths {
+		if elementPath != "" {
+			result = append(result, elementPath)
 		}
 	}
 	return result
@@ -141,7 +141,7 @@ func copyContent(baseDirectory string, paths []string, location string) error {
 		} else {
 			fileLocation := filepath.Join(location, path)
 			os.MkdirAll(filepath.Dir(fileLocation), os.ModePerm)
-			err = copy(filepath.Join(baseDirectory, path), fileLocation)
+			err = copyFile(filepath.Join(baseDirectory, path), fileLocation)
 		}
 		if err != nil {
 			return err
@@ -172,19 +172,15 @@ func copyDirectory(src, dest string) error {
 		dstfp := path.Join(dest, fd.Name())
 
 		if fd.IsDir() {
-			if err = copyDirectory(srcfp, dstfp); err != nil {
-
-			}
+			copyDirectory(srcfp, dstfp)
 		} else {
-			if err = copy(srcfp, dstfp); err != nil {
-
-			}
+			copyFile(srcfp, dstfp)
 		}
 	}
 	return nil
 }
 
-func copy(src, dest string) error {
+func copyFile(src, dest string) error {
 	fileFrom, err := os.Open(src)
 	if err != nil {
 		return err
@@ -231,15 +227,6 @@ func concatenateElementsWithSameValue(elements map[string]string) map[string][]s
 	return result
 }
 
-func resolvePaths(baseDirectory string, filePaths map[string]string) map[string]string {
-	result := make(map[string]string)
-	for name, path := range filePaths {
-		result[name] = filepath.Join(baseDirectory, path)
-	}
-
-	return result
-}
-
 func (builder MtaArchiveBuilder) getBindingParametersPaths(deploymentDescriptorResources []Module) map[string]string {
 	result := make(map[string]string, 0)
 	modulesToAdd := filterModules(deploymentDescriptorResources, func(module Module) bool {
@@ -248,7 +235,7 @@ func (builder MtaArchiveBuilder) getBindingParametersPaths(deploymentDescriptorR
 	for _, module := range modulesToAdd {
 		requiredDependenciesConfigPaths := getRequiredDependenciesConfigPaths(module.RequiredDependencies)
 		for requiredDependencyName, configFile := range requiredDependenciesConfigPaths {
-			result[module.Name+"/"+requiredDependencyName] = configFile
+			result[module.Name + "/" + requiredDependencyName] = configFile
 		}
 	}
 	return result
@@ -353,20 +340,20 @@ func validateSpecifiedModules(modulesForDeployment []string, deploymentDescripto
 	return fmt.Errorf("Modules %s are specified for deployment but are not part of deployment descriptor modules", strings.Join(specifiedResourcesNotPartOfDeploymentDescriptor, ", "))
 }
 
-func filterModules(modulesSlice []Module, prediacte func(element Module) bool) []Module {
+func filterModules(modulesSlice []Module, predicate func(element Module) bool) []Module {
 	result := make([]Module, 0)
 	for _, sliceElement := range modulesSlice {
-		if prediacte(sliceElement) {
+		if predicate(sliceElement) {
 			result = append(result, sliceElement)
 		}
 	}
 	return result
 }
 
-func filterResources(resourcesSlice []Resource, prediacte func(element Resource) bool) []Resource {
+func filterResources(resourcesSlice []Resource, predicate func(element Resource) bool) []Resource {
 	result := make([]Resource, 0)
 	for _, sliceElement := range resourcesSlice {
-		if prediacte(sliceElement) {
+		if predicate(sliceElement) {
 			result = append(result, sliceElement)
 		}
 	}

@@ -1,7 +1,6 @@
 package baseclient
 
 import (
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -45,8 +44,4 @@ func isErrorEOF(err error) bool {
 	isMatching, _ := regexp.MatchString(" EOF$", err.Error())
 
 	return isMatching
-}
-
-func EncodeArg(arg string) string {
-	return strings.Replace(url.QueryEscape(arg), "+", "%20", -1)
 }

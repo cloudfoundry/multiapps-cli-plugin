@@ -15,18 +15,9 @@ import (
 
 // ComputeFileChecksum computes the checksum of the specified file based on the specified algorithm
 func ComputeFileChecksum(filePath, algorithm string) (string, error) {
-	var hash hash.Hash
-	switch strings.ToUpper(algorithm) {
-	case "MD5":
-		hash = md5.New()
-	case "SHA1":
-		hash = sha1.New()
-	case "SHA256":
-		hash = sha256.New()
-	case "SHA512":
-		hash = sha512.New()
-	default:
-		return "", fmt.Errorf("Unsupported digest algorithm %q", algorithm)
+	algImpl, err := getAlgorithmImpl(algorithm)
+	if err != nil {
+		return "", err
 	}
 
 	file, err := os.Open(filePath)
@@ -35,9 +26,24 @@ func ComputeFileChecksum(filePath, algorithm string) (string, error) {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(hash, file)
+	_, err = io.Copy(algImpl, file)
 	if err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	return hex.EncodeToString(algImpl.Sum(nil)), nil
+}
+
+func getAlgorithmImpl(algorithm string) (hash.Hash, error) {
+	switch strings.ToUpper(algorithm) {
+	case "MD5":
+		return md5.New(), nil
+	case "SHA1":
+		return sha1.New(), nil
+	case "SHA256":
+		return sha256.New(), nil
+	case "SHA512":
+		return sha512.New(), nil
+	default:
+		return nil, fmt.Errorf("Unsupported digest algorithm %q", algorithm)
+	}
 }

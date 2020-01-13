@@ -10,6 +10,6 @@ func NewDeployServiceURLFakeCalculator(deployServiceURL string) util.DeployServi
 	return deployServiceURLFakeCalculatorImpl{deployServiceURL: deployServiceURL}
 }
 
-func (c deployServiceURLFakeCalculatorImpl) ComputeDeployServiceURL() (string, error) {
+func (c deployServiceURLFakeCalculatorImpl) ComputeDeployServiceURL(s string) (string, error) {
 	return c.deployServiceURL, nil
 }

@@ -16,7 +16,13 @@ type BlueGreenDeployCommand struct {
 
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
-	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}}
+	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{options: getBlueGreenDeployCommandOptions()}, blueGreenDeployProcessParametersSetter(), blueGreenDeployCommandProcessTypeProvider{}}}
+}
+
+func getBlueGreenDeployCommandOptions() map[string]CommandOption {
+	deployOptions := getDeployCommandOptions()
+	delete(deployOptions, strategyOpt)
+	return deployOptions
 }
 
 // GetPluginCommand returns more information for the blue green deploy command.
@@ -30,39 +36,17 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
-			Options: map[string]string{
-				extDescriptorsOpt:                     "Extension descriptors",
-				deployServiceURLOpt:                   "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                            "Start timeout in seconds",
-				versionRuleOpt:                        "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                        "Active deploy operation id",
-				actionOpt:                             "Action to perform on active deploy operation (abort, retry, monitor)",
-				forceOpt:                              "Force deploy without confirmation for aborting conflicting processes",
-				util.GetShortOption(noStartOpt):       "Do not start apps",
-				util.GetShortOption(useNamespacesOpt): "Use namespaces in app and service names",
-				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
-				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
-				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
-				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
-				util.GetShortOption(keepFilesOpt):                  "Keep files used for deployment",
-				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the deployment",
-				util.GetShortOption(noConfirmOpt):                  "Do not require confirmation for deleting the previously deployed MTA apps",
-				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
-				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
-				util.GetShortOption(skipOwnershipValidationOpt):    "Skip the ownership validation that prevents the modification of entities managed by other multi-target apps",
-				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
-				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
-			},
+			Options: c.getOptionsForPluginCommand(),
 		},
 	}
 }
 
 // BlueGreenDeployProcessParametersSetter returns a new ProcessParametersSetter.
 func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
-	return func(optionValues map[string]interface{}, processBuilder *util.ProcessBuilder) {
-		deployProcessParametersSetter()(optionValues, processBuilder)
-		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, optionValues)))
-		processBuilder.Parameter("keepExistingAppNames", strconv.FormatBool(false))
+	return func(options map[string]CommandOption, processBuilder *util.ProcessBuilder) {
+		deployProcessParametersSetter()(options, processBuilder)
+		processBuilder.Parameter("noConfirm", strconv.FormatBool(getBoolOpt(noConfirmOpt, options)))
+		processBuilder.Parameter("keepOriginalAppNamesAfterDeploy", strconv.FormatBool(false))
 	}
 }
 

@@ -34,7 +34,7 @@ var _ = Describe("ArchiveBuilder", func() {
 		Context("With deployment descriptor which contains some modules and resources", func() {
 			It("Try to parse the specified modules and fail as the paths are not existing", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: "not-existing-path"},
+					{Name: "TestModule", Path: "not-existing-path"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -45,7 +45,7 @@ var _ = Describe("ArchiveBuilder", func() {
 
 			It("Try to parse the specified resources and fail as the paths are not existing", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{}, Resources: []util.Resource{
-					util.Resource{Name: "foo", Type: "Some type", Parameters: map[string]interface{}{
+					{Name: "foo", Type: "Some type", Parameters: map[string]interface{}{
 						"path": "not-existing-resource-path",
 					}},
 				}}
@@ -61,8 +61,8 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent, RequiredDependencies: []util.RequiredDependency{
-						util.RequiredDependency{Name: "foo", Parameters: map[string]interface{}{
+					{Name: "TestModule", Path: requiredDependencyContent, RequiredDependencies: []util.RequiredDependency{
+						{Name: "foo", Parameters: map[string]interface{}{
 							"path": "not-existing-required-dependency-path",
 						}},
 					}},
@@ -78,10 +78,10 @@ var _ = Describe("ArchiveBuilder", func() {
 		Context("With deployment descriptor which contains some modules and resources and not valid modules or resources", func() {
 			It("Try to parse the specified modules and fail as the modules are not presented in the descriptor", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "foo", Path: "not-existing-path"},
-					util.Module{Name: "bar", Path: "not-existing-path"},
-					util.Module{Name: "baz", Path: "not-existing-path"},
-					util.Module{Name: "baz-foo", Path: "not-existing-path"},
+					{Name: "foo", Path: "not-existing-path"},
+					{Name: "bar", Path: "not-existing-path"},
+					{Name: "baz", Path: "not-existing-path"},
+					{Name: "baz-foo", Path: "not-existing-path"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -92,16 +92,16 @@ var _ = Describe("ArchiveBuilder", func() {
 
 			It("Try to parse the specified resources and fail as the resources are not part of deployment descriptor", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{}, Resources: []util.Resource{
-					util.Resource{Name: "foo", Type: "Some type", Parameters: map[string]interface{}{
+					{Name: "foo", Type: "Some type", Parameters: map[string]interface{}{
 						"path": "not-existing-resource-path",
 					}},
-					util.Resource{Name: "bar", Type: "Some type", Parameters: map[string]interface{}{
+					{Name: "bar", Type: "Some type", Parameters: map[string]interface{}{
 						"path": "not-existing-resource-path",
 					}},
-					util.Resource{Name: "baz", Type: "Some type", Parameters: map[string]interface{}{
+					{Name: "baz", Type: "Some type", Parameters: map[string]interface{}{
 						"path": "not-existing-resource-path",
 					}},
-					util.Resource{Name: "baz-foo", Type: "Some type", Parameters: map[string]interface{}{
+					{Name: "baz-foo", Type: "Some type", Parameters: map[string]interface{}{
 						"path": "not-existing-resource-path",
 					}},
 				}}
@@ -117,8 +117,8 @@ var _ = Describe("ArchiveBuilder", func() {
 			var oc = testutil.NewUIOutputCapturer()
 			It("Should try to resolve the modules and report that they do not have path params.", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule"},
-					util.Module{Name: "TestModule1"},
+					{Name: "TestModule"},
+					{Name: "TestModule1"},
 				}}
 
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
@@ -138,7 +138,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent},
+					{Name: "TestModule", Path: requiredDependencyContent},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -161,8 +161,8 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent},
-					util.Module{Name: "TestModule1", Path: requiredDependencyContent},
+					{Name: "TestModule", Path: requiredDependencyContent},
+					{Name: "TestModule1", Path: requiredDependencyContent},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -184,7 +184,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(resourceContent)
 				ioutil.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
-					util.Resource{Name: "TestResource", Parameters: map[string]interface{}{"path": resourceContent}},
+					{Name: "TestResource", Parameters: map[string]interface{}{"path": resourceContent}},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -201,7 +201,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			})
 			It("Should build the MTA Archive containing the resources and add them in the MANIFEST.MF only", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
-					util.Resource{Name: "TestResource"},
+					{Name: "TestResource"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -225,8 +225,8 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", RequiredDependencies: []util.RequiredDependency{
-						util.RequiredDependency{
+					{Name: "TestModule", RequiredDependencies: []util.RequiredDependency{
+						{
 							Name: "TestRequired",
 							Parameters: map[string]interface{}{
 								"path": requiredDependencyContent,

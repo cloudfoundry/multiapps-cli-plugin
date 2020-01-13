@@ -24,11 +24,10 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		const org = "test-org"
 		const space = "test-space"
 		const user = "test-user"
+		const name = "download-mta-op-logs"
 
-		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		var mtaClient mtafake.FakeMtaClientOperations
-		// var restClient *restfake.FakeRestClientOperations
 		var clientFactory *commands.TestClientFactory
 		var command *commands.DownloadMtaOperationLogsCommand
 		var oc = testutil.NewUIOutputCapturer()
@@ -40,7 +39,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				fmt.Sprintf("Downloading logs of multi-target app operation with id %s in org %s / space %s as %s...\n",
 					testutil.ProcessID, org, space, user),
 				"OK\n",
-				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...\n", wd, dir),
+				fmt.Sprintf("Saving logs to %s" + string(os.PathSeparator) + "%s...\n", wd, dir),
 				fmt.Sprintf("  %s\n", testutil.LogID),
 				"OK\n",
 			}
@@ -54,7 +53,6 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
-			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
@@ -64,7 +62,8 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				GetMtaOperationLogs(testutil.ProcessID, []*models.Log{&testutil.SimpleMtaLog}, nil).
 				GetMtaOperationLogContent(testutil.ProcessID, testutil.LogID, testutil.LogContent, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
-			command = &commands.DownloadMtaOperationLogsCommand{}
+			command = commands.NewDownloadMtaOperationLogsCommand()
+			command.Initialize(name, cliConnection)
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
@@ -98,7 +97,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Missing required options '[i]'")
+				ex.ExpectFailure(status, output, "Incorrect usage. Missing required option 'i'")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})

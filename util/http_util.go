@@ -11,10 +11,6 @@ type HttpSimpleGetExecutor interface {
 type SimpleGetExecutor struct {
 }
 
-func NewSimpleGetExecutor() SimpleGetExecutor {
-	return SimpleGetExecutor{}
-}
-
 func (executor SimpleGetExecutor) ExecuteGetRequest(url string) (int, error) {
 	resp, err := http.Get(url)
 	if err != nil {

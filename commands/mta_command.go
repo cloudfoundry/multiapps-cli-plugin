@@ -21,40 +21,44 @@ type MtaCommand struct {
 	BaseCommand
 }
 
+func NewMtaCommand() *MtaCommand {
+	return &MtaCommand{BaseCommand{options: getMtaCommandOptions()}}
+}
+
+func getMtaCommandOptions() map[string]CommandOption {
+	return map[string]CommandOption{
+		deployServiceURLOpt: deployServiceUrlOption(),
+	}
+}
+
 // GetPluginCommand returns the plugin command details
 func (c *MtaCommand) GetPluginCommand() plugin.Command {
 	return plugin.Command{
 		Name:     "mta",
 		HelpText: "Display health and status for a multi-target app",
 		UsageDetails: plugin.Usage{
-			Usage: "cf mta MTA_ID [-u URL]",
-			Options: map[string]string{
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
-			},
+			Usage:   "cf mta MTA_ID [-u URL]",
+			Options: c.getOptionsForPluginCommand(),
 		},
 	}
 }
 
 // Execute executes the command
 func (c *MtaCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+	log.Tracef("Executing command '" + c.name + "': args: '%v'\n", args)
 
-	var host string
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(map[string]bool{}))
-	err = parser.Parse(args)
+	parser := NewCommandFlagsParserWithValidator(c.flags, NewDefaultCommandFlagsParser(1), NewPositionalArgumentsFlagsValidator([]string{"MTA_ID"}))
+	err := parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure
 	}
-	mtaID := args[0]
+
+	host, err := c.computeDeployServiceUrl()
+	if err != nil {
+		ui.Failed("Could not compute deploy service URL: %s", err.Error())
+		return Failure
+	}
 
 	context, err := c.GetContext()
 	if err != nil {
@@ -62,6 +66,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
+	mtaID := args[0]
 	// Print initial message
 	ui.Say("Showing health and status for multi-target app %s in org %s / space %s as %s...",
 		terminal.EntityNameColor(mtaID), terminal.EntityNameColor(context.Org),
@@ -140,7 +145,7 @@ func getInstances(app plugin_models.GetAppsModel) string {
 func getRoutes(app plugin_models.GetAppsModel) string {
 	var urls []string
 	for _, route := range app.Routes {
-		urls = append(urls, route.Host+"."+route.Domain.Name)
+		urls = append(urls, route.Host + "." + route.Domain.Name)
 	}
 	return strings.Join(urls, ", ")
 }

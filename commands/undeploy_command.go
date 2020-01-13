@@ -1,14 +1,11 @@
 package commands
 
 import (
-	"flag"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -19,11 +16,27 @@ import (
 //UndeployCommand is a command for undeploying MTAs
 type UndeployCommand struct {
 	BaseCommand
-	processTypeProvider ProcessTypeProvider
+	processParametersSetter ProcessParametersSetter
+	processTypeProvider     ProcessTypeProvider
 }
 
 func NewUndeployCommand() *UndeployCommand {
-	return &UndeployCommand{BaseCommand: BaseCommand{}, processTypeProvider: &undeployCommandProcessTypeProvider{}}
+	return &UndeployCommand{BaseCommand{options: getUndeployCommandOptions()}, undeployProcessParametersSetter(), &undeployCommandProcessTypeProvider{}}
+}
+
+func getUndeployCommandOptions() map[string]CommandOption {
+	return map[string]CommandOption{
+		deployServiceURLOpt:           deployServiceUrlOption(),
+		operationIDOpt:                {new(string), "", "Active undeploy operation id", true},
+		actionOpt:                     {new(string), "", "Action to perform on active undeploy operation (abort, retry, monitor)", true},
+		forceOpt:                      {new(bool), false, "Force undeploy without confirmation for aborting conflicting processes", true},
+		deleteServicesOpt:             {new(bool), false, "Delete services", false},
+		deleteServiceBrokersOpt:       {new(bool), false, "Delete service brokers", false},
+		noRestartSubscribedAppsOpt:    {new(bool), false, "Do not restart subscribed apps, updated during the undeployment", false},
+		noFailOnMissingPermissionsOpt: {new(bool), false, "Do not fail on missing permissions for admin operations", false},
+		abortOnErrorOpt:               {new(bool), false, "Auto-abort the process on any errors", false},
+		retriesOpt:                    {new(uint), 3, "Retry the operation N times in case a non-content error occurs (default 3)", false},
+	}
 }
 
 // GetPluginCommand returns the plugin command details
@@ -37,55 +50,35 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
-			Options: map[string]string{
-				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				operationIDOpt:                         "Active undeploy operation id",
-				actionOpt:                              "Action to perform on the active undeploy operation (abort, retry, monitor)",
-				forceOpt:                               "Force undeploy without confirmation",
-				util.GetShortOption(deleteServicesOpt): "Delete services",
-				util.GetShortOption(deleteServiceBrokersOpt):       "Delete service brokers",
-				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
-				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
-				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
-				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
-			},
+			Options: c.getOptionsForPluginCommand(),
 		},
+	}
+}
+
+func undeployProcessParametersSetter() ProcessParametersSetter {
+	return func(options map[string]CommandOption, processBuilder *util.ProcessBuilder) {
+		processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(getBoolOpt(noRestartSubscribedAppsOpt, options)))
+		processBuilder.Parameter("deleteServices", strconv.FormatBool(getBoolOpt(deleteServicesOpt, options)))
+		processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(getBoolOpt(deleteServiceBrokersOpt, options)))
+		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(getBoolOpt(noFailOnMissingPermissionsOpt, options)))
+		processBuilder.Parameter("abortOnError", strconv.FormatBool(getBoolOpt(abortOnErrorOpt, options)))
 	}
 }
 
 // Execute executes the command
 func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+	log.Tracef("Executing command '" + c.name + "': args: '%v'\n", args)
 
-	var host string
-	var operationID string
-	var actionID string
-	var force bool
-	var deleteServices bool
-	var noRestartSubscribedApps bool
-	var deleteServiceBrokers bool
-	var noFailOnMissingPermissions bool
-	var abortOnError bool
-	var retries uint
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	flags.BoolVar(&force, forceOpt, false, "")
-	flags.StringVar(&operationID, operationIDOpt, "", "")
-	flags.StringVar(&actionID, actionOpt, "", "")
-	flags.BoolVar(&deleteServices, deleteServicesOpt, false, "")
-	flags.BoolVar(&noRestartSubscribedApps, noRestartSubscribedAppsOpt, false, "")
-	flags.BoolVar(&deleteServiceBrokers, deleteServiceBrokersOpt, false, "")
-	flags.BoolVar(&noFailOnMissingPermissions, noFailOnMissingPermissionsOpt, false, "")
-	flags.BoolVar(&abortOnError, abortOnErrorOpt, false, "")
-	flags.UintVar(&retries, retriesOpt, 3, "")
-
-	parser := NewCommandFlagsParser(flags, NewProcessActionExecutorCommandArgumentsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(nil))
-	err = parser.Parse(args)
+	parser := NewCommandFlagsParserWithValidator(c.flags, NewProcessActionExecutorCommandArgumentsParser(1), NewPositionalArgumentsFlagsValidator([]string{"MTA_ID"}))
+	err := parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
+		return Failure
+	}
+
+	host, err := c.computeDeployServiceUrl()
+	if err != nil {
+		ui.Failed("Could not compute deploy service URL: %s", err.Error())
 		return Failure
 	}
 
@@ -95,11 +88,17 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
+	operationID := getStringOpt(operationIDOpt, c.options)
+	actionID := getStringOpt(actionOpt, c.options)
+	retries := getUintOpt(retriesOpt, c.options)
+
 	if operationID != "" || actionID != "" {
 		return c.ExecuteAction(operationID, actionID, retries, host)
 	}
 
+	force := getBoolOpt(forceOpt, c.options)
 	mtaID := args[0]
+
 	if !force && !ui.Confirm("Really undeploy multi-target app %s? (y/n)", terminal.EntityNameColor(mtaID)) {
 		ui.Warn("Undeploy cancelled")
 		return Failure
@@ -127,11 +126,10 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		}
 		ui.Failed("Could not get multi-target app %s: %s", terminal.EntityNameColor(mtaID), baseclient.NewClientError(err))
 		return Failure
-
 	}
 
 	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(mtaID, host, force)
+	wasAborted, err := c.CheckOngoingOperation(mtaID, force, host)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
@@ -142,12 +140,9 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 
 	processBuilder := util.NewProcessBuilder()
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
+	c.processParametersSetter(c.options, processBuilder)
 	processBuilder.Parameter("mtaId", mtaID)
-	processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(noRestartSubscribedApps))
-	processBuilder.Parameter("deleteServices", strconv.FormatBool(deleteServices))
-	processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(deleteServiceBrokers))
-	processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(noFailOnMissingPermissions))
-	processBuilder.Parameter("abortOnError", strconv.FormatBool(abortOnError))
+
 	operation := processBuilder.Build()
 
 	// Create the new process
@@ -158,52 +153,11 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Monitor process execution
-	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient).Monitor()
+	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, mtaClient).Monitor()
 }
 
 type undeployCommandProcessTypeProvider struct{}
 
 func (d undeployCommandProcessTypeProvider) GetProcessType() string {
 	return "UNDEPLOY"
-}
-
-type ProcessActionExecutorCommandArgumentsParser struct {
-	positionalArgNames []string
-}
-
-func NewProcessActionExecutorCommandArgumentsParser(positionalArgNames []string) ProcessActionExecutorCommandArgumentsParser {
-	return ProcessActionExecutorCommandArgumentsParser{positionalArgNames: positionalArgNames}
-}
-
-func (p ProcessActionExecutorCommandArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
-	operationExecutorOptions := make(map[string]string)
-	for _, arg := range args {
-		optionFlag := flags.Lookup(strings.Replace(arg, "-", "", 1))
-		if optionFlag != nil && (operationIDOpt == optionFlag.Name || actionOpt == optionFlag.Name) {
-			operationExecutorOptions[optionFlag.Name] = arg
-		}
-	}
-
-	if len(operationExecutorOptions) > 2 {
-		return fmt.Errorf("Options %s and %s should be specified only once", operationIDOpt, actionOpt)
-	}
-
-	if len(operationExecutorOptions) > 0 && len(operationExecutorOptions) < len([]string{operationIDOpt, actionOpt}) {
-		var keys []string
-		for _, key := range []string{operationIDOpt, actionOpt} {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		return fmt.Errorf("All the %s options should be specified together", strings.Join(keys, " "))
-	}
-
-	return NewDefaultCommandFlagsParser(p.determinePositionalArguments(operationExecutorOptions)).ParseFlags(flags, args)
-}
-
-func (p ProcessActionExecutorCommandArgumentsParser) determinePositionalArguments(operationExecutorOptions map[string]string) []string {
-	if len(operationExecutorOptions) == 2 {
-		return []string{}
-	}
-
-	return p.positionalArgNames
 }

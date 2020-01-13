@@ -20,8 +20,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 		const org = "test-org"
 		const space = "test-space"
 		const user = "test-user"
+		const name = "mta-ops"
 
-		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		var clientFactory *commands.TestClientFactory
 		var command *commands.MtaOperationsCommand
@@ -29,7 +29,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 		var ex = testutil.NewUIExpector()
 
 		var getOutputLines = func(operationsDetails [][]string) []string {
-			lines := []string{}
+			var lines []string
 			if len(operationsDetails) > 0 {
 				lines = append(lines, testutil.GetTableOutputLines([]string{"id", "type", "mta id", "status", "started at", "started by"}, operationsDetails)...)
 			} else {
@@ -41,7 +41,6 @@ var _ = Describe("MtaOperationsCommand", func() {
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
-			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
@@ -50,7 +49,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMta("test", nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
-			command = &commands.MtaOperationsCommand{}
+			command = commands.NewMtaOperationsCommand()
+			command.Initialize(name, cliConnection)
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
@@ -86,7 +86,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 1)
 			})
 		})
 
@@ -126,7 +126,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"111", "deploy", "test", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"111", "deploy", "test", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -144,7 +144,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"111", "deploy", "N/A", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"111", "deploy", "N/A", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -164,8 +164,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -185,8 +185,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-last", "2"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting last 2 multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -207,9 +207,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-last", "10"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting last 10 multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -230,9 +230,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-last", "1"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting last multi-target app operation in org test-org / space test-space as test-user...\n",
@@ -268,9 +268,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -290,8 +290,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
@@ -312,9 +312,9 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-all"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "FINISHED", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "FINISHED", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
 					"Getting all multi-target app operations in org test-org / space test-space as test-user...\n",

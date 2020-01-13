@@ -14,13 +14,11 @@ import (
 var _ = Describe("PurgeConfigCommand", func() {
 
 	Describe("Execute", func() {
-		const (
-			org   = "test-org"
-			space = "test-space"
-			user  = "test-user"
-		)
+		const org = "test-org"
+		const space = "test-space"
+		const user = "test-user"
+		const name = "purge-mta-config"
 
-		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		var clientFactory *commands.TestClientFactory
 		var command *commands.PurgeConfigCommand
@@ -31,7 +29,6 @@ var _ = Describe("PurgeConfigCommand", func() {
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
-			name = "purge-mta-config"
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
@@ -42,7 +39,8 @@ var _ = Describe("PurgeConfigCommand", func() {
 			clientFactory = commands.NewTestClientFactory(nil, nil)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
-			command = &commands.PurgeConfigCommand{}
+			command = commands.NewPurgeConfigCommand()
+			command.Initialize(name, cliConnection)
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 
 			oc = testutil.NewUIOutputCapturer()

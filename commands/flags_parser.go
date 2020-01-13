@@ -5,56 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
-
-// CommandFlagsDefiner is a function used during the execution of the deploy
-// command. It defines the flags supported by the command and returns a map
-// containing pointers to the parsed flags.
-type CommandFlagsDefiner func(flag *flag.FlagSet) map[string]interface{}
 
 // CommandFlagsParser used for parsing the arguments
 type CommandFlagsParser struct {
-	flag       *flag.FlagSet
-	parser     FlagsParser
-	validator  FlagsValidator
-	parsedArgs []string
-}
-
-// NewCommandFlagsParser creates new command flags parser
-func NewCommandFlagsParser(flag *flag.FlagSet, parser FlagsParser, validator FlagsValidator) CommandFlagsParser {
-	return CommandFlagsParser{flag: flag, parser: parser, validator: validator, parsedArgs: make([]string, 0)}
-}
-
-// Parse parsing the args
-func (p *CommandFlagsParser) Parse(args []string) error {
-	err := p.parser.ParseFlags(p.flag, args)
-	if err != nil {
-		return err
-	}
-
-	// assume that the parsing of arguments is successful - determine the arguments which are not flagged
-	p.parsedArgs = determineParsedNotFlaggedArguments(p.flag, args)
-
-	return p.validator.ValidateParsedFlags(p.flag)
-}
-
-func determineParsedNotFlaggedArguments(flag *flag.FlagSet, args []string) []string {
-	result := make([]string, 0)
-	for _, arg := range args {
-		if argument := flag.Lookup(strings.Replace(arg, "-", "", 2)); argument == nil {
-			result = append(result, arg)
-		} else {
-			break
-		}
-	}
-	return result
-}
-
-// Args returns the first parsed command line arguments WITHOUT the options
-func (p CommandFlagsParser) Args() []string {
-	return p.parsedArgs
+	flags     *flag.FlagSet
+	parser    FlagsParser
+	validator FlagsValidator
 }
 
 // FlagsParser interface used for parsing the command line arguments using the flag library
@@ -64,38 +21,64 @@ type FlagsParser interface {
 
 // FlagsValidator interface used for validating the parsed flags
 type FlagsValidator interface {
-	ValidateParsedFlags(flags *flag.FlagSet) error
+	ValidateFlags(flags *flag.FlagSet, args []string) error
+	IsBeforeParsing() bool
 }
 
-// DefaultCommandFlagsParser defines default implementation of the parser. It uses positional arguments and assumes that the command args will contain arguments
+// CommandOption defines an option for a command
+type CommandOption struct {
+	Value        interface{}
+	DefaultValue interface{}
+	Usage        string
+	IsShortOpt   bool
+}
+
+func NewCommandFlagsParserWithValidator(flags *flag.FlagSet, parser FlagsParser, validator FlagsValidator) CommandFlagsParser {
+	return CommandFlagsParser{flags, parser, validator}
+}
+
+func NewCommandFlagsParser(flags *flag.FlagSet, parser FlagsParser) CommandFlagsParser {
+	return CommandFlagsParser{flags: flags, parser: parser}
+}
+
+// Parse parses the args
+func (p *CommandFlagsParser) Parse(args []string) error {
+	validated := false
+	if p.validator != nil && p.validator.IsBeforeParsing() {
+		if err := p.validator.ValidateFlags(p.flags, args); err != nil {
+			return err
+		}
+		validated = true
+	}
+	if err := p.parser.ParseFlags(p.flags, args); err != nil {
+		return err
+	}
+	if !validated && p.validator != nil {
+		if err := p.validator.ValidateFlags(p.flags, args); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DefaultCommandFlagsParser defines default implementation of the parser
+// It assumes that the command args will contain arguments
 type DefaultCommandFlagsParser struct {
-	positionalArgNames []string
+	offset int
 }
 
 // NewDefaultCommandFlagsParser initializes DefaultCommandFlagsParser
-func NewDefaultCommandFlagsParser(positionalArgNames []string) DefaultCommandFlagsParser {
-	return DefaultCommandFlagsParser{positionalArgNames: positionalArgNames}
+func NewDefaultCommandFlagsParser(offset int) DefaultCommandFlagsParser {
+	return DefaultCommandFlagsParser{offset}
 }
 
 // ParseFlags see DefaultCommandFlagsParser
 func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
-	// Check for missing positional arguments
-	positionalArgsCount := len(p.positionalArgNames)
-	if len(args) < positionalArgsCount {
-		return fmt.Errorf(fmt.Sprintf("Missing positional argument '%s'", p.positionalArgNames[len(args)]))
-	}
-	for i := 0; i < positionalArgsCount; i++ {
-		if flags.Lookup(strings.Replace(args[i], "-", "", 1)) != nil {
-			return fmt.Errorf("Missing positional argument '%s'", p.positionalArgNames[i])
-		}
-	}
-
 	// Parse the arguments
-	err := flags.Parse(args[positionalArgsCount:])
+	err := flags.Parse(args[p.offset:])
 	if err != nil {
 		return errors.New("Unknown or wrong flag")
 	}
-
 	// Check for wrong arguments
 	if flags.NArg() > 0 {
 		return errors.New("Wrong arguments")
@@ -103,29 +86,68 @@ func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string
 	return nil
 }
 
-// DefaultCommandFlagsValidator default implementation of the FlagValidator
-type DefaultCommandFlagsValidator struct {
-	requiredFlags map[string]bool
+type ProcessActionExecutorCommandArgumentsParser struct {
+	offset int
 }
 
-// NewDefaultCommandFlagsValidator creates a default validator for flags
-func NewDefaultCommandFlagsValidator(requiredFlags map[string]bool) DefaultCommandFlagsValidator {
-	return DefaultCommandFlagsValidator{requiredFlags: requiredFlags}
+func NewProcessActionExecutorCommandArgumentsParser(offset int) ProcessActionExecutorCommandArgumentsParser {
+	return ProcessActionExecutorCommandArgumentsParser{offset}
 }
 
-// ValidateParsedFlags uses a required flags map in order to validate whether the arguments are valid
-func (v DefaultCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
-	var missingRequiredOptions []string
-	// Check for missing required flags
-	flags.VisitAll(func(f *flag.Flag) {
-		log.Traceln(f.Name, f.Value)
-		if v.requiredFlags[f.Name] && f.Value.String() == "" {
-			missingRequiredOptions = append(missingRequiredOptions, f.Name)
+func (p ProcessActionExecutorCommandArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
+	executeActionOptCount := make(map[string]int)
+	for _, arg := range args {
+		optionFlag := flags.Lookup(strings.Replace(arg, "-", "", 1))
+		if optionFlag != nil && (operationIDOpt == optionFlag.Name || actionOpt == optionFlag.Name) {
+			executeActionOptCount[optionFlag.Name]++
 		}
-	})
-	if len(missingRequiredOptions) != 0 {
-		return fmt.Errorf("Missing required options '%v'", missingRequiredOptions)
 	}
 
+	if len(executeActionOptCount) > 2 || p.areOptionsSpecifiedMoreThanOnce(executeActionOptCount) {
+		return fmt.Errorf("Options %s and %s should be specified only once", operationIDOpt, actionOpt)
+	}
+	if len(executeActionOptCount) == 1 {
+		return errors.New("All the a i options should be specified together")
+	}
+
+	offset := p.offset
+	if len(executeActionOptCount) == 2 {
+		offset = 0
+	}
+	return NewDefaultCommandFlagsParser(offset).ParseFlags(flags, args)
+}
+
+func (p *ProcessActionExecutorCommandArgumentsParser) areOptionsSpecifiedMoreThanOnce(executeActionOptCount map[string]int) bool {
+	for _, num := range executeActionOptCount {
+		if num > 1 {
+			return true
+		}
+	}
+	return false
+}
+
+type PositionalArgumentsFlagsValidator struct {
+	positionalArgs []string
+}
+
+func NewPositionalArgumentsFlagsValidator(positionalArgs []string) *PositionalArgumentsFlagsValidator {
+	return &PositionalArgumentsFlagsValidator{positionalArgs}
+}
+
+func (v *PositionalArgumentsFlagsValidator) ValidateFlags(flags *flag.FlagSet, args []string) error {
+	// Check for missing positional arguments
+	positionalArgsCount := len(v.positionalArgs)
+	if len(args) < positionalArgsCount {
+		return fmt.Errorf("Missing positional argument '%s'", v.positionalArgs[len(args)])
+	}
+	for i := 0; i < positionalArgsCount; i++ {
+		if flags.Lookup(strings.Replace(args[i], "-", "", 1)) != nil {
+			return fmt.Errorf("Missing positional argument '%s'", v.positionalArgs[i])
+		}
+	}
 	return nil
+}
+
+func (*PositionalArgumentsFlagsValidator) IsBeforeParsing() bool {
+	return true
 }

@@ -9,7 +9,7 @@ import (
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
+	mta_fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
@@ -30,12 +30,10 @@ var _ = Describe("DeployCommand", func() {
 		const testArchive = "mtaArchive.mtar"
 		const mtaArchivePath = testFilesLocation + testArchive
 		const extDescriptorPath = testFilesLocation + "extDescriptor.mtaext"
+		const name = "deploy"
 
-		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
-		// var fakeSession csrffake.FakeSessionProvider
-		var mtaClient mtafake.FakeMtaClientOperations
-		// var restClient *restfake.FakeRestClientOperations
+		var mtaClient mta_fake.FakeMtaClientOperations
 		var testClientFactory *commands.TestClientFactory
 		var command *commands.DeployCommand
 		var oc = testutil.NewUIOutputCapturer()
@@ -52,7 +50,7 @@ var _ = Describe("DeployCommand", func() {
 		}
 
 		var getOutputLines = func(extDescriptor, processAborted bool) []string {
-			lines := []string{}
+			var lines []string
 			lines = append(lines,
 				"Deploying multi-target app archive "+mtaArchivePath+" in org "+org+" / space "+space+" as "+user+"...\n\n")
 			if processAborted {
@@ -78,19 +76,6 @@ var _ = Describe("DeployCommand", func() {
 			return lines
 		}
 
-		// var getProcessParameters = func(additional bool) map[string]string {
-		// 	params := map[string]string{
-		// 		"appArchiveId":   "mtaArchive.mtar",
-		// 		"failOnCrashed":  "false",
-		// 	}
-		// 	if additional {
-		// 		params["deleteServices"] = "true"
-		// 		params["keepFiles"] = "true"
-		// 		params["noStart"] = "true"
-		// 	}
-		// 	return params
-		// }
-
 		var getFile = func(path string) (*os.File, *models.FileMetadata) {
 			file, _ := os.Open(path)
 			digest, _ := util.ComputeFileChecksum(path, "MD5")
@@ -98,17 +83,8 @@ var _ = Describe("DeployCommand", func() {
 			return file, f
 		}
 
-		// var expectProcessParameters = func(expectedParameters map[string]string, processParameters map[string]interface{}) {
-		// 	for processParam, processParamValue := range processParameters {
-		// 		if expectedParameters[processParam] != "" {
-		// 			Expect(processParamValue).To(Equal(expectedParameters[processParamValue.(string)]))
-		// 		}
-		// 	}
-		// }
-
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
-			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
@@ -118,7 +94,7 @@ var _ = Describe("DeployCommand", func() {
 			defer mtaArchiveFile.Close()
 			extDescriptorFile, extDescriptor := getFile(extDescriptorPath)
 			defer extDescriptorFile.Close()
-			mtaClient = mtafake.NewFakeMtaClientBuilder().
+			mtaClient = mta_fake.NewFakeMtaClientBuilder().
 				GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
 				UploadMtaFile(*mtaArchiveFile, mtaArchive, nil).
 				UploadMtaFile(*extDescriptorFile, extDescriptor, nil).
@@ -128,6 +104,7 @@ var _ = Describe("DeployCommand", func() {
 				GetMtaOperations(nil, nil, []*models.Operation{&testutil.OperationResult}, nil).Build()
 			testClientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = commands.NewDeployCommand()
+			command.Initialize(name, cliConnection)
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator)
@@ -187,8 +164,6 @@ var _ = Describe("DeployCommand", func() {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
-				// operation := mtaClient.StartMtaOperationArgsForCall(1)
-				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
 		})
 
@@ -199,8 +174,6 @@ var _ = Describe("DeployCommand", func() {
 					return command.Execute([]string{mtaArchivePath, "-e", extDescriptorPath}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(true, false))
-				// operation := mtaClient.StartMtaOperationArgsForCall(1)
-				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
 		})
 
@@ -211,55 +184,47 @@ var _ = Describe("DeployCommand", func() {
 					return command.Execute([]string{mtaArchivePath, "-f", "-delete-services", "-no-start", "-keep-files", "-do-not-fail-on-missing-permissions"}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
-				// operation := mtaClient.StartMtaOperationArgsForCall(1)
-				// expectProcessParameters(getProcessParameters(true), operation.Parameters)
 			})
 		})
 
-		// non-existing ongoing operations - success
-		// Context("with correct mta id from archive and no ongoing operations", func() {
-		// 	It("should not try to abort confliction operations", func() {
-		// 		testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
-		// 			GetMtaOperations(nil, nil, []*models.Operation{}, nil).
-		// 			StartMtaOperation(models.Operation{}, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).Build()
-		// 		output, status := oc.CaptureOutputAndStatus(func() int {
-		// 			return command.Execute([]string{mtaArchivePath}).ToInt()
-		// 		})
-		// 		fmt.Println(output)
-		// 		ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
-		// 		// operation := mtaClient.StartMtaOperationArgsForCall(1)
-		// 		// expectProcessParameters(getProcessParameters(false), operation.Parameters)
-		// 	})
-		// })
+		//non-existing ongoing operations - success
+		//Context("with correct mta id from archive and no ongoing operations", func() {
+		//	It("should not try to abort conflicting operations", func() {
+		//		testClientFactory.MtaClient = mta_fake.NewFakeMtaClientBuilder().
+		//			GetMtaOperations(nil, nil, []*models.Operation{}, nil).
+		//			StartMtaOperation(models.Operation{}, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).Build()
+		//		output, status := oc.CaptureOutputAndStatus(func() int {
+		//			return command.Execute([]string{mtaArchivePath}).ToInt()
+		//		})
+		//		ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
+		//	})
+		//})
 
 		// existing ongoing operations and force option not supplied - success
 		Context("with correct mta id from archive, with ongoing operations provided and no force option", func() {
-			It("should not try to abort confliction operations", func() {
+			It("should not try to abort conflicting operations", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
-				// operation := mtaClient.StartMtaOperationArgsForCall(1)
-				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
 		})
 
-		// existing ongoing operations and force option supplied - success
-		// Context("with correct mta id from archive, with ongoing operations provided and with force option", func() {
-		// 	It("should try to abort confliction operations", func() {
-		// 		testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
-		// 			GetMtaOperations(nil, nil, []*models.Operation{testutil.GetOperation("process-id", "test-space-guid", "test", "deploy", "ERROR", true)}, nil).Build()
-		// 		output, status := oc.CaptureOutputAndStatus(func() int {
-		// 			return command.Execute([]string{mtaArchivePath, "-f"}).ToInt()
-		// 		})
-		// 		ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, true))
-		// 		// operation := mtaClient.StartMtaOperationArgsForCall(1)
-		// 		// expectProcessParameters(getProcessParameters(false), operation.Parameters)
-		// 	})
-		// })
+		//existing ongoing operations and force option supplied - success
+		//Context("with correct mta id from archive, with ongoing operations provided and with force option", func() {
+		//	It("should try to abort conflicting operations", func() {
+		//		testClientFactory.MtaClient = mta_fake.NewFakeMtaClientBuilder().
+		//			GetMtaOperations(nil, nil, []*models.Operation{testutil.GetOperation("process-id", "test-space-guid", "test", "deploy", "ERROR", true)}, nil).Build()
+		//		output, status := oc.CaptureOutputAndStatus(func() int {
+		//			return command.Execute([]string{mtaArchivePath, "-f"}).ToInt()
+		//		})
+		//		ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, true))
+		//	})
+		//})
+
 		Context("with an error returned from getting ongoing operations", func() {
-			It("should display error and exit witn non-zero status", func() {
-				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+			It("should display error and exit with non-zero status", func() {
+				testClientFactory.MtaClient = mta_fake.NewFakeMtaClientBuilder().
 					GetMtaOperations(nil, nil, []*models.Operation{}, fmt.Errorf("test-error-from backend")).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
@@ -278,7 +243,7 @@ var _ = Describe("DeployCommand", func() {
 		})
 		Context("with valid operation id and non-valid action id provided", func() {
 			It("should return error and exit with non-zero status", func() {
-				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+				testClientFactory.MtaClient = mta_fake.NewFakeMtaClientBuilder().
 					GetMtaOperations(nil, nil, []*models.Operation{
 						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
 					}, nil).Build()
@@ -308,7 +273,7 @@ var _ = Describe("DeployCommand", func() {
 
 		Context("with valid operation id and valid action id provided", func() {
 			It("should execute action on the process specified with process id and exit with zero status", func() {
-				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+				testClientFactory.MtaClient = mta_fake.NewFakeMtaClientBuilder().
 					GetMtaOperations(nil, nil, []*models.Operation{
 						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
 					}, nil).

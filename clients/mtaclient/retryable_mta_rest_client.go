@@ -20,11 +20,6 @@ func NewRetryableMtaRestClient(host, spaceID string, rt http.RoundTripper, jar h
 	return RetryableMtaRestClient{mtaClient: mtaClient, MaxRetriesCount: 3, RetryInterval: time.Second * 3}
 }
 
-func NewRetryableManagementMtaRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RetryableMtaRestClient {
-	mtaManagementClient := NewManagementMtaClient(host, rt, jar, tokenFactory)
-	return RetryableMtaRestClient{mtaClient: mtaManagementClient, MaxRetriesCount: 3, RetryInterval: time.Second * 3}
-}
-
 func (c RetryableMtaRestClient) ExecuteAction(operationID, actionID string) (ResponseHeader, error) {
 	executeActionCb := func() (interface{}, error) {
 		return c.mtaClient.ExecuteAction(operationID, actionID)
@@ -35,6 +30,7 @@ func (c RetryableMtaRestClient) ExecuteAction(operationID, actionID string) (Res
 	}
 	return resp.(ResponseHeader), nil
 }
+
 func (c RetryableMtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 	getMtaCb := func() (interface{}, error) {
 		return c.mtaClient.GetMta(mtaID)
@@ -45,6 +41,7 @@ func (c RetryableMtaRestClient) GetMta(mtaID string) (*models.Mta, error) {
 	}
 	return resp.(*models.Mta), nil
 }
+
 func (c RetryableMtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
 	getMtaFilesCb := func() (interface{}, error) {
 		return c.mtaClient.GetMtaFiles()
@@ -55,6 +52,7 @@ func (c RetryableMtaRestClient) GetMtaFiles() ([]*models.FileMetadata, error) {
 	}
 	return resp.([]*models.FileMetadata), nil
 }
+
 func (c RetryableMtaRestClient) GetMtaOperation(operationID, embed string) (*models.Operation, error) {
 	getMtaOperationCb := func() (interface{}, error) {
 		return c.mtaClient.GetMtaOperation(operationID, embed)
@@ -65,6 +63,7 @@ func (c RetryableMtaRestClient) GetMtaOperation(operationID, embed string) (*mod
 	}
 	return resp.(*models.Operation), err
 }
+
 func (c RetryableMtaRestClient) GetMtaOperationLogs(operationID string) ([]*models.Log, error) {
 	getMtaOperationLogsCb := func() (interface{}, error) {
 		return c.mtaClient.GetMtaOperationLogs(operationID)
@@ -75,6 +74,7 @@ func (c RetryableMtaRestClient) GetMtaOperationLogs(operationID string) ([]*mode
 	}
 	return resp.([]*models.Log), nil
 }
+
 func (c RetryableMtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models.Operation, error) {
 	getMtaOperationsCb := func() (interface{}, error) {
 		return c.mtaClient.GetMtaOperations(last, status)
@@ -85,6 +85,7 @@ func (c RetryableMtaRestClient) GetMtaOperations(last *int64, status []string) (
 	}
 	return resp.([]*models.Operation), nil
 }
+
 func (c RetryableMtaRestClient) GetMtas() ([]*models.Mta, error) {
 	getMtasCb := func() (interface{}, error) {
 		return c.mtaClient.GetMtas()
@@ -95,6 +96,7 @@ func (c RetryableMtaRestClient) GetMtas() ([]*models.Mta, error) {
 	}
 	return resp.([]*models.Mta), nil
 }
+
 func (c RetryableMtaRestClient) GetOperationActions(operationID string) ([]string, error) {
 	getOperationActionsCb := func() (interface{}, error) {
 		return c.mtaClient.GetOperationActions(operationID)
@@ -105,6 +107,7 @@ func (c RetryableMtaRestClient) GetOperationActions(operationID string) ([]strin
 	}
 	return resp.([]string), nil
 }
+
 func (c RetryableMtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHeader, error) {
 	startMtaOperationCb := func() (interface{}, error) {
 		return c.mtaClient.StartMtaOperation(operation)
@@ -115,6 +118,7 @@ func (c RetryableMtaRestClient) StartMtaOperation(operation models.Operation) (R
 	}
 	return resp.(ResponseHeader), nil
 }
+
 func (c RetryableMtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadata, error) {
 	uploadMtaFileCb := func() (interface{}, error) {
 		reopenedFile, err := os.Open(file.Name())
@@ -130,6 +134,7 @@ func (c RetryableMtaRestClient) UploadMtaFile(file os.File) (*models.FileMetadat
 	}
 	return resp.(*models.FileMetadata), nil
 }
+
 func (c RetryableMtaRestClient) GetMtaOperationLogContent(operationID, logID string) (string, error) {
 	getMtaOperationLogContentCb := func() (interface{}, error) {
 		return c.mtaClient.GetMtaOperationLogContent(operationID, logID)

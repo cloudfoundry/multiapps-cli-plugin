@@ -23,13 +23,11 @@ func NewClientError(err error) error {
 	if err == nil {
 		return nil
 	}
-	ae, ok := err.(*runtime.APIError)
-	if ok {
+	if ae, ok := err.(*runtime.APIError); ok {
 		response := ae.Response.(runtime.ClientResponse)
 		return &ClientError{Code: ae.Code, Status: response.Message(), Description: response.Message()}
 	}
-	response, ok := err.(*ErrorResponse)
-	if ok {
+	if response, ok := err.(*ErrorResponse); ok {
 		return &ClientError{Code: response.Code, Status: response.Status, Description: response.Payload}
 	}
 	return err

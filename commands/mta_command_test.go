@@ -21,8 +21,8 @@ var _ = Describe("MtaCommand", func() {
 		const org = "test-org"
 		const space = "test-space"
 		const user = "test-user"
+		const name = "mta"
 
-		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		var clientFactory *commands.TestClientFactory
 		var command *commands.MtaCommand
@@ -30,7 +30,7 @@ var _ = Describe("MtaCommand", func() {
 		var ex = testutil.NewUIExpector()
 
 		var getOutputLines = func(mtaID, version string, apps, services [][]string) []string {
-			lines := []string{}
+			var lines []string
 			lines = append(lines,
 				fmt.Sprintf("Showing health and status for multi-target app %s in org %s / space %s as %s...\n", mtaID, org, space, user))
 			lines = append(lines, "OK\n")
@@ -48,7 +48,6 @@ var _ = Describe("MtaCommand", func() {
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
-			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
@@ -60,11 +59,23 @@ var _ = Describe("MtaCommand", func() {
 			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMta("test", nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
-			command = &commands.MtaCommand{}
+			command = commands.NewMtaCommand()
+			command.Initialize(name, cliConnection)
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
+		})
+
+		// no arguments - error
+		Context("with no arguments", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument 'MTA_ID'")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
 		})
 
 		// wrong arguments - error
@@ -87,7 +98,7 @@ var _ = Describe("MtaCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test", "-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test:", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test:", 1)
 			})
 		})
 
@@ -115,8 +126,8 @@ var _ = Describe("MtaCommand", func() {
 				})
 				ex.ExpectSuccessWithOutput(status, output,
 					getOutputLines("test-mta-id", "test-version",
-						[][]string{[]string{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
-						[][]string{[]string{"test-service-1", "test", "free", "test-mta-module-1", "create succeeded"}}))
+						[][]string{{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
+						[][]string{{"test-service-1", "test", "free", "test-mta-module-1", "create succeeded"}}))
 			})
 		})
 
@@ -132,7 +143,7 @@ var _ = Describe("MtaCommand", func() {
 				})
 				ex.ExpectSuccessWithOutput(status, output,
 					getOutputLines("test-mta-id", "test-version",
-						[][]string{[]string{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
+						[][]string{{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
 						[][]string{}))
 			})
 		})
@@ -175,7 +186,7 @@ func getGetAppsModel(name, state string, runningInstances, totalInstances int,
 		Memory:           memory,
 		DiskQuota:        diskQuota,
 		Routes: []plugin_models.GetAppsRouteSummary{
-			plugin_models.GetAppsRouteSummary{
+			{
 				Host: host,
 				Domain: plugin_models.GetAppsDomainFields{
 					Name: domain,

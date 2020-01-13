@@ -8,7 +8,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/terminal"
 )
 
-// Action interface representing actions to be excuted on processes
+// Action interface representing actions to be executed on processes
 type Action interface {
 	Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus
 }
@@ -109,7 +109,6 @@ type monitoringAction struct {
 }
 
 func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
-
 	// Get the messages of the operation before it's retried/resumed, so that the monitor knows they're from the previous execution and
 	// should not show them again.
 	operation, err := getMonitoringOperation(operationID, mtaClient)

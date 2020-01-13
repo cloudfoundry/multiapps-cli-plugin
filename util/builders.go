@@ -2,7 +2,7 @@ package util
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"net/url"
 	"strings"
 
@@ -72,7 +72,7 @@ func (builder *UriBuilder) SetPath(path string) *UriBuilder {
 
 func (builder *UriBuilder) Build() (string, error) {
 	if builder.scheme == "" || builder.host == "" {
-		return "", fmt.Errorf("The host or scheme could not be empty")
+		return "", errors.New("The host or scheme could not be empty")
 	}
 	stringBuilder := bytes.Buffer{}
 	stringBuilder.WriteString(builder.scheme)

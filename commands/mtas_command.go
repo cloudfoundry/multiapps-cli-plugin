@@ -14,36 +14,42 @@ type MtasCommand struct {
 	BaseCommand
 }
 
+func NewMtasCommand() *MtasCommand {
+	return &MtasCommand{BaseCommand{options: getMtasCommandOptions()}}
+}
+
+func getMtasCommandOptions() map[string]CommandOption {
+	return map[string]CommandOption{
+		deployServiceURLOpt: deployServiceUrlOption(),
+	}
+}
+
 // GetPluginCommand returns the plugin command details
 func (c *MtasCommand) GetPluginCommand() plugin.Command {
 	return plugin.Command{
 		Name:     "mtas",
 		HelpText: "List all multi-target apps",
 		UsageDetails: plugin.Usage{
-			Usage: "cf mtas [-u URL]",
-			Options: map[string]string{
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
-			},
+			Usage:   "cf mtas [-u URL]",
+			Options: c.getOptionsForPluginCommand(),
 		},
 	}
 }
 
 // Execute executes the command
 func (c *MtasCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+	log.Tracef("Executing command '" + c.name + "': args: '%v'\n", args)
 
-	var host string
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
-	err = parser.Parse(args)
+	parser := NewCommandFlagsParser(c.flags, NewDefaultCommandFlagsParser(0))
+	err := parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
+		return Failure
+	}
+
+	host, err := c.computeDeployServiceUrl()
+	if err != nil {
+		ui.Failed("Could not compute deploy service URL: %s", err.Error())
 		return Failure
 	}
 

@@ -4,7 +4,7 @@ import "strings"
 
 func GetTableOutputLines(headers []string, rows [][]string) []string {
 	const padding = 3
-	lines := []string{}
+	var lines []string
 	maxlen := make(map[int]int)
 	getMaxlen(headers, rows, maxlen)
 	lines = append(lines, getLine(headers, maxlen, padding))
@@ -23,11 +23,9 @@ func getLine(row []string, maxlen map[int]int, padding int) string {
 }
 
 func getSpaceCount(i int, row []string, maxlen map[int]int, padding int) int {
-	var count int
+	count := padding
 	if i < len(row)-1 {
 		count = maxlen[i] - len(row[i]) + padding
-	} else {
-		count = padding
 	}
 	return count
 }

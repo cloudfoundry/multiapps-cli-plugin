@@ -26,11 +26,11 @@ type ExecutionMonitor struct {
 	retries            uint
 }
 
-func NewExecutionMonitorFromLocationHeader(commandName, location string, retries uint, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
+func NewExecutionMonitorFromLocationHeader(commandName, location string, retries uint, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	operationID, embed := getMonitoringInformation(location)
 	return &ExecutionMonitor{
 		mtaClient:        mtaClient,
-		reportedMessages: getAlreadyReportedOperationMessages(reportedOperationMessages),
+		reportedMessages: make(map[int64]bool),
 		commandName:      commandName,
 		operationID:      operationID,
 		embed:            embed,
@@ -74,6 +74,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			return Failure
 		}
 		m.reportOperationMessages(operation)
+
 		switch operation.State {
 		case models.StateRUNNING:
 			time.Sleep(3 * time.Second)
@@ -97,12 +98,12 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 				return Failure
 			}
 			ui.Say("Process failed.")
-			m.reportAvaiableActions(m.operationID)
+			m.reportAvailableActions(m.operationID)
 			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Failure
 		case models.StateACTIONREQUIRED:
 			ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
-			m.reportAvaiableActions(m.operationID)
+			m.reportAvailableActions(m.operationID)
 			ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
 			return Success
 		default:
@@ -141,7 +142,7 @@ func (m *ExecutionMonitor) reportOperationMessages(operation *models.Operation) 
 	}
 }
 
-func (m *ExecutionMonitor) reportAvaiableActions(operationID string) {
+func (m *ExecutionMonitor) reportAvailableActions(operationID string) {
 	actions, _ := m.mtaClient.GetOperationActions(operationID)
 	for _, action := range actions {
 		m.reportAvailableAction(action, operationID)

@@ -14,7 +14,7 @@ import (
 )
 
 // Version is the version of the CLI plugin. It is injected on linking time.
-var Version string = "0.0.0"
+var Version = "0.0.0"
 
 // MultiappsPlugin represents a cf CLI plugin for executing operations on MTAs
 type MultiappsPlugin struct{}
@@ -23,12 +23,12 @@ type MultiappsPlugin struct{}
 var Commands = []commands.Command{
 	commands.NewDeployCommand(),
 	commands.NewBlueGreenDeployCommand(),
-	&commands.MtasCommand{},
-	&commands.DownloadMtaOperationLogsCommand{},
+	commands.NewMtasCommand(),
+	commands.NewDownloadMtaOperationLogsCommand(),
 	commands.NewUndeployCommand(),
-	&commands.MtaCommand{},
-	&commands.MtaOperationsCommand{},
-	&commands.PurgeConfigCommand{},
+	commands.NewMtaCommand(),
+	commands.NewMtaOperationsCommand(),
+	commands.NewPurgeConfigCommand(),
 }
 
 // Run runs this plugin

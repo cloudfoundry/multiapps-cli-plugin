@@ -14,10 +14,6 @@ import (
 
 const MaxFileChunkCount = 50
 
-func generateHash() string {
-	return uuid.New()
-}
-
 // SplitFile ...
 func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
 	if fileChunkSizeInMB == 0 {
@@ -25,7 +21,6 @@ func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
 	}
 
 	file, err := os.Open(filePath)
-
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +40,7 @@ func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
 	if totalPartsNum <= 1 {
 		return []string{filePath}, nil
 	}
-	partsTempDir := filepath.Join(os.TempDir(), generateHash())
+	partsTempDir := filepath.Join(os.TempDir(), uuid.New())
 	errCreatingTempDir := os.MkdirAll(partsTempDir, os.ModePerm)
 	if errCreatingTempDir != nil {
 		return nil, errCreatingTempDir
@@ -104,7 +99,7 @@ func minUint64(a, b uint64) uint64 {
 }
 
 func toBytes(mb uint64) uint64 {
-	return uint64(mb) * 1024 * 1024
+	return mb * 1024 * 1024
 }
 
 func toMegabytes(bytes uint64) uint64 {

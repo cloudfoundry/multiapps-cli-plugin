@@ -26,12 +26,6 @@ func NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar
 	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
 }
 
-func NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaClientOperations {
-	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
-	httpMtaClient := New(t, strfmt.Default)
-	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
-}
-
 func (c MtaRestClient) ExecuteAction(operationID, actionID string) (ResponseHeader, error) {
 	params := &operations.ExecuteOperationActionParams{
 		OperationID: operationID,

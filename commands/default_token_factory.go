@@ -25,7 +25,7 @@ func NewDefaultTokenFactory(cliConnection plugin.CliConnection) *DefaultTokenFac
 	}
 }
 
-// NewToken retrives outh token
+// NewToken retrieves outh token
 func (t *DefaultTokenFactory) NewToken() (runtime.ClientAuthInfoWriter, error) {
 	var expirationTime int64
 	if t.cachedToken != "" {

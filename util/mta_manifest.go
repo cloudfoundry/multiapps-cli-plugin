@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 )
 
-const ContentTypeAttribute string = "Content-Type"
 const ManifestVersion string = "Manifest-Version"
 const Name string = "Name"
 const ManifestName string = "MANIFEST.MF"
@@ -29,10 +28,6 @@ type ManifestSection struct {
 
 type MtaManifestBuilder struct {
 	manifest MtaManifest
-}
-
-func NewMtaManifestBuilder() *MtaManifestBuilder {
-	return &MtaManifestBuilder{}
 }
 
 func (builder *MtaManifestBuilder) ManifestSections(sections []ManifestSection) *MtaManifestBuilder {

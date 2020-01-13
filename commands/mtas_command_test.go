@@ -20,8 +20,8 @@ var _ = Describe("MtasCommand", func() {
 		const org = "test-org"
 		const space = "test-space"
 		const user = "test-user"
+		const name = "mtas"
 
-		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		var clientFactory *commands.TestClientFactory
 		var command *commands.MtasCommand
@@ -30,7 +30,7 @@ var _ = Describe("MtasCommand", func() {
 		var testTokenFactory *commands.TestTokenFactory
 
 		var getOutputLines = func(mtas [][]string) []string {
-			lines := []string{}
+			var lines []string
 			lines = append(lines,
 				fmt.Sprintf("Getting multi-target apps in org %s / space %s as %s...\n", org, space, user))
 			lines = append(lines, "OK\n")
@@ -44,7 +44,6 @@ var _ = Describe("MtasCommand", func() {
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
-			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
 				CurrentSpace("test-space-guid", space, nil).
@@ -54,7 +53,8 @@ var _ = Describe("MtasCommand", func() {
 			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMtas(nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
-			command = &commands.MtasCommand{}
+			command = commands.NewMtasCommand()
+			command.Initialize(name, cliConnection)
 			testTokenFactory = commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
@@ -91,7 +91,7 @@ var _ = Describe("MtasCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 1)
 			})
 		})
 
@@ -130,7 +130,7 @@ var _ = Describe("MtasCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output,
-					getOutputLines([][]string{[]string{"org.cloudfoundry.samples.music", "?"}}))
+					getOutputLines([][]string{{"org.cloudfoundry.samples.music", "?"}}))
 			})
 		})
 
@@ -145,7 +145,7 @@ var _ = Describe("MtasCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output,
-					getOutputLines([][]string{[]string{"org.cloudfoundry.samples.music", "1.0"}}))
+					getOutputLines([][]string{{"org.cloudfoundry.samples.music", "1.0"}}))
 			})
 		})
 	})
