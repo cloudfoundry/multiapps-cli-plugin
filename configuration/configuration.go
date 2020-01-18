@@ -1,40 +1,94 @@
 package configuration
 
 import (
+	"fmt"
 	"os"
-	"strconv"
-
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 const (
-	// ChunkSizeInMBEnv Defines the chunk size of MTAR in MB
-	ChunkSizeInMBEnv = "CHUNK_SIZE_IN_MB"
-	// TargetURLEnv Defines the URL of the deploy service
-	TargetURLEnv = "DEPLOY_SERVICE_URL"
-	// DefaultChunkSizeInMB ...
+	unknownError         = "An unknown error occurred during the parsing of the environment variable \"%s\". Please report this! Value type: %T"
 	DefaultChunkSizeInMB = uint64(45)
 )
 
-// GetChunkSizeInMB Retrieves the MTAR chunk size from environment or uses the default one
-func GetChunkSizeInMB() uint64 {
-	chunkSizeInMb, isSet := os.LookupEnv(ChunkSizeInMBEnv)
-	if isSet {
-		parsedChunkSizeInMb, err := strconv.ParseUint(chunkSizeInMb, 10, 64)
-		if err == nil && parsedChunkSizeInMb != 0 {
-			ui.Say("Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".", parsedChunkSizeInMb, ChunkSizeInMBEnv)
-			return parsedChunkSizeInMb
-		}
-		ui.Warn("Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d", chunkSizeInMb, ChunkSizeInMBEnv, DefaultChunkSizeInMB)
-	}
-	return DefaultChunkSizeInMB
+var ChunkSizeInMBConfigurableProperty = configurableProperty{
+	Name:                  "CHUNK_SIZE_IN_MB",
+	DeprecatedNames:       []string{},
+	Parser:                chunkSizeInMBParser{},
+	ParsingSuccessMessage: "Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".\n",
+	ParsingFailureMessage: "Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d\n",
+	DefaultValue:          DefaultChunkSizeInMB,
 }
 
-// GetTargetURL Retrieves the URL of the deploy service if set in the environment
-func GetTargetURL() string {
-	targetURL := os.Getenv(TargetURLEnv)
-	if targetURL != "" {
-		ui.Say("Attention: You've specified a custom Deploy Service URL (%s) via the environment variable \"%s\". The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.\n", targetURL, TargetURLEnv)
+var BackendURLConfigurableProperty = configurableProperty{
+	Name:                  "DEPLOY_SERVICE_URL",
+	DeprecatedNames:       []string{},
+	Parser:                noOpParser{},
+	ParsingSuccessMessage: "Attention: You've specified a custom backend URL (%s) via the environment variable \"%s\". The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.\n",
+	ParsingFailureMessage: "No validation implemented for custom backend URLs. If you're seeing this message then something has gone horribly wrong.\n",
+	DefaultValue:          "",
+}
+
+// GetBackendURL Retrieves the URL of the backend if set in the environment
+func GetBackendURL() string {
+	return getStringProperty(BackendURLConfigurableProperty)
+}
+
+// GetChunkSizeInMB Retrieves the MTAR chunk size from environment or uses the default one
+func GetChunkSizeInMB() uint64 {
+	return getUint64Property(ChunkSizeInMBConfigurableProperty)
+}
+
+func getStringProperty(property configurableProperty) string {
+	uncastedValue := getPropertyOrDefault(property)
+	value, ok := uncastedValue.(string)
+	if !ok {
+		panic(fmt.Sprintf(unknownError, property.Name, uncastedValue))
 	}
-	return targetURL
+	return value
+}
+
+func getUint64Property(property configurableProperty) uint64 {
+	uncastedValue := getPropertyOrDefault(property)
+	value, ok := uncastedValue.(uint64)
+	if !ok {
+		panic(fmt.Sprintf(unknownError, property.Name, uncastedValue))
+	}
+	return value
+}
+
+func getPropertyOrDefault(property configurableProperty) interface{} {
+	value := getPropertyWithNameOrDefaultIfInvalid(property, property.Name)
+	if value != nil {
+		return value
+	}
+	for _, deprecatedName := range property.DeprecatedNames {
+		value := getPropertyWithNameOrDefaultIfInvalid(property, deprecatedName)
+		if value != nil {
+			fmt.Printf("Attention: You're using a deprecated environment variable \"%s\". Use \"%s\" instead.\n\n", deprecatedName, property.Name)
+			return value
+		}
+	}
+	return property.DefaultValue
+}
+
+func getPropertyWithNameOrDefaultIfInvalid(property configurableProperty, name string) interface{} {
+	propertyValue, err := getPropertyWithName(name, property.Parser)
+	if err != nil {
+		propertyValue = os.Getenv(name)
+		fmt.Printf(property.ParsingFailureMessage, propertyValue, name, property.DefaultValue)
+		return property.DefaultValue
+	}
+	if propertyValue != nil {
+		fmt.Printf(property.ParsingSuccessMessage, propertyValue, name)
+		return propertyValue
+	}
+	return nil
+}
+
+func getPropertyWithName(name string, parser configurablePropertyParser) (interface{}, error) {
+	propertyValue, isSet := os.LookupEnv(name)
+	if isSet {
+		return parser.Parse(propertyValue)
+	}
+	return nil, nil
 }
