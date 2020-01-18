@@ -221,7 +221,7 @@ func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
 		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", optionDeployServiceURL))
 		return optionDeployServiceURL
 	}
-	return configuration.GetTargetURL()
+	return configuration.GetBackendURL()
 }
 
 // ExecuteAction executes the action over the process specified with operationID
