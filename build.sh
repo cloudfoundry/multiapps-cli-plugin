@@ -12,10 +12,25 @@ function build() {
         -o ${plugin_name}
 }
 
+function buildstatic() {
+    local version=$1
+    local platform=$2
+    local arch=$3
+    local plugin_name=$4
+
+    echo calling to build static for $platform $arch
+    CGO_ENABLED=0 GOOS=$platform GOARCH=$arch go build -a -tags netgo \
+        -ldflags "-w -extldflags \"-static\" -X main.Version=${version}" \
+        -o ${plugin_name}
+}
+
 function copyPluginsWithOldNames() {
     cp $PLUGIN_NAME_WIN_64 $OLD_PLUGIN_NAME_WIN_64
     cp $PLUGIN_NAME_LINUX_64 $OLD_PLUGIN_NAME_LINUX_64
     cp $PLUGIN_NAME_OSX $OLD_PLUGIN_NAME_OSX
+    cp $PLUGIN_NAME_STATIC_WIN_64 $OLD_PLUGIN_NAME_STATIC_WIN_64
+    cp $PLUGIN_NAME_STATIC_LINUX_64 $OLD_PLUGIN_NAME_STATIC_LINUX_64
+    cp $PLUGIN_NAME_STATIC_OSX $OLD_PLUGIN_NAME_STATIC_OSX
 }
 
 function movePluginsToBuildFolder() {
@@ -25,6 +40,11 @@ function movePluginsToBuildFolder() {
     mv $PLUGIN_NAME_LINUX_32 $folder
     mv $PLUGIN_NAME_LINUX_64 $folder
     mv $PLUGIN_NAME_OSX $folder
+    mv $PLUGIN_NAME_STATIC_WIN_32 $folder
+    mv $PLUGIN_NAME_STATIC_WIN_64 $folder
+    mv $PLUGIN_NAME_STATIC_LINUX_32 $folder
+    mv $PLUGIN_NAME_STATIC_LINUX_64 $folder
+    mv $PLUGIN_NAME_STATIC_OSX $folder
 }
 
 function createBuildMetadataFiles() {
@@ -47,12 +67,27 @@ OLD_PLUGIN_NAME_WIN_64=mta_plugin_windows_amd64.exe
 OLD_PLUGIN_NAME_LINUX_64=mta_plugin_linux_amd64
 OLD_PLUGIN_NAME_OSX=mta_plugin_darwin_amd64
 
+PLUGIN_NAME_STATIC_WIN_32=multiapps-plugin-static.win32
+PLUGIN_NAME_STATIC_WIN_64=multiapps-plugin-static.win64
+PLUGIN_NAME_STATIC_LINUX_32=multiapps-plugin-static.linux32
+PLUGIN_NAME_STATIC_LINUX_64=multiapps-plugin-static.linux64
+PLUGIN_NAME_STATIC_OSX=multiapps-plugin-static.osx
+OLD_PLUGIN_NAME_STATIC_WIN_64=mta_plugin_static_windows_amd64.exe
+OLD_PLUGIN_NAME_STATIC_LINUX_64=mta_plugin_static_linux_amd64
+OLD_PLUGIN_NAME_STATIC_OSX=mta_plugin_static_darwin_amd64
+
 version=$(<cfg/VERSION)
 build $version linux 386 $PLUGIN_NAME_LINUX_32
 build $version linux amd64 $PLUGIN_NAME_LINUX_64
 build $version windows 386 $PLUGIN_NAME_WIN_32
 build $version windows amd64 $PLUGIN_NAME_WIN_64
 build $version darwin amd64 $PLUGIN_NAME_OSX
+
+buildstatic $version linux 386 $PLUGIN_NAME_STATIC_LINUX_32
+buildstatic $version linux amd64 $PLUGIN_NAME_STATIC_LINUX_64
+buildstatic $version windows 386 $PLUGIN_NAME_STATIC_WIN_32
+buildstatic $version windows amd64 $PLUGIN_NAME_STATIC_WIN_64
+buildstatic $version darwin amd64 $PLUGIN_NAME_STATIC_OSX
 
 mkdir $BUILD_FOLDER -p
 createBuildMetadataFiles $version $BUILD_FOLDER
