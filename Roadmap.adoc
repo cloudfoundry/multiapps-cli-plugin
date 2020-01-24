@@ -1,5 +1,8 @@
 # Project multiapps roadmap highlights
 
+# Current status & short-term priorities can be traked on this repo's link:https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/projects/1[project kanban board ]
+
+
 ## Outlook 
 image::png/Slide1-11-26-19_13-28-21-253[outlook_snapshot_nov19]
 
