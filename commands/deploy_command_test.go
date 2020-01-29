@@ -176,6 +176,29 @@ var _ = Describe("DeployCommand", func() {
 			})
 		})
 
+		// strategy flag set to "" - error
+		Context("with strategy flag set to blank string", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--strategy"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		// strategy flag set to invalid deployment strategy - error
+		Context("with strategy flag set to an invalid deployment strategy", func() {
+			It("should print the available strategies and exit with a non-zero status", func() {
+				invalidStrategy := "asd"
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--strategy", invalidStrategy}).ToInt()
+				})
+				message := fmt.Sprintf("%s is not a valid deployment strategy, available strategies: %v", invalidStrategy, commands.AvailableStrategies())
+				ex.ExpectFailureOnLine(status, output, message, 0)
+			})
+		})
+
 		// TODO: can't connect to backend - error
 
 		// TODO: backend returns an an error response - error

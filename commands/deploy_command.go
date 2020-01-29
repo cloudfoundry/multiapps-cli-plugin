@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -33,6 +34,7 @@ const (
 	allResourcesOpt            = "all-resources"
 	verifyArchiveSignatureOpt  = "verify-archive-signature"
 	strategyOpt                = "strategy"
+	skipTestingPhase           = "skip-testing-phase"
 )
 
 type listFlag struct {
@@ -79,7 +81,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature] [--strategy blue-green] [--no-confirm]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--use-namespaces] [--no-namespaces-for-services] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--skip-ownership-validation] [--verify-archive-signature] [--strategy STRATEGY] [--no-confirm]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -93,7 +95,6 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				forceOpt:                              "Force deploy without confirmation for aborting conflicting processes",
 				moduleOpt:                             "Deploy list of modules which are contained in the deployment descriptor, in the current location",
 				resourceOpt:                           "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				strategyOpt:						   "Specify the deployment strategy when updating an mta (blue-green)",
 				util.GetShortOption(noStartOpt):       "Do not start apps",
 				util.GetShortOption(useNamespacesOpt): "Use namespaces in app and service names",
 				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
@@ -109,7 +110,8 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
-				util.GetShortOption(noConfirmOpt):                  "Do not require confirmation for deleting the previously deployed MTA apps",
+				util.GetShortOption(strategyOpt):                   "(EXPERIMENTAL) Specify the deployment strategy when updating an mta (default, blue-green)",
+				util.GetShortOption(skipTestingPhase):              "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA apps",
 			},
 		},
 	}
@@ -144,8 +146,8 @@ func deployCommandFlagsDefiner() CommandFlagsDefiner {
 		optionValues[allResourcesOpt] = flags.Bool(allResourcesOpt, false, "")
 		optionValues[verifyArchiveSignatureOpt] = flags.Bool(verifyArchiveSignatureOpt, false, "")
 		optionValues[retriesOpt] = flags.Uint(retriesOpt, 3, "")
-		optionValues[strategyOpt] = flags.String(strategyOpt, "", "")
-		optionValues[noConfirmOpt] = flags.Bool(noConfirmOpt, false, "")
+		optionValues[strategyOpt] = flags.String(strategyOpt, "default", "")
+		optionValues[skipTestingPhase] = flags.Bool(skipTestingPhase, false, "")
 		flags.Var(&modulesList, moduleOpt, "")
 		flags.Var(&resourcesList, resourceOpt, "")
 		return optionValues
@@ -200,7 +202,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 	optionValues := c.commandFlagsDefiner(flags)
-	parser := NewCommandFlagsParser(flags, newDeployCommandLineArgumentsParser(), NewDefaultCommandFlagsValidator(nil))
+	parser := NewCommandFlagsParser(flags, newDeployCommandLineArgumentsParser(), deployCommandFlagsValidator{})
 	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
@@ -309,20 +311,12 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Build the process instance
-	processBuilder := util.NewProcessBuilder()
-	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
+	processBuilder := NewDeploymentStrategy(optionValues, c.processTypeProvider).CreateProcessBuilder()
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
 	processBuilder.Parameter("mtaId", mtaID)
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
-
-	strategy := GetStringOpt(strategyOpt, optionValues)
-	if strategy == "blue-green" {
-		processBuilder.ProcessType(blueGreenDeployCommandProcessTypeProvider{}.GetProcessType())
-		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, optionValues)))
-		processBuilder.Parameter("keepExistingAppNames", strconv.FormatBool(true))
-	}
 
 	operation := processBuilder.Build()
 
@@ -491,4 +485,23 @@ func determinePositionalArgumentsTovalidate(possitionalArgument string) []string
 	}
 
 	return []string{"MTA"}
+}
+
+type deployCommandFlagsValidator struct {}
+
+func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
+	var err error
+	flags.Visit(func(f *flag.Flag) {
+		if f.Name == strategyOpt {
+			if f.Value.String() == ""  {
+				err = errors.New("strategy flag defined but no argument specified")
+			} else if !util.Contains(AvailableStrategies(), f.Value.String()) {
+				err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
+			}
+		}
+	})
+	if err != nil {
+		return err
+	}
+	return NewDefaultCommandFlagsValidator(nil).ValidateParsedFlags(flags)
 }

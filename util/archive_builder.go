@@ -243,7 +243,7 @@ func resolvePaths(baseDirectory string, filePaths map[string]string) map[string]
 func (builder MtaArchiveBuilder) getBindingParametersPaths(deploymentDescriptorResources []Module) map[string]string {
 	result := make(map[string]string, 0)
 	modulesToAdd := filterModules(deploymentDescriptorResources, func(module Module) bool {
-		return contains(builder.modules, module.Name)
+		return Contains(builder.modules, module.Name)
 	})
 	for _, module := range modulesToAdd {
 		requiredDependenciesConfigPaths := getRequiredDependenciesConfigPaths(module.RequiredDependencies)
@@ -271,7 +271,7 @@ func (builder MtaArchiveBuilder) getResourcesPaths(deploymentDescriptorResources
 	}
 	result := make(map[string]string)
 	resourcesToAdd := filterResources(deploymentDescriptorResources, func(resource Resource) bool {
-		return contains(builder.resources, resource.Name)
+		return Contains(builder.resources, resource.Name)
 	})
 
 	for _, resource := range resourcesToAdd {
@@ -287,7 +287,7 @@ func validateSpecifiedResources(resourcesForDeployment []string, deploymentDescr
 	}
 	specifiedResourcesNotPartOfDeploymentDescriptor := make([]string, 0)
 	for _, resourceForDeployment := range resourcesForDeployment {
-		if !contains(deploymentDescriptorResourceNames, resourceForDeployment) {
+		if !Contains(deploymentDescriptorResourceNames, resourceForDeployment) {
 			specifiedResourcesNotPartOfDeploymentDescriptor = append(specifiedResourcesNotPartOfDeploymentDescriptor, resourceForDeployment)
 		}
 	}
@@ -312,7 +312,7 @@ func (builder MtaArchiveBuilder) getModulesPaths(deploymentDescriptorResources [
 		return nil, err
 	}
 	modulesToAdd := filterModules(deploymentDescriptorResources, func(module Module) bool {
-		return contains(builder.modules, module.Name)
+		return Contains(builder.modules, module.Name)
 	})
 	specifiedModulesWithoutPaths := filterModules(modulesToAdd, func(module Module) bool {
 		return module.Path == ""
@@ -341,7 +341,7 @@ func validateSpecifiedModules(modulesForDeployment []string, deploymentDescripto
 	}
 	specifiedResourcesNotPartOfDeploymentDescriptor := make([]string, 0)
 	for _, moduleForDeployment := range modulesForDeployment {
-		if !contains(deploymentDescriptorResourceNames, moduleForDeployment) {
+		if !Contains(deploymentDescriptorResourceNames, moduleForDeployment) {
 			specifiedResourcesNotPartOfDeploymentDescriptor = append(specifiedResourcesNotPartOfDeploymentDescriptor, moduleForDeployment)
 		}
 	}
@@ -373,7 +373,7 @@ func filterResources(resourcesSlice []Resource, prediacte func(element Resource)
 	return result
 }
 
-func contains(slice []string, element string) bool {
+func Contains(slice []string, element string) bool {
 	for _, sliceElement := range slice {
 		if sliceElement == element {
 			return true
