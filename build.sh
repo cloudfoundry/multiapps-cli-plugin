@@ -94,3 +94,4 @@ createBuildMetadataFiles $version $BUILD_FOLDER
 movePluginsToBuildFolder $BUILD_FOLDER
 cd $BUILD_FOLDER
 copyPluginsWithOldNames
+
