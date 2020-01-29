@@ -5,6 +5,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 )
 
@@ -74,7 +75,7 @@ func (a *action) executeInSession(operationID string, mtaClient mtaclient.MtaCli
 	if err != nil {
 		ui.Failed("Could not retrieve possible actions for operation %s: %s", terminal.EntityNameColor(operationID), err)
 	}
-	if !a.actionIsPossible(possibleActions) {
+	if !util.Contains(possibleActions, a.actionID) {
 		ui.Failed("Action '%s' is not possible for operation %s", a.actionID, terminal.EntityNameColor(operationID))
 		return Failure
 	}
@@ -93,15 +94,6 @@ func (a *action) executeInSession(operationID string, mtaClient mtaclient.MtaCli
 	return Success
 }
 
-func (a *action) actionIsPossible(possibleActions []string) bool {
-	for _, possibleAction := range possibleActions {
-		if possibleAction == a.actionID {
-			return true
-		}
-	}
-	return false
-}
-
 type monitoringAction struct {
 	action
 	commandName       string
@@ -109,7 +101,6 @@ type monitoringAction struct {
 }
 
 func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
-
 	// Get the messages of the operation before it's retried/resumed, so that the monitor knows they're from the previous execution and
 	// should not show them again.
 	operation, err := getMonitoringOperation(operationID, mtaClient)

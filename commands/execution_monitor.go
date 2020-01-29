@@ -101,15 +101,24 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			m.reportCommandForDownloadOfProcessLogs(m.operationID)
 			return Failure
 		case models.StateACTIONREQUIRED:
-			ui.Say("Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
+			intermediatePhase, flag := getIntermediatePhaseAndFlag(m.commandName)
+			ui.Say("Process has entered %s phase. After testing your new deployment you can resume or abort the process.", intermediatePhase)
 			m.reportAvaiableActions(m.operationID)
-			ui.Say("Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
+			ui.Say("Hint: Use the '%s' option of the %s command to skip this phase.", flag, m.commandName)
 			return Success
 		default:
 			ui.Failed("Process is in illegal state %s.", terminal.EntityNameColor(string(operation.State)))
 			return Failure
 		}
 	}
+}
+
+func getIntermediatePhaseAndFlag(commandName string) (string, string) {
+	//for backwards compatibility until the bg-deploy deprecation period expires
+	if commandName == "bg-deploy" {
+		return "validation", "--no-confirm"
+	}
+	return "testing", "--skip-testing-phase"
 }
 
 func canRetry(retries uint, operation *models.Operation) bool {
