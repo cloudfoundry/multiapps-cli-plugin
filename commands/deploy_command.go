@@ -86,17 +86,17 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
-				extDescriptorsOpt:                     "Extension descriptors",
-				deployServiceURLOpt:                   "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                            "Start timeout in seconds",
-				versionRuleOpt:                        "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                        "Active deploy operation id",
-				actionOpt:                             "Action to perform on active deploy operation (abort, retry, monitor)",
-				forceOpt:                              "Force deploy without confirmation for aborting conflicting processes",
-				moduleOpt:                             "Deploy list of modules which are contained in the deployment descriptor, in the current location",
-				resourceOpt:                           "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(noStartOpt):       "Do not start apps",
-				util.GetShortOption(useNamespacesOpt): "Use namespaces in app and service names",
+				extDescriptorsOpt:                                  "Extension descriptors",
+				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				timeoutOpt:                                         "Start timeout in seconds",
+				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
+				operationIDOpt:                                     "Active deploy operation id",
+				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, monitor)",
+				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                                          "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                                        "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(noStartOpt):                    "Do not start apps",
+				util.GetShortOption(useNamespacesOpt):              "Use namespaces in app and service names",
 				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
 				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
@@ -286,8 +286,9 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
+	chunkSizeInMB := c.configurationSnapshot.GetChunkSizeInMB()
 	// Upload the MTA archive file
-	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient)
+	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, chunkSizeInMB)
 	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()
 	if status == Failure {
 		return Failure
@@ -300,7 +301,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Upload the extension descriptor files
 	var uploadedExtDescriptorIDs []string
 	if len(extDescriptorPaths) != 0 {
-		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient)
+		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, chunkSizeInMB)
 		uploadedExtDescriptors, status := extDescriptorsUploader.UploadFiles()
 		if status == Failure {
 			return Failure
@@ -487,13 +488,13 @@ func determinePositionalArgumentsTovalidate(possitionalArgument string) []string
 	return []string{"MTA"}
 }
 
-type deployCommandFlagsValidator struct {}
+type deployCommandFlagsValidator struct{}
 
 func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
 	var err error
 	flags.Visit(func(f *flag.Flag) {
 		if f.Name == strategyOpt {
-			if f.Value.String() == ""  {
+			if f.Value.String() == "" {
 				err = errors.New("strategy flag defined but no argument specified")
 			} else if !util.Contains(AvailableStrategies(), f.Value.String()) {
 				err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())

@@ -10,7 +10,6 @@ import (
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -21,15 +20,17 @@ import (
 
 //FileUploader uploads files for the service with the specified service ID
 type FileUploader struct {
-	files     []string
-	mtaClient mtaclient.MtaClientOperations
+	files         []string
+	mtaClient     mtaclient.MtaClientOperations
+	chunkSizeInMB uint64
 }
 
 //NewFileUploader creates a new file uploader for the specified service ID, files, and SLMP client
-func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations) *FileUploader {
+func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations, chunkSizeInMB uint64) *FileUploader {
 	return &FileUploader{
-		files:     files,
-		mtaClient: mtaClient,
+		files:         files,
+		mtaClient:     mtaClient,
+		chunkSizeInMB: chunkSizeInMB,
 	}
 }
 
@@ -75,7 +76,6 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	var uploadedFiles []*models.FileMetadata
 	uploadedFiles = append(uploadedFiles, alreadyUploadedFiles...)
 	if len(filesToUpload) != 0 {
-		chunkSizeInMB := configuration.GetChunkSizeInMB()
 		ui.Say("Uploading %d files...", len(filesToUpload))
 
 		// Iterate over all files to be uploaded
@@ -89,7 +89,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 			ui.Say("  " + fullPath)
 
 			// Upload the file
-			uploaded, err := uploadInChunks(fullPath, fileToUpload, chunkSizeInMB, f.mtaClient)
+			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.chunkSizeInMB, f.mtaClient)
 			if err != nil {
 				ui.Failed("Could not upload file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
 				return nil, Failure

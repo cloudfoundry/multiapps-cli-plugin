@@ -10,17 +10,6 @@ const (
 	DefaultChunkSizeInMB = uint64(45)
 )
 
-var ChunkSizeInMBConfigurableProperty = configurableProperty{
-	Name: "MULTIAPPS_UPLOAD_CHUNK_SIZE",
-	DeprecatedNames: []string{
-		"CHUNK_SIZE_IN_MB",
-	},
-	Parser:                chunkSizeInMBParser{},
-	ParsingSuccessMessage: "Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".\n",
-	ParsingFailureMessage: "Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d\n",
-	DefaultValue:          DefaultChunkSizeInMB,
-}
-
 var BackendURLConfigurableProperty = configurableProperty{
 	Name: "MULTIAPPS_CONTROLLER_URL",
 	DeprecatedNames: []string{
@@ -32,13 +21,42 @@ var BackendURLConfigurableProperty = configurableProperty{
 	DefaultValue:          "",
 }
 
-// GetBackendURL Retrieves the URL of the backend if set in the environment
-func GetBackendURL() string {
+var ChunkSizeInMBConfigurableProperty = configurableProperty{
+	Name: "MULTIAPPS_UPLOAD_CHUNK_SIZE",
+	DeprecatedNames: []string{
+		"CHUNK_SIZE_IN_MB",
+	},
+	Parser:                chunkSizeInMBParser{},
+	ParsingSuccessMessage: "Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".\n",
+	ParsingFailureMessage: "Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d\n",
+	DefaultValue:          DefaultChunkSizeInMB,
+}
+
+type Snapshot struct {
+	backendURL    string
+	chunkSizeInMB uint64
+}
+
+func NewSnapshot() Snapshot {
+	return Snapshot{
+		backendURL:    getBackendURLFromEnvironment(),
+		chunkSizeInMB: getChunkSizeInMBFromEnvironment(),
+	}
+}
+
+func (c Snapshot) GetBackendURL() string {
+	return c.backendURL
+}
+
+func (c Snapshot) GetChunkSizeInMB() uint64 {
+	return c.chunkSizeInMB
+}
+
+func getBackendURLFromEnvironment() string {
 	return getStringProperty(BackendURLConfigurableProperty)
 }
 
-// GetChunkSizeInMB Retrieves the MTAR chunk size from environment or uses the default one
-func GetChunkSizeInMB() uint64 {
+func getChunkSizeInMBFromEnvironment() uint64 {
 	return getUint64Property(ChunkSizeInMBConfigurableProperty)
 }
 
