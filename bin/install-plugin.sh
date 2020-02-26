@@ -4,6 +4,7 @@ set -e
 
 echo -e "Installing plugin..."
 
+cd $GOPATH/src/github.com/cloudfoundry-incubator/multiapps-cli-plugin
 go install
-cf uninstall-plugin MtaPlugin
-cf install-plugin $GOPATH/bin/cf-cli-plugin -f
+cf uninstall-plugin multiapps
+cf install-plugin $GOPATH/bin/multiapps-cli-plugin -f

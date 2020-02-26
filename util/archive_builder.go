@@ -131,7 +131,7 @@ func getPaths(elementsPaths map[string]string) []string {
 
 func copyContent(baseDirectory string, paths []string, location string) error {
 	for _, path := range paths {
-		path = strings.Replace(path, baseDirectory, "", -1)
+		path = strings.TrimPrefix(path, baseDirectory)
 		filesInDestinationInfo, err := os.Stat(filepath.Join(baseDirectory, path))
 		if err != nil {
 			return fmt.Errorf("Error building MTA Archive: file path %s not found", filepath.Join(baseDirectory, path))

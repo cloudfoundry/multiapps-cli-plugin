@@ -31,6 +31,62 @@ var _ = Describe("ArchiveBuilder", func() {
 			})
 		})
 
+		Context("With different paths relative to the deployment descriptor", func() {
+			var (
+				currentWorkingDirectory string
+				err                     error
+				mtaArchiveLocation      string
+			)
+			const requiredDependencyContent = "test-module-content"
+			const testDeploymentDescriptor = "mtad.yaml"
+
+			BeforeEach(func() {
+				// need to cd into the tempDir in order to simulate the relative path
+				currentWorkingDirectory, err = os.Getwd()
+				Expect(err).To(BeNil())
+				err = os.Chdir(tempDirLocation)
+				Expect(err).To(BeNil())
+
+				os.Create(requiredDependencyContent)
+				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
+					util.Module{Name: "TestModule", Path: requiredDependencyContent},
+				}}
+				generatedYamlBytes, _ := yaml.Marshal(descriptor)
+
+				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+			})
+
+			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(".")
+			})
+
+			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build("./")
+			})
+
+			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+				// create and cd into new dir
+				err = os.Mkdir("test", 0700)
+				Expect(err).To(BeNil())
+				err = os.Chdir("test")
+				Expect(err).To(BeNil())
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build("../")
+			})
+
+			AfterEach(func() {
+				Expect(err).To(BeNil())
+				_, err = os.Stat(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				Expect(isInArchive(requiredDependencyContent, mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
+				defer os.Remove(mtaArchiveLocation)
+				defer os.Chdir(currentWorkingDirectory)
+			})
+		})
+
 		Context("With deployment descriptor which contains some modules and resources", func() {
 			It("Try to parse the specified modules and fail as the paths are not existing", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
