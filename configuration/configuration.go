@@ -2,45 +2,21 @@ package configuration
 
 import (
 	"fmt"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
 	"os"
 )
 
-const (
-	unknownError         = "An unknown error occurred during the parsing of the environment variable \"%s\". Please report this! Value type: %T"
-	DefaultChunkSizeInMB = uint64(45)
-)
-
-var BackendURLConfigurableProperty = configurableProperty{
-	Name: "MULTIAPPS_CONTROLLER_URL",
-	DeprecatedNames: []string{
-		"DEPLOY_SERVICE_URL",
-	},
-	Parser:                noOpParser{},
-	ParsingSuccessMessage: "Attention: You've specified a custom backend URL (%s) via the environment variable \"%s\". The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.\n",
-	ParsingFailureMessage: "No validation implemented for custom backend URLs. If you're seeing this message then something has gone horribly wrong.\n",
-	DefaultValue:          "",
-}
-
-var ChunkSizeInMBConfigurableProperty = configurableProperty{
-	Name: "MULTIAPPS_UPLOAD_CHUNK_SIZE",
-	DeprecatedNames: []string{
-		"CHUNK_SIZE_IN_MB",
-	},
-	Parser:                chunkSizeInMBParser{},
-	ParsingSuccessMessage: "Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".\n",
-	ParsingFailureMessage: "Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d\n",
-	DefaultValue:          DefaultChunkSizeInMB,
-}
+const unknownError = "An unknown error occurred during the parsing of the environment variable \"%s\". Please report this! Value type: %T"
 
 type Snapshot struct {
-	backendURL    string
-	chunkSizeInMB uint64
+	backendURL          string
+	uploadChunkSizeInMB uint64
 }
 
 func NewSnapshot() Snapshot {
 	return Snapshot{
-		backendURL:    getBackendURLFromEnvironment(),
-		chunkSizeInMB: getChunkSizeInMBFromEnvironment(),
+		backendURL:          getBackendURLFromEnvironment(),
+		uploadChunkSizeInMB: getUploadChunkSizeInMBFromEnvironment(),
 	}
 }
 
@@ -48,19 +24,19 @@ func (c Snapshot) GetBackendURL() string {
 	return c.backendURL
 }
 
-func (c Snapshot) GetChunkSizeInMB() uint64 {
-	return c.chunkSizeInMB
+func (c Snapshot) GetUploadChunkSizeInMB() uint64 {
+	return c.uploadChunkSizeInMB
 }
 
 func getBackendURLFromEnvironment() string {
-	return getStringProperty(BackendURLConfigurableProperty)
+	return getStringProperty(properties.BackendURL)
 }
 
-func getChunkSizeInMBFromEnvironment() uint64 {
-	return getUint64Property(ChunkSizeInMBConfigurableProperty)
+func getUploadChunkSizeInMBFromEnvironment() uint64 {
+	return getUint64Property(properties.UploadChunkSizeInMB)
 }
 
-func getStringProperty(property configurableProperty) string {
+func getStringProperty(property properties.ConfigurableProperty) string {
 	uncastedValue := getPropertyOrDefault(property)
 	value, ok := uncastedValue.(string)
 	if !ok {
@@ -69,7 +45,7 @@ func getStringProperty(property configurableProperty) string {
 	return value
 }
 
-func getUint64Property(property configurableProperty) uint64 {
+func getUint64Property(property properties.ConfigurableProperty) uint64 {
 	uncastedValue := getPropertyOrDefault(property)
 	value, ok := uncastedValue.(uint64)
 	if !ok {
@@ -78,7 +54,7 @@ func getUint64Property(property configurableProperty) uint64 {
 	return value
 }
 
-func getPropertyOrDefault(property configurableProperty) interface{} {
+func getPropertyOrDefault(property properties.ConfigurableProperty) interface{} {
 	value := getPropertyWithNameOrDefaultIfInvalid(property, property.Name)
 	if value != nil {
 		return value
@@ -93,7 +69,7 @@ func getPropertyOrDefault(property configurableProperty) interface{} {
 	return property.DefaultValue
 }
 
-func getPropertyWithNameOrDefaultIfInvalid(property configurableProperty, name string) interface{} {
+func getPropertyWithNameOrDefaultIfInvalid(property properties.ConfigurableProperty, name string) interface{} {
 	propertyValue, err := getPropertyWithName(name, property.Parser)
 	if err != nil {
 		propertyValue = os.Getenv(name)
@@ -107,7 +83,7 @@ func getPropertyWithNameOrDefaultIfInvalid(property configurableProperty, name s
 	return nil
 }
 
-func getPropertyWithName(name string, parser configurablePropertyParser) (interface{}, error) {
+func getPropertyWithName(name string, parser properties.Parser) (interface{}, error) {
 	propertyValue, isSet := os.LookupEnv(name)
 	if isSet {
 		return parser.Parse(propertyValue)

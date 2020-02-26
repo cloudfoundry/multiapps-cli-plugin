@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
 	"github.com/pborman/uuid"
 )
 
@@ -76,7 +76,7 @@ func ValidateChunkSize(filePath string, fileChunkSizeInMB uint64) error {
 		return nil
 	}
 
-	if fileChunkSizeInMB == configuration.DefaultChunkSizeInMB {
+	if fileChunkSizeInMB == properties.DefaultUploadChunkSizeInMB {
 		return nil
 	}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -44,7 +44,7 @@ var _ = Describe("FileUploader", func() {
 				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
 
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{}, client, configuration.DefaultChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{}, client, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
@@ -57,7 +57,7 @@ var _ = Describe("FileUploader", func() {
 				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{}, client, configuration.DefaultChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{}, client, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
@@ -73,7 +73,7 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, configuration.DefaultChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -95,7 +95,7 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, configuration.DefaultChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
@@ -113,7 +113,7 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, fileMetadata, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, configuration.DefaultChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles()
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -135,7 +135,7 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
 				// var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, configuration.DefaultChunkSizeInMB)
+					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, properties.DefaultUploadChunkSizeInMB)
 					_, status = fileUploader.UploadFiles()
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))
