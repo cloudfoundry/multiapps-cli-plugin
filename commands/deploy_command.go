@@ -286,9 +286,9 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	chunkSizeInMB := c.configurationSnapshot.GetChunkSizeInMB()
+	uploadChunkSizeInMB := c.configurationSnapshot.GetUploadChunkSizeInMB()
 	// Upload the MTA archive file
-	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, chunkSizeInMB)
+	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, uploadChunkSizeInMB)
 	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()
 	if status == Failure {
 		return Failure
@@ -301,7 +301,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	// Upload the extension descriptor files
 	var uploadedExtDescriptorIDs []string
 	if len(extDescriptorPaths) != 0 {
-		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, chunkSizeInMB)
+		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, uploadChunkSizeInMB)
 		uploadedExtDescriptors, status := extDescriptorsUploader.UploadFiles()
 		if status == Failure {
 			return Failure

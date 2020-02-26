@@ -2,6 +2,7 @@ package configuration_test
 
 import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,8 +19,8 @@ var _ = Describe("Configuration", func() {
 	Describe("GetBackendURL", func() {
 
 		BeforeEach(func() {
-			os.Unsetenv(configuration.BackendURLConfigurableProperty.Name)
-			for _, name := range configuration.BackendURLConfigurableProperty.DeprecatedNames {
+			os.Unsetenv(properties.BackendURL.Name)
+			for _, name := range properties.BackendURL.DeprecatedNames {
 				os.Unsetenv(name)
 			}
 		})
@@ -27,16 +28,16 @@ var _ = Describe("Configuration", func() {
 		Context("with a set environment variable", func() {
 			It("should return its value", func() {
 				backendURL := "http://my-multiapps-controller.domain.com"
-				os.Setenv(configuration.BackendURLConfigurableProperty.Name, backendURL)
+				os.Setenv(properties.BackendURL.Name, backendURL)
 				configurationSnapshot := configuration.NewSnapshot()
 				Expect(configurationSnapshot.GetBackendURL()).To(Equal(backendURL))
 			})
 		})
 		Context("with a set environment variable (deprecated)", func() {
 			It("should return its value", func() {
-				if len(configuration.BackendURLConfigurableProperty.DeprecatedNames) > 0 {
+				if len(properties.BackendURL.DeprecatedNames) > 0 {
 					backendURL := "http://my-multiapps-controller.domain.com"
-					os.Setenv(configuration.BackendURLConfigurableProperty.DeprecatedNames[0], backendURL)
+					os.Setenv(properties.BackendURL.DeprecatedNames[0], backendURL)
 					configurationSnapshot := configuration.NewSnapshot()
 					Expect(configurationSnapshot.GetBackendURL()).To(Equal(backendURL))
 				}
@@ -54,8 +55,8 @@ var _ = Describe("Configuration", func() {
 	Describe("GetChunkSizeInMB", func() {
 
 		BeforeEach(func() {
-			os.Unsetenv(configuration.ChunkSizeInMBConfigurableProperty.Name)
-			for _, name := range configuration.ChunkSizeInMBConfigurableProperty.DeprecatedNames {
+			os.Unsetenv(properties.UploadChunkSizeInMB.Name)
+			for _, name := range properties.UploadChunkSizeInMB.DeprecatedNames {
 				os.Unsetenv(name)
 			}
 		})
@@ -63,43 +64,43 @@ var _ = Describe("Configuration", func() {
 		Context("with a set environment variable", func() {
 			Context("containing a positive integer", func() {
 				It("should return its value", func() {
-					chunkSizeInMB := uint64(5)
-					os.Setenv(configuration.ChunkSizeInMBConfigurableProperty.Name, strconv.Itoa(int(chunkSizeInMB)))
+					uploadChunkSizeInMB := uint64(5)
+					os.Setenv(properties.UploadChunkSizeInMB.Name, strconv.Itoa(int(uploadChunkSizeInMB)))
 					configurationSnapshot := configuration.NewSnapshot()
-					Expect(configurationSnapshot.GetChunkSizeInMB()).To(Equal(chunkSizeInMB))
+					Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(uploadChunkSizeInMB))
 				})
 			})
 			Context("containing zero", func() {
 				It("should return the default value", func() {
-					chunkSizeInMB := 0
-					os.Setenv(configuration.ChunkSizeInMBConfigurableProperty.Name, strconv.Itoa(chunkSizeInMB))
+					uploadChunkSizeInMB := 0
+					os.Setenv(properties.UploadChunkSizeInMB.Name, strconv.Itoa(uploadChunkSizeInMB))
 					configurationSnapshot := configuration.NewSnapshot()
-					Expect(configurationSnapshot.GetChunkSizeInMB()).To(Equal(configuration.DefaultChunkSizeInMB))
+					Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(properties.DefaultUploadChunkSizeInMB))
 				})
 			})
 			Context("containing a string", func() {
 				It("should return the default value", func() {
-					chunkSizeInMB := "abc"
-					os.Setenv(configuration.ChunkSizeInMBConfigurableProperty.Name, chunkSizeInMB)
+					uploadChunkSizeInMB := "abc"
+					os.Setenv(properties.UploadChunkSizeInMB.Name, uploadChunkSizeInMB)
 					configurationSnapshot := configuration.NewSnapshot()
-					Expect(configurationSnapshot.GetChunkSizeInMB()).To(Equal(configuration.DefaultChunkSizeInMB))
+					Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(properties.DefaultUploadChunkSizeInMB))
 				})
 			})
 		})
 		Context("with a set environment variable (deprecated)", func() {
 			It("should return its value", func() {
-				if len(configuration.ChunkSizeInMBConfigurableProperty.DeprecatedNames) > 0 {
-					chunkSizeInMB := uint64(5)
-					os.Setenv(configuration.ChunkSizeInMBConfigurableProperty.DeprecatedNames[0], strconv.Itoa(int(chunkSizeInMB)))
+				if len(properties.UploadChunkSizeInMB.DeprecatedNames) > 0 {
+					uploadChunkSizeInMB := uint64(5)
+					os.Setenv(properties.UploadChunkSizeInMB.DeprecatedNames[0], strconv.Itoa(int(uploadChunkSizeInMB)))
 					configurationSnapshot := configuration.NewSnapshot()
-					Expect(configurationSnapshot.GetChunkSizeInMB()).To(Equal(chunkSizeInMB))
+					Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(uploadChunkSizeInMB))
 				}
 			})
 		})
 		Context("without a set environment variable", func() {
 			It("should return the default value", func() {
 				configurationSnapshot := configuration.NewSnapshot()
-				Expect(configurationSnapshot.GetChunkSizeInMB()).To(Equal(configuration.DefaultChunkSizeInMB))
+				Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(properties.DefaultUploadChunkSizeInMB))
 			})
 		})
 

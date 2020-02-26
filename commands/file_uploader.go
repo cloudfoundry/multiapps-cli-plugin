@@ -20,17 +20,17 @@ import (
 
 //FileUploader uploads files for the service with the specified service ID
 type FileUploader struct {
-	files         []string
-	mtaClient     mtaclient.MtaClientOperations
-	chunkSizeInMB uint64
+	files               []string
+	mtaClient           mtaclient.MtaClientOperations
+	uploadChunkSizeInMB uint64
 }
 
 //NewFileUploader creates a new file uploader for the specified service ID, files, and SLMP client
-func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations, chunkSizeInMB uint64) *FileUploader {
+func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations, uploadChunkSizeInMB uint64) *FileUploader {
 	return &FileUploader{
-		files:         files,
-		mtaClient:     mtaClient,
-		chunkSizeInMB: chunkSizeInMB,
+		files:               files,
+		mtaClient:           mtaClient,
+		uploadChunkSizeInMB: uploadChunkSizeInMB,
 	}
 }
 
@@ -89,7 +89,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 			ui.Say("  " + fullPath)
 
 			// Upload the file
-			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.chunkSizeInMB, f.mtaClient)
+			uploaded, err := uploadInChunks(fullPath, fileToUpload, f.uploadChunkSizeInMB, f.mtaClient)
 			if err != nil {
 				ui.Failed("Could not upload file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
 				return nil, Failure
@@ -101,13 +101,13 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	return uploadedFiles, Success
 }
 
-func uploadInChunks(fullPath string, fileToUpload os.File, chunkSizeInMB uint64, mtaClient mtaclient.MtaClientOperations) ([]*models.FileMetadata, error) {
+func uploadInChunks(fullPath string, fileToUpload os.File, uploadChunkSizeInMB uint64, mtaClient mtaclient.MtaClientOperations) ([]*models.FileMetadata, error) {
 	// Upload the file
-	err := util.ValidateChunkSize(fullPath, chunkSizeInMB)
+	err := util.ValidateChunkSize(fullPath, uploadChunkSizeInMB)
 	if err != nil {
 		return nil, fmt.Errorf("Could not valide file %q: %v", fullPath, baseclient.NewClientError(err))
 	}
-	fileToUploadParts, err := util.SplitFile(fullPath, chunkSizeInMB)
+	fileToUploadParts, err := util.SplitFile(fullPath, uploadChunkSizeInMB)
 	if err != nil {
 		return nil, fmt.Errorf("Could not process file %q: %v", fullPath, baseclient.NewClientError(err))
 	}
