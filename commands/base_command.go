@@ -50,6 +50,7 @@ type BaseCommand struct {
 	clientFactory              clients.ClientFactory
 	tokenFactory               baseclient.TokenFactory
 	deployServiceURLCalculator util.DeployServiceURLCalculator
+	configurationSnapshot      configuration.Snapshot
 }
 
 // Initialize initializes the command with the specified name and CLI connection
@@ -59,12 +60,12 @@ func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection
 	jar := newCookieJar()
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
 	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, jar, tokenFactory)
-	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cloudFoundryClient))
+	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cloudFoundryClient), configuration.NewSnapshot())
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
 func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnection,
-	transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator) {
+	transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator, configurationSnapshot configuration.Snapshot) {
 	c.name = name
 	c.cliConnection = cliConnection
 	c.transport = transport
@@ -72,6 +73,7 @@ func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnect
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
 	c.deployServiceURLCalculator = deployServiceURLCalculator
+	c.configurationSnapshot = configurationSnapshot
 }
 
 func getApiEndpoint(cliConnection plugin.CliConnection) string {
@@ -221,7 +223,7 @@ func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
 		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", optionDeployServiceURL))
 		return optionDeployServiceURL
 	}
-	return configuration.GetBackendURL()
+	return c.configurationSnapshot.GetBackendURL()
 }
 
 // ExecuteAction executes the action over the process specified with operationID
