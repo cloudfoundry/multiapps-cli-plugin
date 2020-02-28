@@ -1,5 +1,7 @@
 ## v2.3.0
-* Strategy flag for bg-deploy
+* Fixed deploy help message
+## v2.3.0
+* Strategy flag for deploy
 * Link project to Kanban Board
 * Modified build.sh to accommodate static builds
 
