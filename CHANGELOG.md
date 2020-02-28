@@ -1,3 +1,8 @@
+## v2.3.0
+* Strategy flag for bg-deploy
+* Link project to Kanban Board
+* Modified build.sh to accommodate static builds
+
 ## v2.2.1
 * Send mtaId when deployment starts
 ## v2.2.0
