@@ -1,4 +1,4 @@
-## v2.3.0
+## v2.3.1
 * Fixed deploy help message
 ## v2.3.0
 * Strategy flag for deploy
