@@ -1,7 +1,10 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -30,11 +33,14 @@ func (c *DownloadMtaOperationLogsCommand) GetPluginCommand() plugin.Command {
 		Alias:    "dmol",
 		HelpText: "Download logs of multi-target app operation",
 		UsageDetails: plugin.Usage{
-			Usage: "cf download-mta-op-logs -i OPERATION_ID [-d DIRECTORY] [-u URL]",
+			Usage: `cf download-mta-op-logs -i OPERATION_ID [-d DIRECTORY] [-u URL]
+
+   cf download-mta-op-logs --mta-id MTA_ID [-d DIRECTORY] [-u URL]`,
 			Options: map[string]string{
-				"i": "Operation id",
-				"d": "Directory to download logs, by default '" + defaultDownloadDirPrefix + "<OPERATION_ID>/'",
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				"i":                           "Operation id",
+				util.GetShortOption("mta-id"): "ID of the deployed package",
+				"d":                           "Directory to download logs, by default '" + defaultDownloadDirPrefix + "<OPERATION_ID>/'",
+				"u":                           "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
@@ -46,6 +52,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 
 	var host string
 	var operationID string
+	var mtaId string
 	var downloadDirName string
 
 	// Parse command arguments and check for required options
@@ -56,11 +63,27 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	}
 	flags.StringVar(&operationID, "i", "", "")
 	flags.StringVar(&downloadDirName, "d", "", "")
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{}), NewDefaultCommandFlagsValidator(map[string]bool{"i": true}))
+	flags.StringVar(&mtaId, "mta-id", "", "")
+	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{}), dmolCommandFlagsValidator{})
 	err = parser.Parse(args)
 	if err != nil {
 		c.Usage(err.Error())
 		return Failure
+	}
+
+	// Create new SLMP client
+	mtaClient, err := c.NewMtaClient(host)
+	if err != nil {
+		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
+		return Failure
+	}
+
+	if hasMtaId(flags) {
+		operationID, err = c.getOperationIdFromMtaId(mtaId, mtaClient)
+		if err != nil {
+			ui.Failed(err.Error())
+			return Failure
+		}
 	}
 
 	// Set the download directory if not specified
@@ -78,13 +101,6 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	ui.Say("Downloading logs of multi-target app operation with id %s in org %s / space %s as %s...",
 		terminal.EntityNameColor(operationID), terminal.EntityNameColor(context.Org),
 		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
-
-	// Create new SLMP client
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
-		return Failure
-	}
 
 	// Download all logs
 	downloadedLogs := make(map[string]*string)
@@ -123,6 +139,17 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	return Success
 }
 
+func (c *DownloadMtaOperationLogsCommand) getOperationIdFromMtaId(mtaId string, mtaClient mtaclient.MtaClientOperations) (string, error) {
+	operation, err := c.findOngoingOperation(mtaId, mtaClient)
+	if err != nil {
+		return "", err
+	}
+	if operation == nil {
+		return "", fmt.Errorf("Could not get operations for multi-target app with id: %s", terminal.EntityNameColor(mtaId))
+	}
+	return operation.ProcessID, nil
+}
+
 func createDownloadDirectory(downloadDirName string) (string, error) {
 	// Check if directory name ends with the os specific path separator
 	if !strings.HasSuffix(downloadDirName, string(os.PathSeparator)) {
@@ -148,4 +175,19 @@ func createDownloadDirectory(downloadDirName string) (string, error) {
 func saveLogContent(downloadDir, logID string, content *string) error {
 	ui.Say("  %s", logID)
 	return ioutil.WriteFile(downloadDir+"/"+logID, []byte(*content), 0644)
+}
+
+type dmolCommandFlagsValidator struct{}
+
+func (dmolCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
+	hasMtaId := hasMtaId(flags)
+	return NewDefaultCommandFlagsValidator(map[string]bool{"i": !hasMtaId, "mta-id": hasMtaId}).ValidateParsedFlags(flags)
+}
+
+func hasMtaId(flags *flag.FlagSet) bool {
+	return hasValue(flags, "mta-id") && !hasValue(flags, "i")
+}
+
+func hasValue(flags *flag.FlagSet, flagName string) bool {
+	return flags.Lookup(flagName).Value.String() != ""
 }

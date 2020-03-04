@@ -65,6 +65,8 @@ type GetMtaOperationsParams struct {
 
 	/*Last*/
 	Last *int64
+	/*MtaID*/
+	MtaID *string
 	/*State*/
 	State []string
 
@@ -117,6 +119,17 @@ func (o *GetMtaOperationsParams) SetLast(last *int64) {
 	o.Last = last
 }
 
+// WithMtaID adds the mtaID to the get operations params
+func (o *GetMtaOperationsParams) WithMtaID(mtaID *string) *GetMtaOperationsParams {
+	o.SetMtaID(mtaID)
+	return o
+}
+
+// SetMtaID adds the mtaId to the get operations params
+func (o *GetMtaOperationsParams) SetMtaID(mtaID *string) {
+	o.MtaID = mtaID
+}
+
 // WithState adds the state to the get mta operations params
 func (o *GetMtaOperationsParams) WithState(state []string) *GetMtaOperationsParams {
 	o.SetState(state)
@@ -146,6 +159,22 @@ func (o *GetMtaOperationsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		qLast := swag.FormatInt64(qrLast)
 		if qLast != "" {
 			if err := r.SetQueryParam("last", qLast); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.MtaID != nil {
+
+		// query param mtaId
+		var qrMtaID string
+		if o.MtaID != nil {
+			qrMtaID = *o.MtaID
+		}
+		qMtaID := qrMtaID
+		if qMtaID != "" {
+			if err := r.SetQueryParam("mtaId", qMtaID); err != nil {
 				return err
 			}
 		}

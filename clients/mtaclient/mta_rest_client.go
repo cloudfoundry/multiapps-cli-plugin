@@ -113,9 +113,10 @@ func (c MtaRestClient) GetMtaOperationLogs(operationID string) ([]*models.Log, e
 	return resp.Payload, nil
 }
 
-func (c MtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models.Operation, error) {
+func (c MtaRestClient) GetMtaOperations(mtaId *string, last *int64, status []string) ([]*models.Operation, error) {
 	params := &operations.GetMtaOperationsParams{
 		Context: context.TODO(),
+		MtaID:   mtaId,
 		Last:    last,
 		State:   status,
 	}

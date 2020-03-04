@@ -25,6 +25,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		const org = "test-org"
 		const space = "test-space"
 		const user = "test-user"
+		const mtaId = "test-mta-id"
 
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
@@ -34,6 +35,13 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		var command *commands.DownloadMtaOperationLogsCommand
 		var oc = testutil.NewUIOutputCapturer()
 		var ex = testutil.NewUIExpector()
+		var operation = models.Operation{
+			AcquiredLock: true,
+			SpaceID:      "test-space-guid",
+			User:         user,
+			ProcessID:    testutil.ProcessID,
+			MtaID:        mtaId,
+		}
 
 		var getOutputLines = func(dir string) []string {
 			wd, _ := os.Getwd()
@@ -63,6 +71,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				AccessToken("bearer test-token", nil).Build()
 			mtaClient = mtafake.NewFakeMtaClientBuilder().
 				GetMtaOperationLogs(testutil.ProcessID, []*models.Log{&testutil.SimpleMtaLog}, nil).
+				GetMtaOperations(&[]string{mtaId}[0], nil, nil, []*models.Operation{&operation}, nil).
 				GetMtaOperationLogContent(testutil.ProcessID, testutil.LogID, testutil.LogContent, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.DownloadMtaOperationLogsCommand{}
@@ -119,6 +128,21 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 			})
 		})
 
+		// non-existing mta id - error
+		Context("with a non-existing mta id", func() {
+			It("should print an error and exit with a non-zero status", func() {
+				os.Remove("mta-op-test")
+				var mtaId = "test-mta-id"
+				var clientError = baseclient.NewClientError(testutil.ClientError)
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().GetMtaOperations(&mtaId, nil, []string{}, []*models.Operation{}, clientError).Build()
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--mta-id", mtaId}).ToInt()
+				})
+				ex.ExpectFailureOnLine(status, output, "Could not get ongoing operations for multi-target app test-mta-id", 0)
+				Expect(exists("mta-op-test")).To(Equal(false))
+			})
+		})
+
 		// existing process id, backend returns an error response (GetLogs) - error
 		Context("with an existing process id and an error response returned by the backend", func() {
 			It("should print an error and exit with a non-zero status", func() {
@@ -153,6 +177,21 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 			It("should download the logs for the current process and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
+				})
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir))
+				expectDirWithLog(dir)
+			})
+			AfterEach(func() {
+				os.RemoveAll(dir)
+			})
+		})
+
+		// existing mta id - success
+		Context("with an existing mta id", func() {
+			const dir = "mta-op-" + testutil.ProcessID
+			It("should download the logs for the specified mta and exit with zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--mta-id", mtaId}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir))
 				expectDirWithLog(dir)

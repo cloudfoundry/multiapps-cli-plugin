@@ -122,7 +122,7 @@ var _ = Describe("BaseCommand", func() {
 			testClientFactory = commands.NewTestClientFactory(fakeMtaClientBuilder.Build(), fakeRestClientBuilder.Build())
 
 			testClientFactory.MtaClient = fakeMtaClientBuilder.
-				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
+				GetMtaOperations(nil, nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
 				GetOperationActions("test", []string{"abort", "retry"}, nil).
 				Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
@@ -143,7 +143,7 @@ var _ = Describe("BaseCommand", func() {
 			It("should exit with zero status", func() {
 				nonConflictingOperation := testutil.GetOperation("111", "space-guid", "", "deploy", "ERROR", false)
 				testClientFactory.MtaClient = fakeMtaClientBuilder.
-					GetMtaOperations(nil, nil, []*models.Operation{nonConflictingOperation}, nil).Build()
+					GetMtaOperations(nil, nil, nil, []*models.Operation{nonConflictingOperation}, nil).Build()
 				wasAborted, err = command.CheckOngoingOperation(mtaID, "test-host", true)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
@@ -152,7 +152,7 @@ var _ = Describe("BaseCommand", func() {
 		Context("with no ongoing operations", func() {
 			It("should exit with zero status", func() {
 				testClientFactory.MtaClient = fakeMtaClientBuilder.
-					GetMtaOperations(nil, nil, []*models.Operation{}, nil).Build()
+					GetMtaOperations(nil, nil, nil, []*models.Operation{}, nil).Build()
 				wasAborted, err = command.CheckOngoingOperation(mtaID, "test-host", true)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
@@ -179,7 +179,7 @@ var _ = Describe("BaseCommand", func() {
 		BeforeEach(func() {
 			ongoingOperationToReturn = testutil.GetOperation("test-process-id", "test-space-guid", "test", "deploy", "ERROR", true)
 			testClientfactory.MtaClient = fakeMtaClientBuilder.
-				GetMtaOperations(nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
+				GetMtaOperations(nil, nil, nil, []*models.Operation{ongoingOperationToReturn}, nil).
 				GetMtaOperation("test-process-id", "mesages", &testutil.SimpleOperationResult, nil).
 				GetOperationActions("test-process-id", []string{"abort", "retry"}, nil).
 				ExecuteAction("test-process-id", "abort", mtaclient.ResponseHeader{}, nil).

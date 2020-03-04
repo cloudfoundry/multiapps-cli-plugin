@@ -75,9 +75,9 @@ func (c RetryableMtaRestClient) GetMtaOperationLogs(operationID string) ([]*mode
 	}
 	return resp.([]*models.Log), nil
 }
-func (c RetryableMtaRestClient) GetMtaOperations(last *int64, status []string) ([]*models.Operation, error) {
+func (c RetryableMtaRestClient) GetMtaOperations(mtaId *string, last *int64, status []string) ([]*models.Operation, error) {
 	getMtaOperationsCb := func() (interface{}, error) {
-		return c.mtaClient.GetMtaOperations(last, status)
+		return c.mtaClient.GetMtaOperations(mtaId, last, status)
 	}
 	resp, err := baseclient.CallWithRetry(getMtaOperationsCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {
