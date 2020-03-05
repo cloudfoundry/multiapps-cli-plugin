@@ -190,6 +190,9 @@ func saveLogContent(downloadDir, logID string, content *string) error {
 type dmolCommandFlagsValidator struct{}
 
 func (dmolCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
+	if hasValue(flags, "i") && hasValue(flags, "mta-id") {
+		return fmt.Errorf("Option -i and option --mta-id are incompatible")
+	}
 	hasMtaId := hasMtaId(flags)
 	return NewDefaultCommandFlagsValidator(map[string]bool{"i": !hasMtaId, "mta-id": hasMtaId}).ValidateParsedFlags(flags)
 }

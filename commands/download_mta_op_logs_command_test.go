@@ -297,6 +297,17 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				os.RemoveAll("custom-dir/mta-op-1002")
 			})
 		})
+
+		// both mta id and process id - error
+		Context("with mta id and process id", func() {
+			It("should print incorrect usage - incompatible flags and exit with non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--mta-id", mtaId, "-i", testutil.ProcessID}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Option -i and option --mta-id are incompatible")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
 	})
 })
 
