@@ -26,6 +26,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		const space = "test-space"
 		const user = "test-user"
 		const mtaId = "test-mta-id"
+		const spaceId = "test-space-guid"
 
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
@@ -35,19 +36,17 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		var command *commands.DownloadMtaOperationLogsCommand
 		var oc = testutil.NewUIOutputCapturer()
 		var ex = testutil.NewUIExpector()
-		var operation = models.Operation{
-			AcquiredLock: true,
-			SpaceID:      "test-space-guid",
-			User:         user,
-			ProcessID:    testutil.ProcessID,
-			MtaID:        mtaId,
+		var operations = []*models.Operation{
+			newOperation(testutil.ProcessID, spaceId, user, mtaId),
+			newOperation("1001", spaceId, user, mtaId),
+			newOperation("1002", spaceId, user, mtaId),
 		}
 
-		var getOutputLines = func(dir string) []string {
+		var getOutputLines = func(dir string, processId string) []string {
 			wd, _ := os.Getwd()
 			return []string{
 				fmt.Sprintf("Downloading logs of multi-target app operation with id %s in org %s / space %s as %s...\n",
-					testutil.ProcessID, org, space, user),
+					processId, org, space, user),
 				"OK\n",
 				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...\n", wd, dir),
 				fmt.Sprintf("  %s\n", testutil.LogID),
@@ -66,18 +65,22 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
-				CurrentSpace("test-space-guid", space, nil).
+				CurrentSpace(spaceId, space, nil).
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).Build()
 			mtaClient = mtafake.NewFakeMtaClientBuilder().
 				GetMtaOperationLogs(testutil.ProcessID, []*models.Log{&testutil.SimpleMtaLog}, nil).
-				GetMtaOperations(&[]string{mtaId}[0], nil, nil, []*models.Operation{&operation}, nil).
+				GetMtaOperations(&[]string{mtaId}[0], &[]int64{1}[0], nil, operations[:1], nil).
 				GetMtaOperationLogContent(testutil.ProcessID, testutil.LogID, testutil.LogContent, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = &commands.DownloadMtaOperationLogsCommand{}
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, clientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll("mta-op-" + testutil.ProcessID)
 		})
 
 		// unknown flag - error
@@ -138,7 +141,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"--mta-id", mtaId}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get ongoing operations for multi-target app test-mta-id", 0)
+				ex.ExpectFailureOnLine(status, output, "Process with id 404 not found (status 404): Process with id 404 not found", 0)
 				Expect(exists("mta-op-test")).To(Equal(false))
 			})
 		})
@@ -178,7 +181,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir, testutil.ProcessID))
 				expectDirWithLog(dir)
 			})
 			AfterEach(func() {
@@ -189,11 +192,11 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		// existing mta id - success
 		Context("with an existing mta id", func() {
 			const dir = "mta-op-" + testutil.ProcessID
-			It("should download the logs for the specified mta and exit with zero status", func() {
+			It("should download the last logs for the specified mta and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", mtaId}).ToInt()
+					return command.Execute([]string{"--mta-id", mtaId, "--last", "1"}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir, testutil.ProcessID))
 				expectDirWithLog(dir)
 			})
 			AfterEach(func() {
@@ -205,13 +208,13 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		Context("with an existing process id and an existing directory", func() {
 			const customDir string = "test"
 			BeforeEach(func() {
-				os.Mkdir(customDir, 0755)
+				os.MkdirAll(customDir+"/mta-op-"+testutil.ProcessID, 0755)
 			})
 			It("should print an error and exit with a non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s:", customDir), 2)
+				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s/mta-op-%s/:", customDir, testutil.ProcessID), 2)
 			})
 			AfterEach(func() {
 				os.RemoveAll(customDir)
@@ -245,15 +248,67 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(customDir))
-				expectDirWithLog(customDir)
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(customDir+"/mta-op-"+testutil.ProcessID, testutil.ProcessID))
+				expectDirWithLog(customDir + "/mta-op-" + testutil.ProcessID)
 			})
 			AfterEach(func() {
 				os.RemoveAll(customDir)
 			})
 		})
+
+		// existing mta id and non-existing directory - success
+		Context("with an existing mta id and a non-existing directory", func() {
+			It("should create multiple directories, download the logs for the each process and exit with zero status", func() {
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperationLogs("1002", []*models.Log{&testutil.SimpleMtaLog}, nil).
+					GetMtaOperationLogContent("1002", testutil.LogID, testutil.LogContent, nil).
+					GetMtaOperations(&[]string{mtaId}[0], &[]int64{2}[0], nil, operations[1:], nil).Build()
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--mta-id", mtaId, "--last", "2"}).ToInt()
+				})
+				expectedOutput := append(getOutputLines("mta-op-1001", "1001"), getOutputLines("mta-op-1002", "1002")...)
+				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
+				expectDirWithLog("mta-op-1001")
+				expectDirWithLog("mta-op-1002")
+			})
+			AfterEach(func() {
+				os.RemoveAll("mta-op-1001")
+				os.RemoveAll("mta-op-1002")
+			})
+		})
+
+		// existing mta id and custom directory - success
+		Context("with an existing mta id and a custom directory", func() {
+			It("should create multiple directories in the custom one, download the logs for the each process and exit with zero status", func() {
+				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
+					GetMtaOperationLogs("1002", []*models.Log{&testutil.SimpleMtaLog}, nil).
+					GetMtaOperationLogContent("1002", testutil.LogID, testutil.LogContent, nil).
+					GetMtaOperations(&[]string{mtaId}[0], &[]int64{2}[0], nil, operations[1:], nil).Build()
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--mta-id", mtaId, "--last", "2", "-d", "custom-dir"}).ToInt()
+				})
+				expectedOutput := append(getOutputLines("custom-dir/mta-op-1001", "1001"), getOutputLines("custom-dir/mta-op-1002", "1002")...)
+				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
+				expectDirWithLog("custom-dir/mta-op-1001")
+				expectDirWithLog("custom-dir/mta-op-1002")
+			})
+			AfterEach(func() {
+				os.RemoveAll("custom-dir/mta-op-1001")
+				os.RemoveAll("custom-dir/mta-op-1002")
+			})
+		})
 	})
 })
+
+func newOperation(operationId string, spaceId string, user string, mtaId string) *models.Operation {
+	return &models.Operation{
+		AcquiredLock: true,
+		SpaceID:      spaceId,
+		User:         user,
+		ProcessID:    operationId,
+		MtaID:        mtaId,
+	}
+}
 
 func contentOf(fileName string) string {
 	content, _ := ioutil.ReadFile(fileName)
