@@ -31,6 +31,62 @@ var _ = Describe("ArchiveBuilder", func() {
 			})
 		})
 
+		Context("With different paths relative to the deployment descriptor", func() {
+			var (
+				currentWorkingDirectory string
+				err                     error
+				mtaArchiveLocation      string
+			)
+			const requiredDependencyContent = "test-module-content"
+			const testDeploymentDescriptor = "mtad.yaml"
+
+			BeforeEach(func() {
+				// need to cd into the tempDir in order to simulate the relative path
+				currentWorkingDirectory, err = os.Getwd()
+				Expect(err).To(BeNil())
+				err = os.Chdir(tempDirLocation)
+				Expect(err).To(BeNil())
+
+				os.Create(requiredDependencyContent)
+				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
+					util.Module{Name: "TestModule", Path: requiredDependencyContent},
+				}}
+				generatedYamlBytes, _ := yaml.Marshal(descriptor)
+
+				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+			})
+
+			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(".")
+			})
+
+			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build("./")
+			})
+
+			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+				// create and cd into new dir
+				err = os.Mkdir("test", 0700)
+				Expect(err).To(BeNil())
+				err = os.Chdir("test")
+				Expect(err).To(BeNil())
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build("../")
+			})
+
+			AfterEach(func() {
+				Expect(err).To(BeNil())
+				_, err = os.Stat(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				Expect(isInArchive(requiredDependencyContent, mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
+				defer os.Remove(mtaArchiveLocation)
+				defer os.Chdir(currentWorkingDirectory)
+			})
+		})
+
 		Context("With deployment descriptor which contains some modules and resources", func() {
 			It("Try to parse the specified modules and fail as the paths are not existing", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
@@ -61,7 +117,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent, RequiredDependencies: []util.RequiredDependency{
+					util.Module{Name: "TestModule", Path: "test-module-1-content", RequiredDependencies: []util.RequiredDependency{
 						util.RequiredDependency{Name: "foo", Parameters: map[string]interface{}{
 							"path": "not-existing-required-dependency-path",
 						}},
@@ -138,7 +194,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent},
+					util.Module{Name: "TestModule", Path: "test-module-1-content"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -151,18 +207,43 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}))
 			})
-
 		})
+
+		Context("With deployment descriptor which contains valid modules with non-normalized paths", func() {
+			It("Should build the MTA Archive containing the valid modules", func() {
+				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
+				os.Create(requiredDependencyContent)
+				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
+					util.Module{Name: "TestModule", Path: "../test-module-1-content"},
+				}}
+				generatedYamlBytes, _ := yaml.Marshal(descriptor)
+				mtadDirectory := filepath.Join(tempDirLocation, "test")
+				os.MkdirAll(mtadDirectory, os.ModePerm)
+				testDeploymentDescriptor := filepath.Join(mtadDirectory, "mtad.yaml")
+				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(mtadDirectory)
+				defer os.Remove(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				_, err = os.Stat(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}))
+			})
+		})
+
 		Context("With deployment descriptor which contains only valid modules with same paths", func() {
 			It("should build the MTA Archive containing the valid modules", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent},
-					util.Module{Name: "TestModule1", Path: requiredDependencyContent},
+					util.Module{Name: "TestModule", Path: "test-module-1-content"},
+					util.Module{Name: "TestModule1", Path: "test-module-1-content"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -175,16 +256,17 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": requiredDependencyContent}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": "test-module-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": "test-module-1-content"}))
 			})
 		})
+
 		Context("With deployment descriptor which contains only valid resources", func() {
 			It("Should build the MTA Archive containing the valid resources", func() {
 				resourceContent := filepath.Join(tempDirLocation, "test-resource-1-content")
 				os.Create(resourceContent)
 				ioutil.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
-					util.Resource{Name: "TestResource", Parameters: map[string]interface{}{"path": resourceContent}},
+					util.Resource{Name: "TestResource", Parameters: map[string]interface{}{"path": "test-resource-1-content"}},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
@@ -196,9 +278,33 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(isInArchive("test-resource-1-content", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": resourceContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": resourceContent}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}))
 				defer os.Remove(mtaArchiveLocation)
 			})
+
+			It("Should build the MTA Archive containing the valid resources with non-normalized paths", func() {
+				resourceContent := filepath.Join(tempDirLocation, "test-resource-1-content")
+				os.Create(resourceContent)
+				ioutil.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
+				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
+					util.Resource{Name: "TestResource", Parameters: map[string]interface{}{"path": "../test-resource-1-content"}},
+				}}
+				generatedYamlBytes, _ := yaml.Marshal(descriptor)
+				mtadDirectory := filepath.Join(tempDirLocation, "test")
+				os.MkdirAll(mtadDirectory, os.ModePerm)
+				testDeploymentDescriptor := filepath.Join(mtadDirectory, "mtad.yaml")
+				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{}, []string{"TestResource"}).Build(mtadDirectory)
+				Expect(err).To(BeNil())
+				_, err = os.Stat(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				Expect(isInArchive("test-resource-1-content", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}))
+				defer os.Remove(mtaArchiveLocation)
+			})
+
 			It("Should build the MTA Archive containing the resources and add them in the MANIFEST.MF only", func() {
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
 					util.Resource{Name: "TestResource"},
@@ -229,7 +335,7 @@ var _ = Describe("ArchiveBuilder", func() {
 						util.RequiredDependency{
 							Name: "TestRequired",
 							Parameters: map[string]interface{}{
-								"path": requiredDependencyContent,
+								"path": "test-required-dep-1-content",
 							},
 						},
 					}},
@@ -245,7 +351,37 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(isInArchive("test-required-dep-1-content", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": requiredDependencyContent}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}))
+			})
+
+			It("Should build the MTA Archive containing the valid modules and required dependencies configuration with non-normalized paths", func() {
+				requiredDependencyContent := filepath.Join(tempDirLocation, "test-required-dep-1-content")
+				os.Create(requiredDependencyContent)
+				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
+					util.Module{Name: "TestModule", RequiredDependencies: []util.RequiredDependency{
+						util.RequiredDependency{
+							Name: "TestRequired",
+							Parameters: map[string]interface{}{
+								"path": "../test-required-dep-1-content",
+							},
+						},
+					}},
+				}}
+				generatedYamlBytes, _ := yaml.Marshal(descriptor)
+				mtadDirectory := filepath.Join(tempDirLocation, "test")
+				os.MkdirAll(mtadDirectory, os.ModePerm)
+				testDeploymentDescriptor := filepath.Join(mtadDirectory, "mtad.yaml")
+				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(mtadDirectory)
+				defer os.Remove(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				_, err = os.Stat(mtaArchiveLocation)
+				Expect(err).To(BeNil())
+				Expect(isInArchive("test-required-dep-1-content", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}))
 			})
 		})
 
