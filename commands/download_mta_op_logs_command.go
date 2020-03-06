@@ -89,10 +89,10 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 
 	var operationIds []string
 
-	if hasMtaId(flags) {
-		operations, err := mtaClient.GetMtaOperations(&mtaId, formatLast(last), nil)
+	if mtaId != "" {
+		operations, err := mtaClient.GetMtaOperations(&mtaId, getOperationsCount(last), nil)
 		if err != nil {
-			ui.Failed(err.Error())
+			ui.Failed("Could not get operations for MTA with id %s: %s", mtaId, baseclient.NewClientError(err))
 			return Failure
 		}
 		for _, op := range operations {
@@ -103,9 +103,8 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	}
 
 	for _, opId := range operationIds {
-		processDir := downloadDirName + string(os.PathSeparator) + defaultDownloadDirPrefix + opId + string(os.PathSeparator)
-		fmt.Println(processDir)
-		err = downloadLogsForProcess(opId, processDir, mtaClient, context)
+		downloadPath := filepath.Join(downloadDirName, defaultDownloadDirPrefix+opId)
+		err = downloadLogsForProcess(opId, downloadPath, mtaClient, context)
 		if err != nil {
 			ui.Failed(err.Error())
 			return Failure
@@ -114,7 +113,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	return Success
 }
 
-func downloadLogsForProcess(operationId string, downloadDirName string, mtaClient mtaclient.MtaClientOperations, context Context) error {
+func downloadLogsForProcess(operationId string, downloadPath string, mtaClient mtaclient.MtaClientOperations, context Context) error {
 	// Print initial message
 	ui.Say("Downloading logs of multi-target app operation with id %s in org %s / space %s as %s...",
 		terminal.EntityNameColor(operationId), terminal.EntityNameColor(context.Org),
@@ -136,9 +135,9 @@ func downloadLogsForProcess(operationId string, downloadDirName string, mtaClien
 	ui.Ok()
 
 	// Create the download directory
-	downloadDir, err := createDownloadDirectory(downloadDirName)
+	downloadDir, err := createDownloadDirectory(downloadPath)
 	if err != nil {
-		return fmt.Errorf("Could not create download directory %s: %s", terminal.EntityNameColor(downloadDirName), baseclient.NewClientError(err))
+		return fmt.Errorf("Could not create download directory %s: %s", terminal.EntityNameColor(downloadPath), baseclient.NewClientError(err))
 	}
 
 	// Get all logs and save their contents to the download directory
@@ -154,7 +153,11 @@ func downloadLogsForProcess(operationId string, downloadDirName string, mtaClien
 }
 
 func createDownloadDirectory(downloadDirName string) (string, error) {
-	downloadDirName = sanitizeDirectoryName(downloadDirName)
+	// Check if directory name ends with the os specific path separator
+	if !strings.HasSuffix(downloadDirName, string(os.PathSeparator)) {
+		//If there is no os specific path separator, put it at the end of the directory name
+		downloadDirName = downloadDirName + string(os.PathSeparator)
+	}
 
 	// Check if the directory already exists
 	if stat, _ := os.Stat(downloadDirName); stat != nil {
@@ -164,27 +167,16 @@ func createDownloadDirectory(downloadDirName string) (string, error) {
 	// Create the directory
 	err := os.MkdirAll(downloadDirName, 0755)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	// Return the absolute path of the directory
 	return filepath.Abs(filepath.Dir(downloadDirName))
 }
 
-func sanitizeDirectoryName(downloadDir string) string {
-	// Check if directory name ends with the os specific path separator
-	if !strings.HasSuffix(downloadDir, string(os.PathSeparator)) {
-		//If there is no os specific path separator, put it at the end of the directory name
-		downloadDir = downloadDir + string(os.PathSeparator)
-	}
-	// Check if directory name starts with the os specific path separator and trim it
-	downloadDir = strings.TrimPrefix(downloadDir, string(os.PathSeparator))
-	return downloadDir
-}
-
 func saveLogContent(downloadDir, logID string, content *string) error {
 	ui.Say("  %s", logID)
-	return ioutil.WriteFile(downloadDir+"/"+logID, []byte(*content), 0644)
+	return ioutil.WriteFile(filepath.Join(downloadDir, logID), []byte(*content), 0644)
 }
 
 type dmolCommandFlagsValidator struct{}
@@ -193,22 +185,11 @@ func (dmolCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error 
 	if hasValue(flags, "i") && hasValue(flags, "mta-id") {
 		return fmt.Errorf("Option -i and option --mta-id are incompatible")
 	}
-	hasMtaId := hasMtaId(flags)
-	return NewDefaultCommandFlagsValidator(map[string]bool{"i": !hasMtaId, "mta-id": hasMtaId}).ValidateParsedFlags(flags)
-}
-
-func hasMtaId(flags *flag.FlagSet) bool {
-	return hasValue(flags, "mta-id") && !hasValue(flags, "i")
+	return NewDefaultCommandFlagsValidator(map[string]bool{
+		"i":      !hasValue(flags, "mta-id"),
+		"mta-id": hasValue(flags, "mta-id")}).ValidateParsedFlags(flags)
 }
 
 func hasValue(flags *flag.FlagSet, flagName string) bool {
 	return flags.Lookup(flagName).Value.String() != ""
-}
-
-func formatLast(last uint) *int64 {
-	if last == 0 {
-		return nil
-	}
-	requestedOps := int64(last)
-	return &requestedOps
 }

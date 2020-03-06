@@ -121,19 +121,27 @@ func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, mtaId string,
 		// Get all operations
 		ops, err = mtaClient.GetMtaOperations(&mtaId, nil, nil)
 	} else {
-		if last == 0 {
-			// Get operations in active state
-			ops, err = mtaClient.GetMtaOperations(&mtaId, nil, activeStatesList)
-		} else {
-			// Get last requested operations
-			requestedOperationsCount := int64(last)
-			ops, err = mtaClient.GetMtaOperations(&mtaId, &requestedOperationsCount, nil)
-		}
+		ops, err = mtaClient.GetMtaOperations(&mtaId, getOperationsCount(last), getActiveStatesList(last))
 	}
 	if err != nil {
 		return []*models.Operation{}, err
 	}
 	return ops, nil
+}
+
+func getOperationsCount(last uint) *int64 {
+	if last == 0 {
+		return nil
+	}
+	requestedOps := int64(last)
+	return &requestedOps
+}
+
+func getActiveStatesList(last uint) []string {
+	if last == 0 {
+		return nil
+	}
+	return activeStatesList
 }
 
 var activeStatesList = []string{"RUNNING", "ERROR", "ACTION_REQUIRED"}

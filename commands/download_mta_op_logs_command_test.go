@@ -214,7 +214,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s/mta-op-%s/:", customDir, testutil.ProcessID), 2)
+				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s/mta-op-%s:", customDir, testutil.ProcessID), 2)
 			})
 			AfterEach(func() {
 				os.RemoveAll(customDir)
@@ -232,7 +232,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
 						return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir + "/subdir"}).ToInt()
 					})
-					ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not save log %s:", testutil.LogID), 4)
+					ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory test/subdir/mta-op-%s:", testutil.ProcessID), 2)
 				})
 				AfterEach(func() {
 					os.Chmod(customDir, 0755)
