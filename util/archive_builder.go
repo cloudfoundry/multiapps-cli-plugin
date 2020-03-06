@@ -45,9 +45,9 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 	}
 	bindingParametersPaths := builder.getBindingParametersPaths(descriptor.Modules)
 
-	modulesSections := buildSection(modulesPaths, MtaModule)
-	resourcesSections := buildSection(resourcesPaths, MtaResource)
-	bindingParametersSections := buildSection(bindingParametersPaths, MtaRequires)
+	modulesSections := buildSection(normalizePaths(modulesPaths), MtaModule)
+	resourcesSections := buildSection(normalizePaths(resourcesPaths), MtaResource)
+	bindingParametersSections := buildSection(normalizePaths(bindingParametersPaths), MtaRequires)
 
 	manifestBuilder := NewMtaManifestBuilder()
 	manifestBuilder.ManifestSections(modulesSections)
@@ -129,19 +129,19 @@ func getPaths(elementsPaths map[string]string) []string {
 	return result
 }
 
-func copyContent(baseDirectory string, paths []string, location string) error {
+func copyContent(sourceDirectory string, paths []string, targetLocation string) error {
 	for _, path := range paths {
-		path = strings.Replace(path, baseDirectory, "", -1)
-		filesInDestinationInfo, err := os.Stat(filepath.Join(baseDirectory, path))
+		sourceLocation := filepath.Join(sourceDirectory, path)
+		filesInSourceInfo, err := os.Stat(sourceLocation)
 		if err != nil {
-			return fmt.Errorf("Error building MTA Archive: file path %s not found", filepath.Join(baseDirectory, path))
+			return fmt.Errorf("Error building MTA Archive: file path %s not found", sourceLocation)
 		}
-		if filesInDestinationInfo.IsDir() {
-			err = copyDirectory(filepath.Join(baseDirectory, path), filepath.Join(location, filepath.Base(path)))
+		destinationLocation := filepath.Join(targetLocation, filepath.Base(path))
+		if filesInSourceInfo.IsDir() {
+			err = copyDirectory(sourceLocation, destinationLocation)
 		} else {
-			fileLocation := filepath.Join(location, path)
-			os.MkdirAll(filepath.Dir(fileLocation), os.ModePerm)
-			err = copy(filepath.Join(baseDirectory, path), fileLocation)
+			os.MkdirAll(filepath.Dir(destinationLocation), os.ModePerm)
+			err = copy(sourceLocation, destinationLocation)
 		}
 		if err != nil {
 			return err
@@ -332,6 +332,16 @@ func (builder MtaArchiveBuilder) getModulesPaths(deploymentDescriptorResources [
 	}
 
 	return result, nil
+}
+
+func normalizePaths(elementsPaths map[string]string) map[string]string {
+	normalizedPaths := make(map[string]string, len(elementsPaths))
+	for key, value := range elementsPaths {
+		if value != "" {
+			normalizedPaths[key] = filepath.Base(value)
+		}
+	}
+	return normalizedPaths
 }
 
 func validateSpecifiedModules(modulesForDeployment []string, deploymentDescriptorResources []Module) error {
