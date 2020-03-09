@@ -19,6 +19,7 @@ import (
 
 const (
 	defaultDownloadDirPrefix string = "mta-op-"
+	logFilesExtension        string = ".log"
 )
 
 // DownloadMtaOperationLogsCommand is a command for retrieving the logs of an MTA operation
@@ -175,8 +176,9 @@ func createDownloadDirectory(downloadDirName string) (string, error) {
 }
 
 func saveLogContent(downloadDir, logID string, content *string) error {
-	ui.Say("  %s", logID)
-	return ioutil.WriteFile(filepath.Join(downloadDir, logID), []byte(*content), 0644)
+	filename := logID + logFilesExtension
+	ui.Say("  %s", filename)
+	return ioutil.WriteFile(filepath.Join(downloadDir, filename), []byte(*content), 0644)
 }
 
 type dmolCommandFlagsValidator struct{}
