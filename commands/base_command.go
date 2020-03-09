@@ -288,7 +288,7 @@ func (c *BaseCommand) CheckOngoingOperation(mtaID string, host string, force boo
 }
 
 func (c *BaseCommand) findOngoingOperationByID(processID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
-	ongoingOperations, err := mtaClient.GetMtaOperations(nil, nil)
+	ongoingOperations, err := mtaClient.GetMtaOperations(nil, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Could not get ongoing operation with id %s: %s", terminal.EntityNameColor(processID), err)
 	}
@@ -304,7 +304,7 @@ func (c *BaseCommand) findOngoingOperationByID(processID string, mtaClient mtacl
 // FindOngoingOperation finds ongoing operation for mta with the specified id
 func (c *BaseCommand) findOngoingOperation(mtaID string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
 	activeStatesList := []string{"RUNNING", "ERROR", "ACTION_REQUIRED"}
-	ongoingOperations, err := mtaClient.GetMtaOperations(nil, activeStatesList)
+	ongoingOperations, err := mtaClient.GetMtaOperations(&mtaID, nil, activeStatesList)
 	if err != nil {
 		return nil, fmt.Errorf("Could not get ongoing operations for multi-target app %s: %s", terminal.EntityNameColor(mtaID), err)
 	}

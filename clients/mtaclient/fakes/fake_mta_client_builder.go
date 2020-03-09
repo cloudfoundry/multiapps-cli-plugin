@@ -35,7 +35,7 @@ func (fb *FakeMtaClientBuilder) GetMtaOperationLogs(operationID string, result [
 	fb.FakeMtaClient.GetMtaOperationLogsReturns(result, resultErr)
 	return fb
 }
-func (fb *FakeMtaClientBuilder) GetMtaOperations(last *int64, status []string, result []*models.Operation, resultErr error) *FakeMtaClientBuilder {
+func (fb *FakeMtaClientBuilder) GetMtaOperations(mtaId *string, last *int64, status []string, result []*models.Operation, resultErr error) *FakeMtaClientBuilder {
 	fb.FakeMtaClient.GetMtaOperationsReturns(result, resultErr)
 	return fb
 }

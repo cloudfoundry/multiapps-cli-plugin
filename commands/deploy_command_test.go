@@ -126,7 +126,7 @@ var _ = Describe("DeployCommand", func() {
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
-				GetMtaOperations(nil, nil, []*models.Operation{&testutil.OperationResult}, nil).Build()
+				GetMtaOperations(nil, nil, nil, []*models.Operation{&testutil.OperationResult}, nil).Build()
 			testClientFactory = commands.NewTestClientFactory(mtaClient, nil)
 			command = commands.NewDeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
@@ -284,7 +284,7 @@ var _ = Describe("DeployCommand", func() {
 		Context("with an error returned from getting ongoing operations", func() {
 			It("should display error and exit witn non-zero status", func() {
 				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
-					GetMtaOperations(nil, nil, []*models.Operation{}, fmt.Errorf("test-error-from backend")).Build()
+					GetMtaOperations(nil, nil, nil, []*models.Operation{}, fmt.Errorf("test-error-from backend")).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
@@ -303,7 +303,7 @@ var _ = Describe("DeployCommand", func() {
 		Context("with valid operation id and non-valid action id provided", func() {
 			It("should return error and exit with non-zero status", func() {
 				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
-					GetMtaOperations(nil, nil, []*models.Operation{
+					GetMtaOperations(nil, nil, nil, []*models.Operation{
 						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
 					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
@@ -333,7 +333,7 @@ var _ = Describe("DeployCommand", func() {
 		Context("with valid operation id and valid action id provided", func() {
 			It("should execute action on the process specified with process id and exit with zero status", func() {
 				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
-					GetMtaOperations(nil, nil, []*models.Operation{
+					GetMtaOperations(nil, nil, nil, []*models.Operation{
 						testutil.GetOperation("test-process-id", "test-space", "test-mta-id", "deploy", "ERROR", true),
 					}, nil).
 					GetOperationActions("test", []string{"abort", "retry"}, nil).

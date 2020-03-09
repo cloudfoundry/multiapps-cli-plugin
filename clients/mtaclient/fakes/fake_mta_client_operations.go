@@ -74,9 +74,10 @@ type FakeMtaClientOperations struct {
 		result1 []*models.Log
 		result2 error
 	}
-	GetMtaOperationsStub        func(last *int64, status []string) ([]*models.Operation, error)
+	GetMtaOperationsStub        func(mtaId *string, last *int64, status []string) ([]*models.Operation, error)
 	getMtaOperationsMutex       sync.RWMutex
 	getMtaOperationsArgsForCall []struct {
+		mtaId  *string
 		last   *int64
 		status []string
 	}
@@ -405,7 +406,7 @@ func (fake *FakeMtaClientOperations) GetMtaOperationLogsReturnsOnCall(i int, res
 	}{result1, result2}
 }
 
-func (fake FakeMtaClientOperations) GetMtaOperations(last *int64, status []string) ([]*models.Operation, error) {
+func (fake FakeMtaClientOperations) GetMtaOperations(mtaId *string, last *int64, status []string) ([]*models.Operation, error) {
 	var statusCopy []string
 	if status != nil {
 		statusCopy = make([]string, len(status))
@@ -414,13 +415,14 @@ func (fake FakeMtaClientOperations) GetMtaOperations(last *int64, status []strin
 	fake.getMtaOperationsMutex.Lock()
 	ret, specificReturn := fake.getMtaOperationsReturnsOnCall[len(fake.getMtaOperationsArgsForCall)]
 	fake.getMtaOperationsArgsForCall = append(fake.getMtaOperationsArgsForCall, struct {
+		mtaId  *string
 		last   *int64
 		status []string
-	}{last, statusCopy})
+	}{mtaId, last, statusCopy})
 	fake.recordInvocation("GetMtaOperations", []interface{}{last, statusCopy})
 	fake.getMtaOperationsMutex.Unlock()
 	if fake.GetMtaOperationsStub != nil {
-		return fake.GetMtaOperationsStub(last, status)
+		return fake.GetMtaOperationsStub(mtaId, last, status)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
