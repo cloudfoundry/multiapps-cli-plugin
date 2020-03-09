@@ -110,8 +110,8 @@ func printInitialMessage(context Context, mtaId string, all bool, last uint) {
 	} else {
 		initialMessage = "Getting active multi-target app operations in org %[3]s / space %[4]s as %[5]s..."
 	}
-	ui.Say(initialMessage, mtaId, last, terminal.EntityNameColor(context.Org), terminal.EntityNameColor(context.Space),
-		terminal.EntityNameColor(context.Username))
+	ui.Say(initialMessage, terminal.EntityNameColor(mtaId), last, terminal.EntityNameColor(context.Org),
+		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
 }
 
 func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, mtaId string, last uint, all bool) ([]*models.Operation, error) {
@@ -139,9 +139,9 @@ func getOperationsCount(last uint) *int64 {
 
 func getActiveStatesList(last uint) []string {
 	if last == 0 {
-		return nil
+		return activeStatesList
 	}
-	return activeStatesList
+	return nil
 }
 
 var activeStatesList = []string{"RUNNING", "ERROR", "ACTION_REQUIRED"}
