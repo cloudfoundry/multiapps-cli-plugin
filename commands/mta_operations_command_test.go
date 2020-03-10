@@ -331,7 +331,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 						testutil.GetOperation("test-1", "test-space", "test-mta-id", "deploy", "ERROR", true),
 					}, nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", "test-mta-id"}).ToInt()
+					return command.Execute([]string{"--mta", "test-mta-id"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
 					[]string{"test-1", "deploy", "test-mta-id", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},

@@ -36,13 +36,13 @@ func (c *DownloadMtaOperationLogsCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: `cf download-mta-op-logs -i OPERATION_ID [-d DIRECTORY] [-u URL]
 
-   cf download-mta-op-logs --mta-id MTA_ID [--last NUM] [-d DIRECTORY] [-u URL]`,
+   cf download-mta-op-logs --mta MTA [--last NUM] [-d DIRECTORY] [-u URL]`,
 			Options: map[string]string{
-				"i":                           "Operation id",
-				util.GetShortOption("mta-id"): "ID of the deployed package",
-				util.GetShortOption("last"):   "Downloads last NUM operation logs. If not specified, logs for each process with the specified MTA_ID are downloaded",
-				"d":                           "Root directory to download logs, by default the current working directory",
-				"u":                           "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				"i":                         "Operation id",
+				util.GetShortOption("mta"):  "ID of the deployed package",
+				util.GetShortOption("last"): "Downloads last NUM operation logs. If not specified, logs for each process with the specified MTA_ID are downloaded",
+				"d":                         "Root directory to download logs, by default the current working directory",
+				"u":                         "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
@@ -66,7 +66,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	}
 	flags.StringVar(&operationId, "i", "", "")
 	flags.StringVar(&downloadDirName, "d", "", "")
-	flags.StringVar(&mtaId, "mta-id", "", "")
+	flags.StringVar(&mtaId, "mta", "", "")
 	flags.UintVar(&last, "last", 0, "")
 	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{}), dmolCommandFlagsValidator{})
 	err = parser.Parse(args)
@@ -184,12 +184,12 @@ func saveLogContent(downloadDir, logID string, content *string) error {
 type dmolCommandFlagsValidator struct{}
 
 func (dmolCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
-	if hasValue(flags, "i") && hasValue(flags, "mta-id") {
-		return fmt.Errorf("Option -i and option --mta-id are incompatible")
+	if hasValue(flags, "i") && hasValue(flags, "mta") {
+		return fmt.Errorf("Option -i and option --mta are incompatible")
 	}
 	return NewDefaultCommandFlagsValidator(map[string]bool{
-		"i":      !hasValue(flags, "mta-id"),
-		"mta-id": hasValue(flags, "mta-id")}).ValidateParsedFlags(flags)
+		"i":   !hasValue(flags, "mta"),
+		"mta": hasValue(flags, "mta")}).ValidateParsedFlags(flags)
 }
 
 func hasValue(flags *flag.FlagSet, flagName string) bool {
