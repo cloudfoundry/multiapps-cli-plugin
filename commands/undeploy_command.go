@@ -157,8 +157,9 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	// Monitor process execution
-	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient).Monitor()
+	executionMonitor := NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient)
+	ui.Say("Operation id: %s", terminal.EntityNameColor(executionMonitor.operationID))
+	return executionMonitor.Monitor()
 }
 
 type undeployCommandProcessTypeProvider struct{}
