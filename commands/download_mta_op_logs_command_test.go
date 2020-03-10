@@ -140,7 +140,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				var clientError = baseclient.NewClientError(testutil.ClientError)
 				clientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().GetMtaOperations(&mtaId, nil, []string{}, []*models.Operation{}, clientError).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", mtaId}).ToInt()
+					return command.Execute([]string{"--mta", mtaId}).ToInt()
 				})
 				ex.ExpectFailureOnLine(status, output, "Process with id 404 not found (status 404): Process with id 404 not found", 0)
 				Expect(exists("mta-op-test")).To(Equal(false))
@@ -195,7 +195,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 			const dir = "mta-op-" + testutil.ProcessID
 			It("should download the last logs for the specified mta and exit with zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", mtaId, "--last", "1"}).ToInt()
+					return command.Execute([]string{"--mta", mtaId, "--last", "1"}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(dir, testutil.ProcessID))
 				expectDirWithLog(dir)
@@ -265,7 +265,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 					GetMtaOperationLogContent("1002", testutil.LogID, testutil.LogContent, nil).
 					GetMtaOperations(&[]string{mtaId}[0], &[]int64{2}[0], nil, operations[1:], nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", mtaId, "--last", "2"}).ToInt()
+					return command.Execute([]string{"--mta", mtaId, "--last", "2"}).ToInt()
 				})
 				expectedOutput := append(getOutputLines("mta-op-1001", "1001"), getOutputLines("mta-op-1002", "1002")...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
@@ -286,7 +286,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 					GetMtaOperationLogContent("1002", testutil.LogID, testutil.LogContent, nil).
 					GetMtaOperations(&[]string{mtaId}[0], &[]int64{2}[0], nil, operations[1:], nil).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", mtaId, "--last", "2", "-d", "custom-dir"}).ToInt()
+					return command.Execute([]string{"--mta", mtaId, "--last", "2", "-d", "custom-dir"}).ToInt()
 				})
 				expectedOutput := append(getOutputLines("custom-dir/mta-op-1001", "1001"), getOutputLines("custom-dir/mta-op-1002", "1002")...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
@@ -303,9 +303,9 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		Context("with mta id and process id", func() {
 			It("should print incorrect usage - incompatible flags and exit with non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{"--mta-id", mtaId, "-i", testutil.ProcessID}).ToInt()
+					return command.Execute([]string{"--mta", mtaId, "-i", testutil.ProcessID}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Option -i and option --mta-id are incompatible")
+				ex.ExpectFailure(status, output, "Incorrect usage. Option -i and option --mta are incompatible")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})

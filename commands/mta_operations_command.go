@@ -22,12 +22,12 @@ func (c *MtaOperationsCommand) GetPluginCommand() plugin.Command {
 		Name:     "mta-ops",
 		HelpText: "List multi-target app operations",
 		UsageDetails: plugin.Usage{
-			Usage: "cf mta-ops [--mta-id MTA_ID] [-u URL] [--last NUM] [--all]",
+			Usage: "cf mta-ops [--mta MTA] [-u URL] [--last NUM] [--all]",
 			Options: map[string]string{
-				"u":                           "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				util.GetShortOption("mta-id"): "ID of the deployed package",
-				util.GetShortOption("last"):   "List last NUM operations",
-				util.GetShortOption("all"):    "List all operations, not just the active ones",
+				"u":                         "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				util.GetShortOption("mta"):  "ID of the deployed package",
+				util.GetShortOption("last"): "List last NUM operations",
+				util.GetShortOption("all"):  "List all operations, not just the active ones",
 			},
 		},
 	}
@@ -48,7 +48,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed(err.Error())
 		return Failure
 	}
-	flags.StringVar(&mtaId, "mta-id", "", "")
+	flags.StringVar(&mtaId, "mta", "", "")
 	flags.UintVar(&last, "last", 0, "")
 	flags.BoolVar(&all, "all", false, "")
 	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
