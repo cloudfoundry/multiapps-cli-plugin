@@ -327,8 +327,9 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not create operation: %s", baseclient.NewClientError(err))
 		return Failure
 	}
-
-	return NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient).Monitor()
+	executionMonitor := NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient)
+	ui.Say("Operation id: %s", terminal.EntityNameColor(executionMonitor.operationID))
+	return executionMonitor.Monitor()
 }
 
 func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, processBuilder *util.ProcessBuilder, mtaElementsCalculator mtaElementsToAddCalculator) {
