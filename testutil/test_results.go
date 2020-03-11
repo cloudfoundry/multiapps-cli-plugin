@@ -56,7 +56,7 @@ var SimpleMtaLog = models.Log{
 // const Version = "1.2.0"
 // const ServiceID = "xs2-undeploy"
 const ProcessID = "1000"
-const LogID = "MAIN_LOG"
+const LogID = "OPERATION.log"
 const LogContent = "test-test-test"
 
 // const ActionID = "slp.action.ABORT"

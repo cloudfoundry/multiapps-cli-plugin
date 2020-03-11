@@ -49,16 +49,15 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 					processId, org, space, user),
 				"OK\n",
 				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...\n", wd, dir),
-				fmt.Sprintf("  %s\n", addLogFileExtension(testutil.LogID)),
+				fmt.Sprintf("  %s\n", testutil.LogID),
 				"OK\n",
 			}
 		}
 
 		var expectDirWithLog = func(dir string) {
 			Expect(exists(dir)).To(Equal(true))
-			logFilename := addLogFileExtension(testutil.LogID)
-			Expect(exists(dir + "/" + logFilename)).To(Equal(true))
-			Expect(contentOf(dir + "/" + logFilename)).To(Equal(testutil.LogContent))
+			Expect(exists(dir + "/" + testutil.LogID)).To(Equal(true))
+			Expect(contentOf(dir + "/" + testutil.LogID)).To(Equal(testutil.LogContent))
 		}
 
 		BeforeEach(func() {
@@ -333,8 +332,4 @@ func exists(dirName string) bool {
 		return true
 	}
 	return false
-}
-
-func addLogFileExtension(filename string) string {
-	return filename + ".log"
 }
