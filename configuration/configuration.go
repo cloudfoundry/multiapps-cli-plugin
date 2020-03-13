@@ -84,8 +84,8 @@ func getPropertyWithNameOrDefaultIfInvalid(property properties.ConfigurablePrope
 }
 
 func getPropertyWithName(name string, parser properties.Parser) (interface{}, error) {
-	propertyValue, isSet := os.LookupEnv(name)
-	if isSet {
+	propertyValue := os.Getenv(name)
+	if propertyValue != "" {
 		return parser.Parse(propertyValue)
 	}
 	return nil, nil
