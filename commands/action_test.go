@@ -57,29 +57,6 @@ var _ = Describe("Actions", func() {
 					ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation test-process-id: test-error", 1)
 				})
 			})
-			Context("when the action is not possible", func() {
-				It("should return an error and exit with non-zero status", func() {
-					mtaClient = fakes.NewFakeMtaClientBuilder().
-						GetOperationActions(operationID, []string{}, nil).
-						ExecuteAction(operationID, "abort", mtaclient.ResponseHeader{}, fmt.Errorf("test-error")).
-						Build()
-					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient).ToInt()
-					})
-					ex.ExpectFailure(status, output, "Action 'abort' is not possible for operation test-process-id")
-				})
-			})
-			Context("when the possible actions cannot be retrieved", func() {
-				It("should return an error and exit with non-zero status", func() {
-					mtaClient = fakes.NewFakeMtaClientBuilder().
-						GetOperationActions(operationID, nil, fmt.Errorf("test-error")).
-						Build()
-					output, status := oc.CaptureOutputAndStatus(func() int {
-						return action.Execute(operationID, mtaClient).ToInt()
-					})
-					ex.ExpectFailure(status, output, "Could not retrieve possible actions for operation test-process-id: test-error")
-				})
-			})
 		})
 	})
 

@@ -5,7 +5,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 )
 
@@ -71,19 +70,10 @@ func (a *action) Execute(operationID string, mtaClient mtaclient.MtaClientOperat
 }
 
 func (a *action) executeInSession(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
-	possibleActions, err := mtaClient.GetOperationActions(operationID)
-	if err != nil {
-		ui.Failed("Could not retrieve possible actions for operation %s: %s", terminal.EntityNameColor(operationID), err)
-	}
-	if !util.Contains(possibleActions, a.actionID) {
-		ui.Failed("Action '%s' is not possible for operation %s", a.actionID, terminal.EntityNameColor(operationID))
-		return Failure
-	}
-
 	if a.verbosityLevel == VerbosityLevelVERBOSE {
 		ui.Say("Executing action '%s' on operation %s...", a.actionID, terminal.EntityNameColor(operationID))
 	}
-	_, err = mtaClient.ExecuteAction(operationID, a.actionID)
+	_, err := mtaClient.ExecuteAction(operationID, a.actionID)
 	if err != nil {
 		ui.Failed("Could not execute action '%s' on operation %s: %s", a.actionID, terminal.EntityNameColor(operationID), err)
 		return Failure
