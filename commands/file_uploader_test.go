@@ -146,6 +146,7 @@ var _ = Describe("FileUploader", func() {
 		})
 
 		AfterEach(func() {
+			testFile.Close()
 			os.RemoveAll(testFileName)
 		})
 	})

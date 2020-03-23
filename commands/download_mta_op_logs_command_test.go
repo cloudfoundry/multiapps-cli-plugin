@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
@@ -214,7 +215,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s/mta-op-%s:", customDir, testutil.ProcessID), 2)
+				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s%s:", filepath.Join(customDir, "mta-op-"), testutil.ProcessID), 2)
 			})
 			AfterEach(func() {
 				os.RemoveAll(customDir)
@@ -248,7 +249,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(customDir+"/mta-op-"+testutil.ProcessID, testutil.ProcessID))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(filepath.Join(customDir, "/mta-op-")+testutil.ProcessID, testutil.ProcessID))
 				expectDirWithLog(customDir + "/mta-op-" + testutil.ProcessID)
 			})
 			AfterEach(func() {
@@ -287,7 +288,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"--mta", mtaId, "--last", "2", "-d", "custom-dir"}).ToInt()
 				})
-				expectedOutput := append(getOutputLines("custom-dir/mta-op-1001", "1001"), getOutputLines("custom-dir/mta-op-1002", "1002")...)
+				expectedOutput := append(getOutputLines(filepath.Join("custom-dir", "mta-op-1001"), "1001"), getOutputLines(filepath.Join("custom-dir", "mta-op-1002"), "1002")...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 				expectDirWithLog("custom-dir/mta-op-1001")
 				expectDirWithLog("custom-dir/mta-op-1002")
