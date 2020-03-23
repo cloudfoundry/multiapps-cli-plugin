@@ -48,6 +48,7 @@ var _ = Describe("Digest", func() {
 		})
 
 		AfterEach(func() {
+			testFile.Close()
 			os.Remove(testFileName)
 		})
 	})
