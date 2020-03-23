@@ -33,7 +33,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Undeploy a multi-target app",
 		UsageDetails: plugin.Usage{
 			Usage: `Undeploy a multi-target app
-   cf undeploy MTA_ID [-u URL] [-f] [--retries RETRIES] [--delete-services] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
+   cf undeploy MTA_ID [-u URL] [-f] [--retries RETRIES] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
 
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -43,6 +43,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 				actionOpt:                              "Action to perform on the active undeploy operation (abort, retry, monitor)",
 				forceOpt:                               "Force undeploy without confirmation",
 				util.GetShortOption(deleteServicesOpt): "Delete services",
+				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete service brokers",
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
 				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
@@ -62,6 +63,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	var actionID string
 	var force bool
 	var deleteServices bool
+	var deleteServiceKeys bool
 	var noRestartSubscribedApps bool
 	var deleteServiceBrokers bool
 	var noFailOnMissingPermissions bool
@@ -76,6 +78,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	flags.StringVar(&operationID, operationIDOpt, "", "")
 	flags.StringVar(&actionID, actionOpt, "", "")
 	flags.BoolVar(&deleteServices, deleteServicesOpt, false, "")
+	flags.BoolVar(&deleteServiceKeys, deleteServiceKeysOpt, false, "")
 	flags.BoolVar(&noRestartSubscribedApps, noRestartSubscribedAppsOpt, false, "")
 	flags.BoolVar(&deleteServiceBrokers, deleteServiceBrokersOpt, false, "")
 	flags.BoolVar(&noFailOnMissingPermissions, noFailOnMissingPermissionsOpt, false, "")
@@ -145,6 +148,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.Parameter("mtaId", mtaID)
 	processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(noRestartSubscribedApps))
 	processBuilder.Parameter("deleteServices", strconv.FormatBool(deleteServices))
+	processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(deleteServiceKeys))
 	processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(deleteServiceBrokers))
 	processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(noFailOnMissingPermissions))
 	processBuilder.Parameter("abortOnError", strconv.FormatBool(abortOnError))
