@@ -243,7 +243,7 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, 
 	}
 
 	if ongoingOperation == nil {
-		ui.Failed("Multi-target app operation with id %s not found", terminal.EntityNameColor(operationID))
+		ui.Failed("Multi-target app operation with ID %s not found", terminal.EntityNameColor(operationID))
 		return Failure
 	}
 

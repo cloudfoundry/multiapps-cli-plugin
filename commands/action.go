@@ -13,7 +13,7 @@ type Action interface {
 	Execute(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus
 }
 
-// GetActionToExecute returns the action to execute specified with action id
+// GetActionToExecute returns the action to execute specified with action ID
 func GetActionToExecute(actionID, commandName string, monitoringRetries uint) Action {
 	switch actionID {
 	case "abort":
@@ -95,7 +95,7 @@ func (a *monitoringAction) Execute(operationID string, mtaClient mtaclient.MtaCl
 	// should not show them again.
 	operation, err := getMonitoringOperation(operationID, mtaClient)
 	if err != nil {
-		ui.Failed("Could not monitor multi-target app operation with id %s: %s", terminal.EntityNameColor(operationID), baseclient.NewClientError(err))
+		ui.Failed("Could not monitor multi-target app operation with ID %s: %s", terminal.EntityNameColor(operationID), baseclient.NewClientError(err))
 		return Failure
 	}
 

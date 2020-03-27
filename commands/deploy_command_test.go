@@ -72,7 +72,7 @@ var _ = Describe("DeployCommand", func() {
 					"  "+fullExtDescriptorPath+"\n",
 					"OK\n")
 			}
-			lines = append(lines, "Operation id: 1000\n")
+			lines = append(lines, "Operation ID: 1000\n")
 			lines = append(lines,
 				"Test message\n",
 				"Process finished.\n",
@@ -298,7 +298,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test", "-a", "abort"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Multi-target app operation with id test not found")
+				ex.ExpectFailure(status, output, "Multi-target app operation with ID test not found")
 			})
 		})
 		Context("with valid operation id and non-valid action id provided", func() {

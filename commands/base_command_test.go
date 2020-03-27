@@ -200,7 +200,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("not-valid-process-id", "abort", 0, "test-host").ToInt()
 				})
-				ex.ExpectFailure(status, output, "Multi-target app operation with id not-valid-process-id not found")
+				ex.ExpectFailure(status, output, "Multi-target app operation with ID not-valid-process-id not found")
 			})
 		})
 

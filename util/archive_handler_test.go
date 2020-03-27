@@ -21,7 +21,7 @@ var _ = Describe("ArchiveHandler", func() {
 			It("should return error", func() {
 				mtaArchiveFilePath, _ = filepath.Abs("../test_resources/util/mtaArchiveNoDescriptor.mtar")
 				_, err := util.GetMtaIDFromArchive(mtaArchiveFilePath)
-				Expect(err).To(MatchError("Could not get MTA id from archive"))
+				Expect(err).To(MatchError("Could not get MTA ID from archive"))
 			})
 		})
 

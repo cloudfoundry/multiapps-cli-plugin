@@ -46,7 +46,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		var getOutputLines = func(dir string, processId string) []string {
 			wd, _ := os.Getwd()
 			return []string{
-				fmt.Sprintf("Downloading logs of multi-target app operation with id %s in org %s / space %s as %s...\n",
+				fmt.Sprintf("Downloading logs of multi-target app operation with ID %s in org %s / space %s as %s...\n",
 					processId, org, space, user),
 				"OK\n",
 				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...\n", wd, dir),

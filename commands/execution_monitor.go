@@ -93,7 +93,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			}
 			messageInError := findErrorMessage(operation.Messages)
 			if messageInError == nil {
-				ui.Failed("There is no error message for operation with id %s", m.operationID)
+				ui.Failed("There is no error message for operation with ID %s", m.operationID)
 				return Failure
 			}
 			ui.Say("Process failed.")

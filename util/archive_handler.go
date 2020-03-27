@@ -52,7 +52,7 @@ func GetMtaIDFromArchive(mtaArchiveFilePath string) (string, error) {
 			}
 		}
 	}
-	return "", errors.New("Could not get MTA id from archive")
+	return "", errors.New("Could not get MTA ID from archive")
 }
 
 func CreateMtaArchive(source, target string) error {
