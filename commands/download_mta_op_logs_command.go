@@ -37,11 +37,11 @@ func (c *DownloadMtaOperationLogsCommand) GetPluginCommand() plugin.Command {
 
    cf download-mta-op-logs --mta MTA [--last NUM] [-d DIRECTORY] [-u URL]`,
 			Options: map[string]string{
-				"i":                         "Operation id",
-				util.GetShortOption("mta"):  "ID of the deployed package",
+				"i": "Operation ID",
+				util.GetShortOption("mta"):  "ID of the deployed MTA",
 				util.GetShortOption("last"): "Downloads last NUM operation logs. If not specified, logs for each process with the specified MTA_ID are downloaded",
-				"d":                         "Root directory to download logs, by default the current working directory",
-				"u":                         "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				"d": "Root directory to download logs, by default the current working directory",
+				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
@@ -77,7 +77,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	// Create new SLMP client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
+		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
@@ -92,7 +92,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	if mtaId != "" {
 		operations, err := mtaClient.GetMtaOperations(&mtaId, getOperationsCount(last), nil)
 		if err != nil {
-			ui.Failed("Could not get operations for MTA with id %s: %s", mtaId, baseclient.NewClientError(err))
+			ui.Failed("Could not get operations for MTA with ID %s: %s", mtaId, baseclient.NewClientError(err))
 			return Failure
 		}
 		for _, op := range operations {
@@ -115,7 +115,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 
 func downloadLogsForProcess(operationId string, downloadPath string, mtaClient mtaclient.MtaClientOperations, context Context) error {
 	// Print initial message
-	ui.Say("Downloading logs of multi-target app operation with id %s in org %s / space %s as %s...",
+	ui.Say("Downloading logs of multi-target app operation with ID %s in org %s / space %s as %s...",
 		terminal.EntityNameColor(operationId), terminal.EntityNameColor(context.Org),
 		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
 

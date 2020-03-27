@@ -24,7 +24,7 @@ func (c *MtaOperationsCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: "cf mta-ops [--mta MTA] [-u URL] [--last NUM] [--all]",
 			Options: map[string]string{
-				"u":                         "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				util.GetShortOption("mta"):  "ID of the deployed package",
 				util.GetShortOption("last"): "List last NUM operations",
 				util.GetShortOption("all"):  "List all operations, not just the active ones",
@@ -69,7 +69,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	// Create new REST client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
+		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 

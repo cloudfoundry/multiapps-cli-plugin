@@ -70,7 +70,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	// Create new REST client
 	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed("Could not get space id: %s", baseclient.NewClientError(err))
+		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 

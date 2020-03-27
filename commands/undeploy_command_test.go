@@ -65,7 +65,7 @@ var _ = Describe("UndeployCommand", func() {
 					"OK\n")
 			}
 			lines = append(lines,
-				"Operation id: "+processID+"\n",
+				"Operation ID: "+processID+"\n",
 				"Test message\n",
 				"Process finished.\n",
 				"Use \"cf dmol -i "+processID+"\" to download the logs of the process.\n")

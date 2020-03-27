@@ -86,17 +86,17 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
-				extDescriptorsOpt:                     "Extension descriptors",
-				deployServiceURLOpt:                   "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                            "Start timeout in seconds",
-				versionRuleOpt:                        "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                        "Active deploy operation id",
-				actionOpt:                             "Action to perform on active deploy operation (abort, retry, monitor)",
-				forceOpt:                              "Force deploy without confirmation for aborting conflicting processes",
-				moduleOpt:                             "Deploy list of modules which are contained in the deployment descriptor, in the current location",
-				resourceOpt:                           "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(noStartOpt):       "Do not start apps",
-				util.GetShortOption(useNamespacesOpt): "Use namespaces in app and service names",
+				extDescriptorsOpt:                                  "Extension descriptors",
+				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				timeoutOpt:                                         "Start timeout in seconds",
+				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
+				operationIDOpt:                                     "Active deploy operation ID",
+				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, monitor)",
+				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                                          "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                                        "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(noStartOpt):                    "Do not start apps",
+				util.GetShortOption(useNamespacesOpt):              "Use namespaces in app and service names",
 				util.GetShortOption(noNamespacesForServicesOpt):    "Do not use namespaces in service names",
 				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
@@ -264,7 +264,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed("Could not find file %s", terminal.EntityNameColor(mtaArchivePath))
 		return Failure
 	} else if err != nil {
-		ui.Failed("Could not get MTA id from deployment descriptor: %s", err)
+		ui.Failed("Could not get MTA ID from deployment descriptor: %s", err)
 		return Failure
 	}
 
@@ -327,7 +327,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 	executionMonitor := NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient)
-	ui.Say("Operation id: %s", terminal.EntityNameColor(executionMonitor.operationID))
+	ui.Say("Operation ID: %s", terminal.EntityNameColor(executionMonitor.operationID))
 	return executionMonitor.Monitor()
 }
 
