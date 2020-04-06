@@ -89,17 +89,17 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 	}
 	// TODO: modify the deployment descriptor after copying it in order not to contain any path parameters...
 
-	err = copyContent(deploymentDescriptorLocation, getPaths(modulesPaths), mtaAssembly)
+	err = copyContent(deploymentDescriptorLocation, modulesPaths, mtaAssembly)
 	if err != nil {
 		return "", err
 	}
 
-	err = copyContent(deploymentDescriptorLocation, getPaths(resourcesPaths), mtaAssembly)
+	err = copyContent(deploymentDescriptorLocation, resourcesPaths, mtaAssembly)
 	if err != nil {
 		return "", err
 	}
 
-	err = copyContent(deploymentDescriptorLocation, getPaths(bindingParametersPaths), mtaAssembly)
+	err = copyContent(deploymentDescriptorLocation, bindingParametersPaths, mtaAssembly)
 	if err != nil {
 		return "", err
 	}
@@ -119,35 +119,26 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 	return mtaArchiveAbsolutePath, nil
 }
 
-func getPaths(elementsPaths map[string]string) []string {
-	var result []string
-	for _, path := range elementsPaths {
+func copyContent(sourceDirectory string, elementsPaths map[string]string, targetLocation string) error {
+	for name, path := range elementsPaths {
 		if path != "" {
-			result = append(result, path)
+			sourceLocation := filepath.Join(sourceDirectory, path)
+			filesInSourceInfo, err := os.Stat(sourceLocation)
+			if err != nil {
+				return fmt.Errorf("Error building MTA Archive: file path %s not found", sourceLocation)
+			}
+			destinationLocation := filepath.Join(targetLocation, name, filepath.Base(path))
+			if filesInSourceInfo.IsDir() {
+				err = copyDirectory(sourceLocation, destinationLocation)
+			} else {
+				os.MkdirAll(filepath.Dir(destinationLocation), os.ModePerm)
+				err = copy(sourceLocation, destinationLocation)
+			}
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return result
-}
-
-func copyContent(sourceDirectory string, paths []string, targetLocation string) error {
-	for _, path := range paths {
-		sourceLocation := filepath.Join(sourceDirectory, path)
-		filesInSourceInfo, err := os.Stat(sourceLocation)
-		if err != nil {
-			return fmt.Errorf("Error building MTA Archive: file path %s not found", sourceLocation)
-		}
-		destinationLocation := filepath.Join(targetLocation, filepath.Base(path))
-		if filesInSourceInfo.IsDir() {
-			err = copyDirectory(sourceLocation, destinationLocation)
-		} else {
-			os.MkdirAll(filepath.Dir(destinationLocation), os.ModePerm)
-			err = copy(sourceLocation, destinationLocation)
-		}
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -228,15 +219,6 @@ func concatenateElementsWithSameValue(elements map[string]string) map[string][]s
 			result[value] = []string{key}
 		}
 	}
-	return result
-}
-
-func resolvePaths(baseDirectory string, filePaths map[string]string) map[string]string {
-	result := make(map[string]string)
-	for name, path := range filePaths {
-		result[name] = filepath.Join(baseDirectory, path)
-	}
-
 	return result
 }
 
@@ -338,7 +320,7 @@ func normalizePaths(elementsPaths map[string]string) map[string]string {
 	normalizedPaths := make(map[string]string, len(elementsPaths))
 	for key, value := range elementsPaths {
 		if value != "" {
-			normalizedPaths[key] = filepath.Base(value)
+			normalizedPaths[key] = filepath.Join(key, filepath.Base(value))
 		}
 	}
 	return normalizedPaths

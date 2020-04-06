@@ -39,6 +39,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			)
 			const requiredDependencyContent = "test-module-content"
 			const testDeploymentDescriptor = "mtad.yaml"
+			const moduleName = "TestModule"
 
 			BeforeEach(func() {
 				// need to cd into the tempDir in order to simulate the relative path
@@ -50,7 +51,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				os.Create(requiredDependencyContent)
 				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
-					util.Module{Name: "TestModule", Path: requiredDependencyContent},
+					util.Module{Name: moduleName, Path: requiredDependencyContent},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 
@@ -58,30 +59,31 @@ var _ = Describe("ArchiveBuilder", func() {
 			})
 
 			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
-				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(".")
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{moduleName}, []string{}).Build(".")
 			})
 
-			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
-				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build("./")
+			It("Should find deployment descriptor with \"./\" baseDirectory path", func() {
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{moduleName}, []string{}).Build("./")
 			})
 
-			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
+			It("Should find deployment descriptor with \"../\" baseDirectory path", func() {
 				// create and cd into new dir
 				err = os.Mkdir("test", 0700)
 				Expect(err).To(BeNil())
 				err = os.Chdir("test")
 				Expect(err).To(BeNil())
-				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build("../")
+				mtaArchiveLocation, err = util.NewMtaArchiveBuilder([]string{moduleName}, []string{}).Build("../")
 			})
 
 			AfterEach(func() {
+				expectedModulePath := filepath.Join(moduleName, requiredDependencyContent)
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive(requiredDependencyContent, mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive(expectedModulePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": requiredDependencyContent}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": expectedModulePath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": expectedModulePath}))
 				defer os.Remove(mtaArchiveLocation)
 				defer os.Chdir(currentWorkingDirectory)
 			})
@@ -204,10 +206,11 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
+				expectedModulePath := filepath.Join("TestModule", "test-module-1-content")
+				Expect(isInArchive(expectedModulePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": expectedModulePath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": expectedModulePath}))
 			})
 		})
 
@@ -229,10 +232,11 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
+				expectedModulePath := filepath.Join("TestModule", "test-module-1-content")
+				Expect(isInArchive(expectedModulePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": "test-module-1-content"}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule", "Name": expectedModulePath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule", "Name": expectedModulePath}))
 			})
 		})
 
@@ -253,10 +257,10 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-module-1-content", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("TestModule/test-module-1-content", mtaArchiveLocation)).To(BeTrue())
+				Expect(isInArchive("TestModule1/test-module-1-content", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": "test-module-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Module": "TestModule,TestModule1", "Name": "test-module-1-content"}))
 			})
 		})
 
@@ -275,10 +279,11 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-resource-1-content", mtaArchiveLocation)).To(BeTrue())
+				expectedResourcePath := filepath.Join("TestResource", "test-resource-1-content")
+				Expect(isInArchive(expectedResourcePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": expectedResourcePath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": expectedResourcePath}))
 				defer os.Remove(mtaArchiveLocation)
 			})
 
@@ -298,10 +303,11 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-resource-1-content", mtaArchiveLocation)).To(BeTrue())
+				expectedResourcePath := filepath.Join("TestResource", "test-resource-1-content")
+				Expect(isInArchive(expectedResourcePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": "test-resource-1-content"}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Resource": "TestResource", "Name": expectedResourcePath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Resource": "TestResource", "Name": expectedResourcePath}))
 				defer os.Remove(mtaArchiveLocation)
 			})
 
@@ -348,10 +354,11 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-required-dep-1-content", mtaArchiveLocation)).To(BeTrue())
+				expectedRequiredDependenciesPath := filepath.Join("TestModule", "TestRequired", "test-required-dep-1-content")
+				Expect(isInArchive(expectedRequiredDependenciesPath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": expectedRequiredDependenciesPath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": expectedRequiredDependenciesPath}))
 			})
 
 			It("Should build the MTA Archive containing the valid modules and required dependencies configuration with non-normalized paths", func() {
@@ -378,10 +385,11 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				Expect(isInArchive("test-required-dep-1-content", mtaArchiveLocation)).To(BeTrue())
+				expectedRequiredDependenciesPath := filepath.Join("TestModule", "TestRequired", "test-required-dep-1-content")
+				Expect(isInArchive(expectedRequiredDependenciesPath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
-				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": "test-required-dep-1-content"}))
+				Expect(isManifestValid("META-INF/MANIFEST.MF", map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": expectedRequiredDependenciesPath}, mtaArchiveLocation)).To(Equal(map[string]string{"MTA-Requires": "TestModule/TestRequired", "Name": expectedRequiredDependenciesPath}))
 			})
 		})
 
