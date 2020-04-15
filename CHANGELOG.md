@@ -1,4 +1,13 @@
+## v2.3.2
+
+* Added support for non-normalized paths in descriptor
+* Additional --mta option for 'dmol' and 'mta-ops'
+* Logging the operation id in the beginning of the (un)deployment
+* Add --delete-service-keys option for the 'undeploy' command
+* Fix overriding of artifacts with the same filename
+
 ## v2.3.1
+
 * Fixed deploy help message
 ## v2.3.0
 * Strategy flag for deploy
