@@ -1,4 +1,4 @@
-## v2.3.2
+## v2.4.0
 
 * Added support for non-normalized paths in descriptor
 * Additional --mta option for 'dmol' and 'mta-ops'
