@@ -76,7 +76,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			})
 
 			AfterEach(func() {
-				expectedModulePath := filepath.Join(moduleName, requiredDependencyContent)
+				expectedModulePath := filepathUnixJoin(moduleName, requiredDependencyContent)
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
@@ -206,7 +206,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				expectedModulePath := filepath.Join("TestModule", "test-module-1-content")
+				expectedModulePath := filepathUnixJoin("TestModule", "test-module-1-content")
 				Expect(isInArchive(expectedModulePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
@@ -232,7 +232,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				expectedModulePath := filepath.Join("TestModule", "test-module-1-content")
+				expectedModulePath := filepathUnixJoin("TestModule", "test-module-1-content")
 				Expect(isInArchive(expectedModulePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
@@ -279,7 +279,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				expectedResourcePath := filepath.Join("TestResource", "test-resource-1-content")
+				expectedResourcePath := filepathUnixJoin("TestResource", "test-resource-1-content")
 				Expect(isInArchive(expectedResourcePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
@@ -303,7 +303,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				expectedResourcePath := filepath.Join("TestResource", "test-resource-1-content")
+				expectedResourcePath := filepathUnixJoin("TestResource", "test-resource-1-content")
 				Expect(isInArchive(expectedResourcePath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
@@ -354,7 +354,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				expectedRequiredDependenciesPath := filepath.Join("TestModule", "TestRequired", "test-required-dep-1-content")
+				expectedRequiredDependenciesPath := filepathUnixJoin("TestModule", "TestRequired", "test-required-dep-1-content")
 				Expect(isInArchive(expectedRequiredDependenciesPath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
@@ -385,7 +385,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
 				Expect(err).To(BeNil())
-				expectedRequiredDependenciesPath := filepath.Join("TestModule", "TestRequired", "test-required-dep-1-content")
+				expectedRequiredDependenciesPath := filepathUnixJoin("TestModule", "TestRequired", "test-required-dep-1-content")
 				Expect(isInArchive(expectedRequiredDependenciesPath, mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/MANIFEST.MF", mtaArchiveLocation)).To(BeTrue())
 				Expect(isInArchive("META-INF/mtad.yaml", mtaArchiveLocation)).To(BeTrue())
@@ -445,4 +445,8 @@ func isManifestValid(manifestLocation string, searchCriteria map[string]string, 
 		}
 	}
 	return searchCriteriaResult
+}
+
+func filepathUnixJoin(elements ...string) string {
+	return strings.Join(elements, "/")
 }
