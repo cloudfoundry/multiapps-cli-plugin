@@ -45,9 +45,9 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 	}
 	bindingParametersPaths := builder.getBindingParametersPaths(descriptor.Modules)
 
-	modulesSections := buildSection(normalizePaths(modulesPaths), MtaModule)
-	resourcesSections := buildSection(normalizePaths(resourcesPaths), MtaResource)
-	bindingParametersSections := buildSection(normalizePaths(bindingParametersPaths), MtaRequires)
+	modulesSections := buildSection(normalizePathsUsingUnixSeparator(modulesPaths), MtaModule)
+	resourcesSections := buildSection(normalizePathsUsingUnixSeparator(resourcesPaths), MtaResource)
+	bindingParametersSections := buildSection(normalizePathsUsingUnixSeparator(bindingParametersPaths), MtaRequires)
 
 	manifestBuilder := NewMtaManifestBuilder()
 	manifestBuilder.ManifestSections(modulesSections)
@@ -316,11 +316,12 @@ func (builder MtaArchiveBuilder) getModulesPaths(deploymentDescriptorResources [
 	return result, nil
 }
 
-func normalizePaths(elementsPaths map[string]string) map[string]string {
+func normalizePathsUsingUnixSeparator(elementsPaths map[string]string) map[string]string {
 	normalizedPaths := make(map[string]string, len(elementsPaths))
 	for key, value := range elementsPaths {
 		if value != "" {
-			normalizedPaths[key] = filepath.Join(key, filepath.Base(value))
+			zipEntryNormalizedPath := fmt.Sprintf("%s/%s", key, filepath.Base(value))
+			normalizedPaths[key] = zipEntryNormalizedPath
 		}
 	}
 	return normalizedPaths
