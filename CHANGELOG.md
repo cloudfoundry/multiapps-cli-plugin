@@ -1,3 +1,6 @@
+## v2.4.1
+* Fixed normalization of paths when creating MANIFEST.MF
+
 ## v2.4.0
 
 * Added support for non-normalized paths in descriptor
