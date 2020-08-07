@@ -76,7 +76,7 @@ For example, with a 100MB MTAR the minimum value for this environment variable w
 
 # Development
 
-*WARNING* : with [Issue 117](#117) the master branch of this repository as well as other artifacts will be renamed. Adaptation to any CI/CD infrastructure & scritps will be required.
+*WARNING* : with [Issue 117](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/issues/117) the master branch of this repository as well as other artifacts will be renamed. Adaptation to any CI/CD infrastructure & scritps will be required.
 
 ## Cloning the repository
 To clone the project in your Go workspace `$GOPATH/src/github.com/cloudfoundry-incubator/multiapps-cli-plugin` execute the following commands:
