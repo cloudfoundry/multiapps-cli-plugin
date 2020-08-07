@@ -75,6 +75,9 @@ For example, with a 100MB MTAR the minimum value for this environment variable w
 * [How to develop, test and contribute to MultiApps CF Plugin](CONTRIBUTING.md#do-you-want-to-contribute-to-the-code-base)
 
 # Development
+
+*WARNING*: with #117 the master branch of this repository as well as other artifacts will be renamed. Adaptation to any CI/CD infrastructure & scritps will be required.
+
 ## Cloning the repository
 To clone the project in your Go workspace `$GOPATH/src/github.com/cloudfoundry-incubator/multiapps-cli-plugin` execute the following commands:
 ```
