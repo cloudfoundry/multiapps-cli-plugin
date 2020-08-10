@@ -37,7 +37,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				timeoutOpt:                                         "Start timeout in seconds",
 				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                                     "Active deploy operation ID",
-				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, monitor)",
+				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, resume, monitor)",
 				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
 				util.GetShortOption(noStartOpt):                    "Do not start apps",
 				util.GetShortOption(namespaceOpt):                  "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
