@@ -89,7 +89,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				timeoutOpt:                             "Start timeout in seconds",
 				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                         "Active deploy operation ID",
-				actionOpt:                              "Action to perform on active deploy operation (abort, retry, monitor)",
+				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
 				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
 				moduleOpt:                              "Deploy list of modules which are contained in the deployment descriptor, in the current location",
 				resourceOpt:                            "Deploy list of resources which are contained in the deployment descriptor, in the current location",

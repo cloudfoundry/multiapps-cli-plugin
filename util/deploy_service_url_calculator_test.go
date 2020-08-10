@@ -53,7 +53,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 				})
 				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cfrestclient_fakes.NewFakeCloudFoundryClient(domains, nil), fakeHttpExecutor)
 				_, err := deployServiceURLCalculator.ComputeDeployServiceURL()
-				Expect(err).Should(MatchError("The Deploy Service does not respond on any of the default URLs:\ndeploy-service.test1.ondemand.com\ndeploy-service.test2.ondemand.com\n\nYou can use the command line option -u or the DEPLOY_SERVICE_URL environment variable to specify a custom URL explicitly."))
+				Expect(err).Should(MatchError("The Deploy Service does not respond on any of the default URLs:\ndeploy-service.test1.ondemand.com\ndeploy-service.test2.ondemand.com\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly."))
 			})
 		})
 		Context("when a space is targeted and there are two shared domains, but the Deploy Service is broken on one of them", func() {
@@ -68,7 +68,7 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 				})
 				deployServiceURLCalculator := util.NewDeployServiceURLCalculatorWithHttpExecutor(cfrestclient_fakes.NewFakeCloudFoundryClient(domains, nil), fakeHttpExecutor)
 				_, err := deployServiceURLCalculator.ComputeDeployServiceURL()
-				Expect(err).Should(MatchError("The Deploy Service does not respond on any of the default URLs:\ndeploy-service.test1.ondemand.com\ndeploy-service.test2.ondemand.com\n\nYou can use the command line option -u or the DEPLOY_SERVICE_URL environment variable to specify a custom URL explicitly."))
+				Expect(err).Should(MatchError("The Deploy Service does not respond on any of the default URLs:\ndeploy-service.test1.ondemand.com\ndeploy-service.test2.ondemand.com\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly."))
 			})
 		})
 		Context("when a space is targeted and there are no shared domains", func() {

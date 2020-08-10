@@ -53,7 +53,7 @@ func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models
 			return possibleDeployServiceURL, nil
 		}
 	}
-	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the DEPLOY_SERVICE_URL environment variable to specify a custom URL explicitly.")
+	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly.")
 }
 
 func buildPossibleDeployServiceURLs(domains []models.SharedDomain) []string {
