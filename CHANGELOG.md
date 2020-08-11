@@ -1,3 +1,6 @@
+## v2.5.0
+* Added --namespace flag (experimental) to 'deploy'/'undeploy' and related commands
+
 ## v2.4.1
 * Fixed normalization of paths when creating MANIFEST.MF
 
