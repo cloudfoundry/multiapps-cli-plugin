@@ -106,8 +106,8 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
-				util.GetShortOption(strategyOpt):                   "(EXPERIMENTAL) Specify the deployment strategy when updating an mta (default, blue-green)",
-				util.GetShortOption(skipTestingPhase):              "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA apps",
+				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
+				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA apps",
 			},
 		},
 	}
