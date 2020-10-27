@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/resilient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
@@ -43,6 +44,9 @@ const (
 	namespaceOpt                  = "namespace"
 )
 
+const maxRetriesCount = 3
+const retryIntervalInSeconds = 10
+
 // BaseCommand represents a base command
 type BaseCommand struct {
 	name                       string
@@ -62,7 +66,8 @@ func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection
 	jar := newCookieJar()
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
 	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, jar, tokenFactory)
-	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cloudFoundryClient), configuration.NewSnapshot())
+	resilientCloudFoundryClient := resilient.NewResilientCloudFoundryClient(cloudFoundryClient, maxRetriesCount, retryIntervalInSeconds)
+	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient), configuration.NewSnapshot())
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
