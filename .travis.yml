@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.11
+  - 1.15.2
 install:
   - chmod +x bin/test.sh
   - chmod +x build.sh
