@@ -128,13 +128,8 @@ func GetOptionValue(args []string, optionName string) string {
 }
 
 // NewRestClient creates a new MTA deployer REST client
-func (c *BaseCommand) NewRestClient(host string) (restclient.RestClientOperations, error) {
-	restClient := c.clientFactory.NewRestClient(host, c.transport, c.jar, c.tokenFactory)
-	return restClient, nil
-}
-
-func (c *BaseCommand) NewManagementRestClient(host string) (restclient.RestClientOperations, error) {
-	return c.clientFactory.NewManagementRestClient(host, c.transport, c.jar, c.tokenFactory), nil
+func (c *BaseCommand) NewRestClient(host string) restclient.RestClientOperations {
+	return c.clientFactory.NewRestClient(host, c.transport, c.jar, c.tokenFactory)
 }
 
 // NewMtaClient creates a new MTA deployer REST client
@@ -145,10 +140,6 @@ func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, 
 	}
 
 	return c.clientFactory.NewMtaClient(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
-}
-
-func (c *BaseCommand) NewManagementMtaClient(host string) (mtaclient.MtaClientOperations, error) {
-	return c.clientFactory.NewManagementMtaClient(host, c.transport, c.jar, c.tokenFactory), nil
 }
 
 // NewMtaV2Client creates a new MTAV2 deployer REST client
