@@ -52,11 +52,7 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 		terminal.EntityNameColor(context.Space),
 		terminal.EntityNameColor(context.Username))
 
-	rc, err := c.NewRestClient(host)
-	if err != nil {
-		c.reportError(baseclient.NewClientError(err))
-		return Failure
-	}
+	rc := c.NewRestClient(host)
 	// TODO: ensure session
 
 	if err := rc.PurgeConfiguration(context.Org, context.Space); err != nil {

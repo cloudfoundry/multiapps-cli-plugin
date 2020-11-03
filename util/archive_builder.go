@@ -20,7 +20,7 @@ type MtaArchiveBuilder struct {
 	resources []string
 }
 
-// NewMtaArchiveBuilder constrcuts new MtaArchiveBuilder
+// NewMtaArchiveBuilder constructs new MtaArchiveBuilder
 func NewMtaArchiveBuilder(modules, resources []string) MtaArchiveBuilder {
 	return MtaArchiveBuilder{
 		modules:   modules,
@@ -78,12 +78,12 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 		return "", err
 	}
 
-	err = copy(manifestLocation, filepath.Join(metaInfLocation, manifestInfo.Name()))
+	err = copyFile(manifestLocation, filepath.Join(metaInfLocation, manifestInfo.Name()))
 	if err != nil {
 		return "", err
 	}
 
-	err = copy(deploymentDescriptorFile, filepath.Join(metaInfLocation, "mtad.yaml"))
+	err = copyFile(deploymentDescriptorFile, filepath.Join(metaInfLocation, "mtad.yaml"))
 	if err != nil {
 		return "", err
 	}
@@ -132,7 +132,7 @@ func copyContent(sourceDirectory string, elementsPaths map[string]string, target
 				err = copyDirectory(sourceLocation, destinationLocation)
 			} else {
 				os.MkdirAll(filepath.Dir(destinationLocation), os.ModePerm)
-				err = copy(sourceLocation, destinationLocation)
+				err = copyFile(sourceLocation, destinationLocation)
 			}
 			if err != nil {
 				return err
@@ -164,18 +164,18 @@ func copyDirectory(src, dest string) error {
 
 		if fd.IsDir() {
 			if err = copyDirectory(srcfp, dstfp); err != nil {
-
+				return err
 			}
 		} else {
-			if err = copy(srcfp, dstfp); err != nil {
-
+			if err = copyFile(srcfp, dstfp); err != nil {
+				return err
 			}
 		}
 	}
 	return nil
 }
 
-func copy(src, dest string) error {
+func copyFile(src, dest string) error {
 	fileFrom, err := os.Open(src)
 	if err != nil {
 		return err
@@ -356,10 +356,10 @@ func filterModules(modulesSlice []Module, prediacte func(element Module) bool) [
 	return result
 }
 
-func filterResources(resourcesSlice []Resource, prediacte func(element Resource) bool) []Resource {
+func filterResources(resourcesSlice []Resource, predicate func(element Resource) bool) []Resource {
 	result := make([]Resource, 0)
 	for _, sliceElement := range resourcesSlice {
-		if prediacte(sliceElement) {
+		if predicate(sliceElement) {
 			result = append(result, sliceElement)
 		}
 	}

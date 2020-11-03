@@ -460,7 +460,7 @@ func newDeployCommandLineArgumentsParser() deployCommandLineArgumentsParser {
 func (p deployCommandLineArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
 	argument := findFirstNotFlagedArgument(flags, args)
 
-	positionalArgumentsToValidate := determinePositionalArgumentsTovalidate(argument)
+	positionalArgumentsToValidate := determinePositionalArgumentsToValidate(argument)
 
 	return NewProcessActionExecutorCommandArgumentsParser(positionalArgumentsToValidate).ParseFlags(flags, args)
 }
@@ -476,8 +476,8 @@ func findFirstNotFlagedArgument(flags *flag.FlagSet, args []string) string {
 	return ""
 }
 
-func determinePositionalArgumentsTovalidate(possitionalArgument string) []string {
-	if possitionalArgument == "" {
+func determinePositionalArgumentsToValidate(positionalArgument string) []string {
+	if positionalArgument == "" {
 		return []string{}
 	}
 
