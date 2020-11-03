@@ -1,3 +1,7 @@
+## v2.5.1
+* Removed blue-green strategy experimental status
+* Calls to shared domains are now retried in case of failure
+
 ## v2.5.0
 * Added --namespace flag (experimental) to 'deploy'/'undeploy' and related commands
 
