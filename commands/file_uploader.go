@@ -184,19 +184,17 @@ func (f *FileUploader) uploadFilePart(filePart *os.File, baseFileName string) (*
 }
 
 func (f *FileUploader) isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []*models.FileMetadata, alreadyUploadedFiles *[]*models.FileMetadata) bool {
-	newFileDigests := make(map[string]string)
 	for _, oldFile := range oldFiles {
 		if oldFile.Name != fileInfo.Name() || oldFile.Namespace != f.namespace {
 			continue
 		}
-		if newFileDigests[oldFile.DigestAlgorithm] == "" {
-			digest, err := util.ComputeFileChecksum(newFilePath, oldFile.DigestAlgorithm)
-			if err != nil {
-				ui.Failed("Could not compute digest of file %s: %s", terminal.EntityNameColor(newFilePath), baseclient.NewClientError(err))
-			}
-			newFileDigests[oldFile.DigestAlgorithm] = strings.ToUpper(digest)
+		digest, err := util.ComputeFileChecksum(newFilePath, oldFile.DigestAlgorithm)
+		if err != nil {
+			ui.Failed("Could not compute digest of file %s: %s", terminal.EntityNameColor(newFilePath), baseclient.NewClientError(err))
+			return false
 		}
-		if newFileDigests[oldFile.DigestAlgorithm] == oldFile.Digest {
+
+		if strings.ToUpper(digest) == oldFile.Digest {
 			*alreadyUploadedFiles = append(*alreadyUploadedFiles, oldFile)
 			ui.Say("Previously uploaded file %s with same digest detected, new upload will be skipped.",
 				terminal.EntityNameColor(fileInfo.Name()))
