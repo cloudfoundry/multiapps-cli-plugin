@@ -609,7 +609,7 @@ func (fake *FakeMtaClientOperations) StartMtaOperationReturnsOnCall(i int, resul
 	}{result1, result2}
 }
 
-func (fake FakeMtaClientOperations) UploadMtaFile(file os.File, namespace *string) (*models.FileMetadata, error) {
+func (fake FakeMtaClientOperations) UploadMtaFile(file os.File, fileSize int64, namespace *string) (*models.FileMetadata, error) {
 	fake.uploadMtaFileMutex.Lock()
 	ret, specificReturn := fake.uploadMtaFileReturnsOnCall[len(fake.uploadMtaFileArgsForCall)]
 	fake.uploadMtaFileArgsForCall = append(fake.uploadMtaFileArgsForCall, struct {

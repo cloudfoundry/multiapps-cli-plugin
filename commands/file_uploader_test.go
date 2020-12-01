@@ -29,7 +29,7 @@ var _ = Describe("FileUploader", func() {
 		var oc = testutil.NewUIOutputCapturer()
 		var ex = testutil.NewUIExpector()
 
-		fakeSlmpClientBuilder := fakes.NewFakeMtaClientBuilder()
+		fakeMtaClientBuilder := fakes.NewFakeMtaClientBuilder()
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
@@ -42,7 +42,7 @@ var _ = Describe("FileUploader", func() {
 		var status commands.ExecutionStatus
 		Context("with non-existing service files and no files to upload", func() {
 			It("should return no uploaded files", func() {
-				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
+				client := fakeMtaClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
 
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader([]string{}, client, namespace, properties.DefaultUploadChunkSizeInMB)
@@ -55,7 +55,7 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with existing service files and no files to upload", func() {
 			It("should return no uploaded files", func() {
-				client := fakeSlmpClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
+				client := fakeMtaClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader([]string{}, client, namespace, properties.DefaultUploadChunkSizeInMB)
@@ -69,7 +69,7 @@ var _ = Describe("FileUploader", func() {
 		Context("with non-existing service files and one file to upload", func() {
 			It("should return the uploaded file", func() {
 				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest, namespace)}
-				client := fakeSlmpClientBuilder.
+				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
 					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, namespace), nil).Build()
 				var uploadedFiles []*models.FileMetadata
@@ -91,7 +91,7 @@ var _ = Describe("FileUploader", func() {
 		Context("with existing service files and one file to upload", func() {
 			It("should display a message that the file upload will be skipped", func() {
 				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest, "namespace")}
-				client := fakeSlmpClientBuilder.
+				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
 					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, "namespace"), nil).Build()
 				var uploadedFiles []*models.FileMetadata
@@ -109,7 +109,7 @@ var _ = Describe("FileUploader", func() {
 		Context("with non-existing service files and one file to upload and service versions returned from the backend", func() {
 			It("should return the uploaded file", func() {
 				fileMetadata := testutil.GetFile(*testFile, testFileDigest, namespace)
-				client := fakeSlmpClientBuilder.
+				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
 					UploadMtaFile(*testFile, fileMetadata, nil).Build()
 				var uploadedFiles []*models.FileMetadata
@@ -131,7 +131,7 @@ var _ = Describe("FileUploader", func() {
 		Context("with error returned from the backend", func() {
 			It("should return the uploaded file", func() {
 				// files := []*models.File{testutil.GetFile("xs2-deploy", *testFile, testFileDigest)}
-				client := fakeSlmpClientBuilder.
+				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
 					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
 				// var uploadedFiles []*models.FileMetadata
