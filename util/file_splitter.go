@@ -25,7 +25,6 @@ func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
 	}
 
 	file, err := os.Open(filePath)
-
 	if err != nil {
 		return nil, err
 	}
@@ -39,17 +38,19 @@ func SplitFile(filePath string, fileChunkSizeInMB uint64) ([]string, error) {
 
 	// calculate total number of parts the file will be chunked into
 	totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunkSize)))
-
-	baseFileName := filepath.Base(filePath)
-	var fileParts []string
 	if totalPartsNum <= 1 {
 		return []string{filePath}, nil
 	}
+
 	partsTempDir := filepath.Join(os.TempDir(), generateHash())
 	errCreatingTempDir := os.MkdirAll(partsTempDir, os.ModePerm)
 	if errCreatingTempDir != nil {
 		return nil, errCreatingTempDir
 	}
+
+	baseFileName := filepath.Base(filePath)
+	var fileParts []string
+
 	for i := uint64(0); i < totalPartsNum; i++ {
 		filePartName := baseFileName + ".part." + strconv.FormatUint(i, 10)
 		tempFile := filepath.Join(partsTempDir, filePartName)
@@ -104,7 +105,7 @@ func minUint64(a, b uint64) uint64 {
 }
 
 func toBytes(mb uint64) uint64 {
-	return uint64(mb) * 1024 * 1024
+	return mb * 1024 * 1024
 }
 
 func toMegabytes(bytes uint64) uint64 {
