@@ -8,6 +8,7 @@ package operations
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"golang.org/x/net/context"
@@ -64,6 +65,8 @@ type UploadMtaFileParams struct {
 
 	/*File*/
 	File os.File
+
+	FileSize int64
 
 	timeout    time.Duration
 	Context    context.Context
@@ -125,6 +128,15 @@ func (o *UploadMtaFileParams) SetFile(file os.File) {
 	o.File = file
 }
 
+func (o *UploadMtaFileParams) WithFileSize(fileSize int64) *UploadMtaFileParams {
+	o.SetFileSize(fileSize)
+	return o
+}
+
+func (o *UploadMtaFileParams) SetFileSize(fileSize int64) {
+	o.FileSize = fileSize
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *UploadMtaFileParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -151,6 +163,10 @@ func (o *UploadMtaFileParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 
 	// form file param file
 	if err := r.SetFileParam("file", &o.File); err != nil {
+		return err
+	}
+
+	if err := r.SetHeaderParam("X-File-Size", strconv.FormatInt(o.FileSize, 10)); err != nil {
 		return err
 	}
 

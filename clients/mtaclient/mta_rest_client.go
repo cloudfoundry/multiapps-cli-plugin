@@ -177,10 +177,11 @@ func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHe
 	return ResponseHeader{Location: resp.Location}, nil
 }
 
-func (c MtaRestClient) UploadMtaFile(file os.File, namespace *string) (*models.FileMetadata, error) {
+func (c MtaRestClient) UploadMtaFile(file os.File, fileSize int64, namespace *string) (*models.FileMetadata, error) {
 	params := &operations.UploadMtaFileParams{
 		Context:   context.TODO(),
 		File:      file,
+		FileSize:  fileSize,
 		Namespace: namespace,
 	}
 
