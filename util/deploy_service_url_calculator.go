@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	cfrestclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
@@ -11,6 +12,8 @@ import (
 const deployServiceHost = "deploy-service"
 const defaultDeployServiceHostHttpScheme = "https"
 const defaultDeployServiceEndpoint = "/public/ping"
+const defaultMaxRetriesCount = 3
+const defaultRetryInterval = time.Second * 2
 
 type DeployServiceURLCalculator interface {
 	ComputeDeployServiceURL() (string, error)
@@ -48,12 +51,26 @@ func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models
 		return "", fmt.Errorf("Could not compute the Deploy Service's URL as there are no shared domains on the landscape.")
 	}
 	possibleDeployServiceURLs := buildPossibleDeployServiceURLs(domains)
-	for _, possibleDeployServiceURL := range possibleDeployServiceURLs {
-		if c.isCorrectURL(possibleDeployServiceURL) {
-			return possibleDeployServiceURL, nil
-		}
+
+	stableDeployServiceURL := c.computeStableDeployServiceURL(possibleDeployServiceURLs)
+
+	if stableDeployServiceURL != "" {
+		return stableDeployServiceURL, nil
 	}
+	
 	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly.")
+}
+
+func (c deployServiceURLCalculatorImpl) computeStableDeployServiceURL(possibleDeployServiceURLs []string) (string) {
+	for index := 0; index < defaultMaxRetriesCount; index++ {
+		for _, possibleDeployServiceURL := range possibleDeployServiceURLs {
+			if c.isCorrectURL(possibleDeployServiceURL) {
+				return possibleDeployServiceURL
+			}
+		}
+		time.Sleep(defaultRetryInterval)
+	}
+	return ""
 }
 
 func buildPossibleDeployServiceURLs(domains []models.SharedDomain) []string {
