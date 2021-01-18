@@ -16,7 +16,7 @@ type RetryableMtaRestClient struct {
 
 func NewRetryableMtaRestClient(host string, spaceGUID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RetryableMtaRestClient {
 	mtaClient := NewMtaClient(host, spaceGUID, rt, jar, tokenFactory)
-	return RetryableMtaRestClient{mtaClient: mtaClient, MaxRetriesCount: 3, RetryInterval: time.Second * 3}
+	return RetryableMtaRestClient{mtaClient: mtaClient, MaxRetriesCount: 18, RetryInterval: time.Second * 10}
 }
 
 func (c RetryableMtaRestClient) GetMtas(name, namespace *string, spaceGuid string) ([]*models.Mta, error) {

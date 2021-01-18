@@ -352,7 +352,7 @@ func newTransport() http.RoundTripper {
 	// Increase tls handshake timeout to cope with  of slow internet connection. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
 	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	return csrf.Transport{Transport: httpTransport, Csrf: &csrfx, Cookies: &csrf.Cookies{[]*http.Cookie{}}}
+	return csrf.Transport{OriginalTransport: httpTransport, Csrf: &csrfx, Cookies: &csrf.Cookies{[]*http.Cookie{}}}
 }
 
 func getNonProtectedMethods() map[string]bool {

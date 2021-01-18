@@ -6,10 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 )
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
@@ -34,7 +33,7 @@ func NewCustomTransport(statusCode int, v interface{}) *csrf.Transport {
 		resp.Body = ioutil.NopCloser(buf)
 		return &resp, nil
 	})
-	return &csrf.Transport{Transport: transport, Csrf: &csrfx}
+	return &csrf.Transport{OriginalTransport: transport, Csrf: &csrfx}
 }
 
 // NewCustomBearerToken creates a new bearer token to be used for testing

@@ -1,10 +1,12 @@
 package csrf
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_paramters"
-	"github.com/cloudfoundry/cli/plugin"
 	"net/http"
 	"os"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry/cli/plugin"
 )
 
 const CsrfTokenHeaderFetchValue = "Fetch"
@@ -12,7 +14,7 @@ const CsrfTokensApi = "/api/v1/csrf-token"
 const ContentTypeHeader = "Content-Type"
 const AuthorizationHeader = "Authorization"
 const ApplicationJsonContentType = "application/json"
-const CookieHeader = "CookieHeader"
+const CookieHeader = "Cookie"
 
 type DefaultCsrfTokenFetcher struct {
 	transport *Transport
@@ -22,7 +24,8 @@ func NewDefaultCsrfTokenFetcher(transport *Transport) *DefaultCsrfTokenFetcher {
 	return &DefaultCsrfTokenFetcher{transport: transport}
 }
 
-func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url string, currentRequest *http.Request) (*csrf_paramters.CsrfRequestHeader, error) {
+func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url string, currentRequest *http.Request) (*csrf_parameters.CsrfRequestHeader, error) {
+
 	fetchTokenRequest, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -38,35 +41,21 @@ func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url string, currentRequest *htt
 	fetchTokenRequest.Header.Set(AuthorizationHeader, token)
 	UpdateCookiesIfNeeded(currentRequest.Cookies(), fetchTokenRequest)
 
-	response, err := c.transport.Transport.RoundTrip(fetchTokenRequest)
+	response, err := c.transport.OriginalTransport.RoundTrip(fetchTokenRequest)
 	if err != nil {
 		return nil, err
 	}
+	// if there are set-cookie headers present in response - persist them in Transport
 	if len(response.Cookies()) != 0 {
-		fetchTokenRequest.Header.Del(CookieHeader)
-		UpdateCookiesIfNeeded(response.Cookies(), fetchTokenRequest)
+		log.Tracef("Set-Cookie headers present in response, updating current with '" + prettyPrintCookies(response.Cookies()) + "'\n")
 
-		c.transport.Cookies.Cookies = fetchTokenRequest.Cookies()
-
-		response, err = c.transport.Transport.RoundTrip(fetchTokenRequest)
-
-		if err != nil {
-			return nil, err
-		}
+		c.transport.Cookies.Cookies = response.Cookies()
 	}
 
-	return &csrf_paramters.CsrfRequestHeader{response.Header.Get(XCsrfHeader), response.Header.Get(XCsrfToken)}, nil
+	log.Tracef("New CSRF Token fetched '" + response.Header.Get(XCsrfToken) + "'\n")
+	return &csrf_parameters.CsrfRequestHeader{response.Header.Get(XCsrfHeader), response.Header.Get(XCsrfToken)}, nil
 }
 
 func getCsrfTokenUrl(req *http.Request) string {
 	return string(req.URL.Scheme) + "://" + string(req.URL.Host) + CsrfTokensApi
-}
-
-func UpdateCookiesIfNeeded(cookies []*http.Cookie, request *http.Request) {
-	if cookies != nil {
-		request.Header.Del(CookieHeader)
-		for _, cookie := range cookies {
-			request.AddCookie(cookie)
-		}
-	}
 }
