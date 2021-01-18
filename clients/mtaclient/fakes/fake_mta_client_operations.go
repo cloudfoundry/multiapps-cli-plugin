@@ -139,6 +139,19 @@ type FakeMtaClientOperations struct {
 		result1 *models.FileMetadata
 		result2 error
 	}
+	UploadMtaArchiveFromUrlStub        func(url string) (*models.FileMetadata, error)
+	uploadMtaArchiveFromUrlMutex       sync.RWMutex
+	uploadMtaArchiveFromUrlArgsForCall []struct {
+		url string
+	}
+	uploadMtaArchiveFromUrlReturns struct {
+		result1 *models.FileMetadata
+		result2 error
+	}
+	uploadMtaArchiveFromUrlReturnsOnCall map[int]struct {
+		result1 *models.FileMetadata
+		result2 error
+	}
 	GetMtaOperationLogContentStub        func(operationID, logID string) (string, error)
 	getMtaOperationLogContentMutex       sync.RWMutex
 	getMtaOperationLogContentArgsForCall []struct {
@@ -660,6 +673,57 @@ func (fake *FakeMtaClientOperations) UploadMtaFileReturnsOnCall(i int, result1 *
 	}{result1, result2}
 }
 
+func (fake FakeMtaClientOperations) UploadMtaArchiveFromUrl(fileUrl string, namespace *string) (*models.FileMetadata, error) {
+	fake.uploadMtaArchiveFromUrlMutex.Lock()
+	ret, specificReturn := fake.uploadMtaArchiveFromUrlReturnsOnCall[len(fake.uploadMtaArchiveFromUrlArgsForCall)]
+	fake.uploadMtaArchiveFromUrlArgsForCall = append(fake.uploadMtaArchiveFromUrlArgsForCall, struct {
+		url string
+	}{fileUrl})
+	fake.recordInvocation("UploadMtaArchiveFromUrl", []interface{}{fileUrl})
+	fake.uploadMtaArchiveFromUrlMutex.Unlock()
+	if fake.UploadMtaFileStub != nil {
+		return fake.UploadMtaArchiveFromUrlStub(fileUrl)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.uploadMtaArchiveFromUrlReturns.result1, fake.uploadMtaArchiveFromUrlReturns.result2
+}
+
+func (fake *FakeMtaClientOperations) UploadMtaArchiveFromUrlCallCount() int {
+	fake.uploadMtaArchiveFromUrlMutex.RLock()
+	defer fake.uploadMtaArchiveFromUrlMutex.RUnlock()
+	return len(fake.uploadMtaArchiveFromUrlArgsForCall)
+}
+
+func (fake *FakeMtaClientOperations) UploadMtaArchiveFromUrlArgsForCall(i int) string {
+	fake.uploadMtaArchiveFromUrlMutex.RLock()
+	defer fake.uploadMtaArchiveFromUrlMutex.RUnlock()
+	return fake.uploadMtaArchiveFromUrlArgsForCall[i].url
+}
+
+func (fake *FakeMtaClientOperations) UploadMtaArchiveFromUrlReturns(result1 *models.FileMetadata, result2 error) {
+	fake.UploadMtaArchiveFromUrlStub = nil
+	fake.uploadMtaArchiveFromUrlReturns = struct {
+		result1 *models.FileMetadata
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeMtaClientOperations) UploadMtaArchiveFromUrlReturnsOnCall(i int, result1 *models.FileMetadata, result2 error) {
+	fake.UploadMtaArchiveFromUrlStub = nil
+	if fake.uploadMtaArchiveFromUrlReturnsOnCall == nil {
+		fake.uploadMtaArchiveFromUrlReturnsOnCall = make(map[int]struct {
+			result1 *models.FileMetadata
+			result2 error
+		})
+	}
+	fake.uploadMtaArchiveFromUrlReturnsOnCall[i] = struct {
+		result1 *models.FileMetadata
+		result2 error
+	}{result1, result2}
+}
+
 func (fake FakeMtaClientOperations) GetMtaOperationLogContent(operationID string, logID string) (string, error) {
 	fake.getMtaOperationLogContentMutex.Lock()
 	ret, specificReturn := fake.getMtaOperationLogContentReturnsOnCall[len(fake.getMtaOperationLogContentArgsForCall)]
@@ -735,6 +799,8 @@ func (fake *FakeMtaClientOperations) Invocations() map[string][][]interface{} {
 	defer fake.startMtaOperationMutex.RUnlock()
 	fake.uploadMtaFileMutex.RLock()
 	defer fake.uploadMtaFileMutex.RUnlock()
+	fake.uploadMtaArchiveFromUrlMutex.RLock()
+	defer fake.uploadMtaArchiveFromUrlMutex.RUnlock()
 	fake.getMtaOperationLogContentMutex.RLock()
 	defer fake.getMtaOperationLogContentMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

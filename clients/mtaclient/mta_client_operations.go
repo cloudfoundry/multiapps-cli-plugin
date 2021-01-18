@@ -3,8 +3,8 @@ package mtaclient
 import (
 	"os"
 
-	models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/go-openapi/strfmt"
 )
 
 // MtaClientOperations drun drun drun
@@ -19,6 +19,7 @@ type MtaClientOperations interface {
 	GetOperationActions(operationID string) ([]string, error)
 	StartMtaOperation(operation models.Operation) (ResponseHeader, error)
 	UploadMtaFile(file os.File, fileSize int64, namespace *string) (*models.FileMetadata, error)
+	UploadMtaArchiveFromUrl(fileUrl string, namespace *string) (*models.FileMetadata, error)
 	GetMtaOperationLogContent(operationID, logID string) (string, error)
 }
 
