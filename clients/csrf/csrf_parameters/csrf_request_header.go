@@ -1,4 +1,4 @@
-package csrf_paramters
+package csrf_parameters
 
 type CsrfRequestHeader struct {
 	CsrfTokenHeader string
