@@ -136,6 +136,8 @@ var _ = Describe("DeployCommand", func() {
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
 		})
 
+		//TODO add test for "cf deploy <url>"
+
 		// unknown flag - error
 		Context("with argument that is not a directory or MTA", func() {
 			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {

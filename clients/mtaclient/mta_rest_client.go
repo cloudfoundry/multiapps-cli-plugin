@@ -27,12 +27,6 @@ func NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar
 	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
 }
 
-func NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaClientOperations {
-	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
-	httpMtaClient := New(t, strfmt.Default)
-	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
-}
-
 func (c MtaRestClient) ExecuteAction(operationID, actionID string) (ResponseHeader, error) {
 	params := &operations.ExecuteOperationActionParams{
 		OperationID: operationID,
@@ -193,6 +187,23 @@ func (c MtaRestClient) UploadMtaFile(file os.File, fileSize int64, namespace *st
 		return nil, baseclient.NewClientError(err)
 	}
 	return result.(*operations.UploadMtaFileCreated).Payload, nil
+}
+
+func (c MtaRestClient) UploadMtaArchiveFromUrl(fileUrl string, namespace *string) (*models.FileMetadata, error) {
+	params := &operations.UploadMtaArchiveFromUrlParams{
+		Context:   context.TODO(),
+		FileUrl:   fileUrl,
+		Namespace: namespace,
+	}
+
+	result, err := executeRestOperation(c.TokenFactory, func(token runtime.ClientAuthInfoWriter) (interface{}, error) {
+		return c.client.Operations.UploadMtaArchiveFromUrl(params, token)
+	})
+
+	if err != nil {
+		return nil, baseclient.NewClientError(err)
+	}
+	return result.(*operations.UploadMtaArchiveFromUrlCreated).Payload, nil
 }
 
 func (c MtaRestClient) GetMtaOperationLogContent(operationID, logID string) (string, error) {

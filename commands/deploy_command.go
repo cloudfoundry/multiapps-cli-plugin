@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -82,7 +84,10 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]
 
    Perform action on an active deploy operation
-   cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
+   cf deploy -i OPERATION_ID -a ACTION [-u URL]
+
+   (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
+   cf deploy <MTA archive URL> [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                      "Extension descriptors",
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
@@ -221,22 +226,78 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
 	mtaElementsCalculator.calculateElementsToDeploy(optionValues)
 
-	mtaArchive, err := getMtaArchive(parser.Args(), mtaElementsCalculator)
+	rawMtaArchive, err := getMtaArchive(parser.Args(), mtaElementsCalculator)
 	if err != nil {
 		ui.Failed("Error retrieving MTA: %s", err.Error())
 		return Failure
 	}
 
+	isUrl, mtaArchive := parseMtaArchiveArgument(rawMtaArchive)
+
+	mtaNameToPrint := terminal.EntityNameColor(mtaArchive)
+	if isUrl {
+		mtaNameToPrint = "from url"
+	}
+
 	// Print initial message
 	ui.Say("Deploying multi-target app archive %s in org %s / space %s as %s...\n",
-		terminal.EntityNameColor(mtaArchive), terminal.EntityNameColor(context.Org),
-		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
+		mtaNameToPrint, terminal.EntityNameColor(context.Org), terminal.EntityNameColor(context.Space),
+		terminal.EntityNameColor(context.Username))
 
-	// Get the full path of the MTA archive
-	mtaArchivePath, err := filepath.Abs(mtaArchive)
+	var uploadedArchivePartIds []string
+	var mtaId string
+
+	// Check SLMP metadata
+	// TODO: ensure session
+	mtaClient, err := c.NewMtaClient(host)
 	if err != nil {
-		ui.Failed("Could not get absolute path of file '%s'", mtaArchive)
+		ui.Failed("Could not get space guid:", baseclient.NewClientError(err))
 		return Failure
+	}
+
+	if isUrl {
+		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(mtaArchive, &namespace)
+		if err != nil {
+			ui.Failed("Could not upload from url: ", baseclient.NewClientError(err))
+			return Failure
+		}
+		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedArchive.ID)
+		ui.Ok()
+	} else {
+		// Get the full path of the MTA archive
+		mtaArchivePath, err := filepath.Abs(mtaArchive)
+		if err != nil {
+			ui.Failed("Could not get absolute path of file '%s'", mtaArchive)
+			return Failure
+		}
+
+		// Extract mta id from archive file
+		descriptor, err := util.GetMtaDescriptorFromArchive(mtaArchivePath)
+		if os.IsNotExist(err) {
+			ui.Failed("Could not find file %s", terminal.EntityNameColor(mtaArchivePath))
+			return Failure
+		} else if err != nil {
+			ui.Failed("Could not get MTA ID from deployment descriptor: %s", err)
+			return Failure
+		}
+		mtaId = descriptor.ID
+
+		// Check for an ongoing operation for this MTA ID and abort it
+		wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, host, force)
+		if err != nil {
+			ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
+			return Failure
+		}
+		if !wasAborted {
+			return Failure
+		}
+
+		// Upload the MTA archive file
+		uploadedMtaArchivePartIds, status := c.uploadFiles([]string{mtaArchivePath}, namespace, mtaClient)
+		if status == Failure {
+			return Failure
+		}
+		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedMtaArchivePartIds...)
 	}
 
 	// Get the full paths of the extension descriptors
@@ -253,56 +314,14 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		}
 	}
 
-	// Extract mta id from archive file
-	descriptor, err := util.GetMtaDescriptorFromArchive(mtaArchivePath)
-	if os.IsNotExist(err) {
-		ui.Failed("Could not find file %s", terminal.EntityNameColor(mtaArchivePath))
-		return Failure
-	} else if err != nil {
-		ui.Failed("Could not get MTA ID from deployment descriptor: %s", err)
-		return Failure
-	}
-
-	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, host, force)
-	if err != nil {
-		ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-	if !wasAborted {
-		return Failure
-	}
-	// Check SLMP metadata
-	// TODO: ensure session
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed("Could not get space guid:", baseclient.NewClientError(err))
-		return Failure
-	}
-
-	uploadChunkSizeInMB := c.configurationSnapshot.GetUploadChunkSizeInMB()
-	// Upload the MTA archive file
-	mtaArchiveUploader := NewFileUploader([]string{mtaArchivePath}, mtaClient, namespace, uploadChunkSizeInMB)
-	uploadedMtaArchives, status := mtaArchiveUploader.UploadFiles()
-	if status == Failure {
-		return Failure
-	}
-	var uploadedArchivePartIds []string
-	for _, uploadedMtaArchivePart := range uploadedMtaArchives {
-		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedMtaArchivePart.ID)
-	}
-
 	// Upload the extension descriptor files
 	var uploadedExtDescriptorIDs []string
 	if len(extDescriptorPaths) != 0 {
-		extDescriptorsUploader := NewFileUploader(extDescriptorPaths, mtaClient, namespace, uploadChunkSizeInMB)
-		uploadedExtDescriptors, status := extDescriptorsUploader.UploadFiles()
+		uploadedExtDescriptorIds, status := c.uploadFiles(extDescriptorPaths, namespace, mtaClient)
 		if status == Failure {
 			return Failure
 		}
-		for _, uploadedExtDescriptor := range uploadedExtDescriptors {
-			uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, uploadedExtDescriptor.ID)
-		}
+		uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, uploadedExtDescriptorIds...)
 	}
 
 	// Build the process instance
@@ -310,7 +329,9 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder.Namespace(namespace)
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
-	processBuilder.Parameter("mtaId", descriptor.ID)
+	if !isUrl {
+		processBuilder.Parameter("mtaId", mtaId)
+	}
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.processParametersSetter(optionValues, processBuilder)
 
@@ -325,6 +346,31 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	executionMonitor := NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient)
 	ui.Say("Operation ID: %s", terminal.EntityNameColor(executionMonitor.operationID))
 	return executionMonitor.Monitor()
+}
+
+func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
+	switch castedMtaArchive := rawMtaArchive.(type) {
+	case *url.URL:
+		return true, castedMtaArchive.String()
+	case string:
+		return false, castedMtaArchive
+	}
+	return false, ""
+}
+
+func (c *DeployCommand) uploadFiles(files []string, namespace string, mtaClient mtaclient.MtaClientOperations) ([]string, ExecutionStatus) {
+	uploadChunkSizeInMB := c.configurationSnapshot.GetUploadChunkSizeInMB()
+	var resultIds []string
+
+	fileUploader := NewFileUploader(files, mtaClient, namespace, uploadChunkSizeInMB)
+	uploadedFiles, status := fileUploader.UploadFiles()
+	if status == Failure {
+		return nil, Failure
+	}
+	for _, uploadedFilePart := range uploadedFiles {
+		resultIds = append(resultIds, uploadedFilePart.ID)
+	}
+	return resultIds, Success
 }
 
 func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, processBuilder *util.ProcessBuilder, mtaElementsCalculator mtaElementsToAddCalculator) {
@@ -347,7 +393,7 @@ func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, p
 	processBuilder.SetParameterWithoutCheck("modulesForDeployment", modulesList.getProcessList())
 }
 
-func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsToAddCalculator) (string, error) {
+func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsToAddCalculator) (interface{}, error) {
 	if len(parsedArguments) == 0 {
 		currentWorkingDirectory, err := os.Getwd()
 		if err != nil {
@@ -357,6 +403,12 @@ func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsTo
 	}
 
 	mtaArgument := parsedArguments[0]
+
+	_, err := util.SimpleGetExecutor{}.ExecuteGetRequest(mtaArgument)
+	if err == nil {
+		return url.Parse(mtaArgument)
+	}
+
 	fileInfo, err := os.Stat(mtaArgument)
 	if err != nil && os.IsNotExist(err) {
 		return "", fmt.Errorf("Could not find MTA %s", mtaArgument)
