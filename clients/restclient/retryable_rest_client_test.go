@@ -18,7 +18,7 @@ var _ = Describe("RetryableRestClient", func() {
 	Describe("PurgeConfiguration", func() {
 		Context("when the backend returns not 204 No Content", func() {
 			It("should return an error", func() {
-				client := newRetryableRestClient(http.StatusInternalServerError, nil)
+				client := newRetryableRestClient(http.StatusInternalServerError)
 				err := client.PurgeConfiguration("org", "space")
 				Expect(err).To(HaveOccurred())
 			})
@@ -26,14 +26,14 @@ var _ = Describe("RetryableRestClient", func() {
 
 		Context("when the backend returns 204 No Content", func() {
 			It("should not return an error", func() {
-				client := newRetryableRestClient(http.StatusNoContent, nil)
+				client := newRetryableRestClient(http.StatusNoContent)
 				err := client.PurgeConfiguration("org", "space")
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 		Context("with an 500 server error returned by the backend", func() {
 			It("should return the error, zero result and retry expectedRetriesCount times", func() {
-				client := newRetryableRestClient(500, nil)
+				client := newRetryableRestClient(500)
 				retryableRestClient := client.(restclient.RetryableRestClient)
 				err := retryableRestClient.PurgeConfiguration("org", "space")
 				testutil.ExpectError(err)
@@ -43,7 +43,7 @@ var _ = Describe("RetryableRestClient", func() {
 		})
 		Context("with an 502 server error returned by the backend", func() {
 			It("should return the error, zero result and retry expectedRetriesCount times", func() {
-				client := newRetryableRestClient(502, nil)
+				client := newRetryableRestClient(502)
 				retryableRestClient := client.(restclient.RetryableRestClient)
 				err := retryableRestClient.PurgeConfiguration("org", "space")
 				testutil.ExpectError(err)
@@ -54,10 +54,10 @@ var _ = Describe("RetryableRestClient", func() {
 	})
 })
 
-func newRetryableRestClient(statusCode int, v interface{}) restclient.RestClientOperations {
+func newRetryableRestClient(statusCode int) restclient.RestClientOperations {
 	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
 	cookieJar, _ := cookiejar.New(nil)
-	roundTripper := testutil.NewCustomTransport(statusCode, v)
+	roundTripper := testutil.NewCustomTransport(statusCode)
 	return NewMockRetryableRestClient("http://localhost:1000", roundTripper, cookieJar, tokenFactory)
 }
 

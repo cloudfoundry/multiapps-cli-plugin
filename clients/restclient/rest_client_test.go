@@ -16,7 +16,7 @@ var _ = Describe("RestClient", func() {
 	Describe("PurgeConfiguration", func() {
 		Context("when the backend returns not 204 No Content", func() {
 			It("should return an error", func() {
-				client := newRestClient(http.StatusInternalServerError, nil)
+				client := newRestClient(http.StatusInternalServerError)
 				err := client.PurgeConfiguration("org", "space")
 				Ω(err).Should(HaveOccurred())
 			})
@@ -24,7 +24,7 @@ var _ = Describe("RestClient", func() {
 
 		Context("when the backend returns 204 No Content", func() {
 			It("should not return an error", func() {
-				client := newRestClient(http.StatusNoContent, nil)
+				client := newRestClient(http.StatusNoContent)
 				err := client.PurgeConfiguration("org", "space")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -32,9 +32,9 @@ var _ = Describe("RestClient", func() {
 	})
 })
 
-func newRestClient(statusCode int, v interface{}) restclient.RestClientOperations {
+func newRestClient(statusCode int) restclient.RestClientOperations {
 	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
 	cookieJar, _ := cookiejar.New(nil)
-	roundTripper := testutil.NewCustomTransport(statusCode, v)
+	roundTripper := testutil.NewCustomTransport(statusCode)
 	return restclient.NewRestClient("http://localhost:1000", roundTripper, cookieJar, tokenFactory)
 }
