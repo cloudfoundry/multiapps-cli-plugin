@@ -133,7 +133,7 @@ var _ = Describe("DeployCommand", func() {
 			command = commands.NewDeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
 		})
 
 		//TODO add test for "cf deploy <url>"

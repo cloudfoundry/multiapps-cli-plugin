@@ -131,7 +131,7 @@ var _ = Describe("BaseCommand", func() {
 				Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
-			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK, nil), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
 		})
 		Context("with valid ongoing operations", func() {
 			It("should abort and exit with zero status", func() {
@@ -209,7 +209,7 @@ var _ = Describe("BaseCommand", func() {
 				ExecuteAction("test-process-id", "abort", mtaclient.ResponseHeader{}, nil).
 				ExecuteAction("test-process-id", "retry", mtaclient.ResponseHeader{Location: "operations/test-process-id?embed=messages"}, nil).Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200, nil), nil, testClientfactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200), nil, testClientfactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
 		})
 		Context("with valid process id and valid action id", func() {
 			It("should abort and exit with zero status", func() {

@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"bytes"
-	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 
@@ -19,18 +18,13 @@ func (fn roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 // NewCustomTransport creates a new custom transport to be used for testing
-func NewCustomTransport(statusCode int, v interface{}) *csrf.Transport {
+func NewCustomTransport(statusCode int) *csrf.Transport {
 	csrfx := csrf.Csrf{Header: "", Token: ""}
 	transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		var resp http.Response
 		resp.StatusCode = statusCode
 		resp.Header = make(http.Header)
 		buf := bytes.NewBuffer(nil)
-		if v != nil {
-			resp.Header.Set("content-type", "application/xml")
-			enc := xml.NewEncoder(buf)
-			enc.Encode(v)
-		}
 		resp.Body = ioutil.NopCloser(buf)
 		return &resp, nil
 	})
