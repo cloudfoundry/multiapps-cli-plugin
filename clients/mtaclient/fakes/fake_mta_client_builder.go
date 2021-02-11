@@ -55,8 +55,8 @@ func (fb *FakeMtaClientBuilder) UploadMtaFile(file os.File, result *models.FileM
 	fb.FakeMtaClient.UploadMtaFileReturns(result, resultError)
 	return fb
 }
-func (fb *FakeMtaClientBuilder) UploadMtaArchiveFromUrl(url string, result *models.FileMetadata, resultError error) *FakeMtaClientBuilder {
-	fb.FakeMtaClient.UploadMtaArchiveFromUrlReturns(result, resultError)
+func (fb *FakeMtaClientBuilder) UploadMtaArchiveFromUrl(fileUrl string, result *models.FileMetadata, resultError error) *FakeMtaClientBuilder {
+	fb.FakeMtaClient.UploadMtaArchiveFromUrlReturnsOnCall(fileUrl, result, resultError)
 	return fb
 }
 func (fb *FakeMtaClientBuilder) GetMtaOperationLogContent(operationID, logID string, result string, resultError error) *FakeMtaClientBuilder {
