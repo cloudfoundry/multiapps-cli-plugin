@@ -45,6 +45,8 @@ var _ = Describe("DeployCommand", func() {
 
 		var fullMtaArchivePath, _ = filepath.Abs(mtaArchivePath)
 		var fullExtDescriptorPath, _ = filepath.Abs(extDescriptorPath)
+		var correctMtaUrl = "http://host/path/anatz.mtar?query=true"
+		var incorrectMtaUrl = "http://alabala.com"
 
 		var getLinesForAbortingProcess = func() []string {
 			return []string{
@@ -53,20 +55,28 @@ var _ = Describe("DeployCommand", func() {
 			}
 		}
 
-		var getOutputLines = func(extDescriptor, processAborted bool) []string {
-			lines := []string{}
+		var getOutputLines = func(extDescriptor, processAborted, fromUrl bool) []string {
+			var lines []string
+			mtaNameToPrint := mtaArchivePath
+			if fromUrl {
+				mtaNameToPrint = "from url"
+			}
 			lines = append(lines,
-				"Deploying multi-target app archive "+mtaArchivePath+" in org "+org+" / space "+space+" as "+user+"...\n\n")
+				"Deploying multi-target app archive "+mtaNameToPrint+" in org "+org+" / space "+space+" as "+user+"...\n\n")
 			if processAborted {
 				lines = append(lines,
 					"Executing action 'abort' on operation test-process-id...\n",
 					"OK\n",
 				)
 			}
-			lines = append(lines,
-				"Uploading 1 files...\n",
-				"  "+fullMtaArchivePath+"\n",
-				"OK\n")
+			if fromUrl {
+				lines = append(lines, "OK\n")
+			} else {
+				lines = append(lines,
+					"Uploading 1 files...\n",
+					"  "+fullMtaArchivePath+"\n",
+					"OK\n")
+			}
 			if extDescriptor {
 				lines = append(lines,
 					"Uploading 1 files...\n",
@@ -125,6 +135,8 @@ var _ = Describe("DeployCommand", func() {
 				GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
 				UploadMtaFile(*mtaArchiveFile, mtaArchive, nil).
 				UploadMtaFile(*extDescriptorFile, extDescriptor, nil).
+				UploadMtaArchiveFromUrl(correctMtaUrl, mtaArchive, nil).
+				UploadMtaArchiveFromUrl(incorrectMtaUrl, nil, fmt.Errorf("connection refused")).
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
@@ -135,8 +147,6 @@ var _ = Describe("DeployCommand", func() {
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
 		})
-
-		//TODO add test for "cf deploy <url>"
 
 		// unknown flag - error
 		Context("with argument that is not a directory or MTA", func() {
@@ -156,6 +166,24 @@ var _ = Describe("DeployCommand", func() {
 				})
 				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		Context("with a correct URL argument", func() {
+			It("should upload the MTAR from the correct URL and initiate a deploy", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{correctMtaUrl}).ToInt()
+				})
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true))
+			})
+		})
+
+		Context("with an incorrect URL argument", func() {
+			It("should fail with the error returned from the server", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{incorrectMtaUrl}).ToInt()
+				})
+				ex.ExpectFailureOnLine(status, output, "Could not upload from url: connection refused", 1)
 			})
 		})
 
@@ -214,7 +242,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
@@ -226,7 +254,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "-e", extDescriptorPath}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(true, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(true, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
@@ -238,7 +266,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "-f", "-delete-services", "-no-start", "-keep-files", "-do-not-fail-on-missing-permissions"}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(true), operation.Parameters)
 			})
@@ -278,7 +306,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -258,7 +259,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	if isUrl {
 		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(mtaArchive, &namespace)
 		if err != nil {
-			ui.Failed("Could not upload from url: ", baseclient.NewClientError(err))
+			ui.Failed("Could not upload from url: %s", baseclient.NewClientError(err))
 			return Failure
 		}
 		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedArchive.ID)
@@ -404,8 +405,7 @@ func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsTo
 
 	mtaArgument := parsedArguments[0]
 
-	_, err := util.SimpleGetExecutor{}.ExecuteGetRequest(mtaArgument)
-	if err == nil {
+	if matched, _ := regexp.MatchString("^http[s]?://.+", mtaArgument); matched {
 		return url.Parse(mtaArgument)
 	}
 
