@@ -1,3 +1,8 @@
+## v2.6.0
+* Added functionality for MTAR deployment from URL
+* Custom header for the size of the MTA file is added in the request to the deploy-service
+* Calls to find deploy-service URL are retried
+
 ## v2.5.1
 * Removed blue-green strategy experimental status
 * Calls to shared domains are now retried in case of failure
