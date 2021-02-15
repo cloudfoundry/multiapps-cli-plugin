@@ -41,28 +41,23 @@ func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	ui.Say("Purging configuration entries in org %s / space %s as %s",
-		terminal.EntityNameColor(context.Org),
-		terminal.EntityNameColor(context.Space),
-		terminal.EntityNameColor(context.Username))
+		terminal.EntityNameColor(cfTarget.Org.Name), terminal.EntityNameColor(cfTarget.Space.Name),
+		terminal.EntityNameColor(cfTarget.Username))
 
 	rc := c.NewRestClient(host)
 	// TODO: ensure session
 
-	if err := rc.PurgeConfiguration(context.Org, context.Space); err != nil {
-		c.reportError(baseclient.NewClientError(err))
+	if err := rc.PurgeConfiguration(cfTarget.Org.Name, cfTarget.Space.Name); err != nil {
+		ui.Failed("Could not purge configuration: %v\n", baseclient.NewClientError(err))
 		return Failure
 	}
 	ui.Ok()
 	return Success
-}
-
-func (c *PurgeConfigCommand) reportError(err error) {
-	ui.Failed("Could not purge configuration: %v\n", err)
 }

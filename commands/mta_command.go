@@ -60,7 +60,7 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 	}
 	mtaID := args[0]
 
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed("Could not get org and space: %s", baseclient.NewClientError(err))
 		return Failure
@@ -68,15 +68,11 @@ func (c *MtaCommand) Execute(args []string) ExecutionStatus {
 
 	// Print initial message
 	ui.Say("Showing health and status for multi-target app %s in org %s / space %s as %s...",
-		terminal.EntityNameColor(mtaID), terminal.EntityNameColor(context.Org),
-		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
+		terminal.EntityNameColor(mtaID), terminal.EntityNameColor(cfTarget.Org.Name),
+		terminal.EntityNameColor(cfTarget.Space.Name), terminal.EntityNameColor(cfTarget.Username))
 
 	// Create new REST client
-	mtaV2Client, err := c.NewMtaV2Client(host)
-	if err != nil {
-		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
-		return Failure
-	}
+	mtaV2Client := c.NewMtaV2Client(host, cfTarget)
 
 	// Get the MTA
 	mtas, err := mtaV2Client.GetMtasForThisSpace(&mtaID, &namespace)

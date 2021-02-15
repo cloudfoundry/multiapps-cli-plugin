@@ -47,7 +47,7 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
@@ -55,14 +55,11 @@ func (c *MtasCommand) Execute(args []string) ExecutionStatus {
 
 	// Print initial message
 	ui.Say("Getting multi-target apps in org %s / space %s as %s...",
-		terminal.EntityNameColor(context.Org), terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
+		terminal.EntityNameColor(cfTarget.Org.Name), terminal.EntityNameColor(cfTarget.Space.Name),
+		terminal.EntityNameColor(cfTarget.Username))
 
 	// Create new REST client
-	mtaV2Client, err := c.NewMtaV2Client(host)
-	if err != nil {
-		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
-		return Failure
-	}
+	mtaV2Client := c.NewMtaV2Client(host, cfTarget)
 
 	// Get all deployed components
 	mtas, err := mtaV2Client.GetMtasForThisSpace(nil, nil)

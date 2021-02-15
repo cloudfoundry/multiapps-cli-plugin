@@ -74,18 +74,14 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 		return Failure
 	}
 
-	// Create new SLMP client
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
+
+	// Create new SLMP client
+	mtaClient := c.NewMtaClient(host, cfTarget)
 
 	var operationIds []string
 
@@ -104,7 +100,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 
 	for _, opId := range operationIds {
 		downloadPath := filepath.Join(downloadDirName, defaultDownloadDirPrefix+opId)
-		err = downloadLogsForProcess(opId, downloadPath, mtaClient, context)
+		err = downloadLogsForProcess(opId, downloadPath, mtaClient, cfTarget)
 		if err != nil {
 			ui.Failed(err.Error())
 			return Failure
@@ -113,11 +109,11 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 	return Success
 }
 
-func downloadLogsForProcess(operationId string, downloadPath string, mtaClient mtaclient.MtaClientOperations, context Context) error {
+func downloadLogsForProcess(operationId string, downloadPath string, mtaClient mtaclient.MtaClientOperations, cfTarget util.CloudFoundryTarget) error {
 	// Print initial message
 	ui.Say("Downloading logs of multi-target app operation with ID %s in org %s / space %s as %s...",
-		terminal.EntityNameColor(operationId), terminal.EntityNameColor(context.Org),
-		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
+		terminal.EntityNameColor(operationId), terminal.EntityNameColor(cfTarget.Org.Name),
+		terminal.EntityNameColor(cfTarget.Space.Name), terminal.EntityNameColor(cfTarget.Username))
 
 	// Download all logs
 	downloadedLogs := make(map[string]*string)

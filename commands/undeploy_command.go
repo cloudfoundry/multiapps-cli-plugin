@@ -96,14 +96,14 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	if operationID != "" || actionID != "" {
-		return c.ExecuteAction(operationID, actionID, retries, host)
+		return c.ExecuteAction(operationID, actionID, retries, host, cfTarget)
 	}
 
 	mtaID := args[0]
@@ -114,22 +114,13 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 
 	// Print initial message
 	ui.Say("Undeploying multi-target app %s in org %s / space %s as %s...",
-		terminal.EntityNameColor(mtaID), terminal.EntityNameColor(context.Org),
-		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
+		terminal.EntityNameColor(mtaID), terminal.EntityNameColor(cfTarget.Org.Name),
+		terminal.EntityNameColor(cfTarget.Space.Name), terminal.EntityNameColor(cfTarget.Username))
 
 	// Create rest client
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
+	mtaClient := c.NewMtaClient(host, cfTarget)
 	// Create new REST client for mtas V2 api
-	mtaV2Client, err := c.NewMtaV2Client(host)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
+	mtaV2Client := c.NewMtaV2Client(host, cfTarget)
 
 	// Check if a deployed MTA with the specified ID exists
 	_, err = mtaV2Client.GetMtasForThisSpace(&mtaID, &namespace)
@@ -148,7 +139,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(mtaID, namespace, host, force)
+	wasAborted, err := c.CheckOngoingOperation(mtaID, namespace, host, force, cfTarget)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
