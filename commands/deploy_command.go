@@ -65,9 +65,9 @@ var resourcesList listFlag
 // DeployCommand is a command for deploying an MTA archive
 type DeployCommand struct {
 	BaseCommand
-	commandFlagsDefiner     CommandFlagsDefiner
-	processParametersSetter ProcessParametersSetter
-	processTypeProvider     ProcessTypeProvider
+	defineCommandFlags   CommandFlagsDefiner
+	setProcessParameters ProcessParametersSetter
+	processTypeProvider  ProcessTypeProvider
 }
 
 // NewDeployCommand creates a new deploy command.
@@ -121,71 +121,54 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 
 // ProcessParametersSetter is a function that sets the startup parameters for
 // the deploy process. It takes them from the list of parsed flags.
-type ProcessParametersSetter func(options map[string]interface{}, processBuilder *util.ProcessBuilder)
+type ProcessParametersSetter func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder)
 
 // DeployCommandFlagsDefiner returns a new CommandFlagsDefiner.
 func deployCommandFlagsDefiner() CommandFlagsDefiner {
-	return func(flags *flag.FlagSet) map[string]interface{} {
-		optionValues := make(map[string]interface{})
-		optionValues[extDescriptorsOpt] = flags.String(extDescriptorsOpt, "", "")
-		optionValues[operationIDOpt] = flags.String(operationIDOpt, "", "")
-		optionValues[actionOpt] = flags.String(actionOpt, "", "")
-		optionValues[forceOpt] = flags.Bool(forceOpt, false, "")
-		optionValues[timeoutOpt] = flags.String(timeoutOpt, "", "")
-		optionValues[versionRuleOpt] = flags.String(versionRuleOpt, "", "")
-		optionValues[deleteServicesOpt] = flags.Bool(deleteServicesOpt, false, "")
-		optionValues[noStartOpt] = flags.Bool(noStartOpt, false, "")
-		optionValues[namespaceOpt] = flags.String(namespaceOpt, "", "")
-		optionValues[deleteServiceKeysOpt] = flags.Bool(deleteServiceKeysOpt, false, "")
-		optionValues[deleteServiceBrokersOpt] = flags.Bool(deleteServiceBrokersOpt, false, "")
-		optionValues[keepFilesOpt] = flags.Bool(keepFilesOpt, false, "")
-		optionValues[noRestartSubscribedAppsOpt] = flags.Bool(noRestartSubscribedAppsOpt, false, "")
-		optionValues[noFailOnMissingPermissionsOpt] = flags.Bool(noFailOnMissingPermissionsOpt, false, "")
-		optionValues[abortOnErrorOpt] = flags.Bool(abortOnErrorOpt, false, "")
-		optionValues[skipOwnershipValidationOpt] = flags.Bool(skipOwnershipValidationOpt, false, "")
-		optionValues[allModulesOpt] = flags.Bool(allModulesOpt, false, "")
-		optionValues[allResourcesOpt] = flags.Bool(allResourcesOpt, false, "")
-		optionValues[verifyArchiveSignatureOpt] = flags.Bool(verifyArchiveSignatureOpt, false, "")
-		optionValues[retriesOpt] = flags.Uint(retriesOpt, 3, "")
-		optionValues[strategyOpt] = flags.String(strategyOpt, "default", "")
-		optionValues[skipTestingPhase] = flags.Bool(skipTestingPhase, false, "")
+	return func(flags *flag.FlagSet) {
+		flags.String(extDescriptorsOpt, "", "")
+		flags.String(operationIDOpt, "", "")
+		flags.String(actionOpt, "", "")
+		flags.Bool(forceOpt, false, "")
+		flags.String(timeoutOpt, "", "")
+		flags.String(versionRuleOpt, "", "")
+		flags.Bool(deleteServicesOpt, false, "")
+		flags.Bool(noStartOpt, false, "")
+		flags.String(namespaceOpt, "", "")
+		flags.Bool(deleteServiceKeysOpt, false, "")
+		flags.Bool(deleteServiceBrokersOpt, false, "")
+		flags.Bool(keepFilesOpt, false, "")
+		flags.Bool(noRestartSubscribedAppsOpt, false, "")
+		flags.Bool(noFailOnMissingPermissionsOpt, false, "")
+		flags.Bool(abortOnErrorOpt, false, "")
+		flags.Bool(skipOwnershipValidationOpt, false, "")
+		flags.Bool(allModulesOpt, false, "")
+		flags.Bool(allResourcesOpt, false, "")
+		flags.Bool(verifyArchiveSignatureOpt, false, "")
+		flags.Uint(retriesOpt, 3, "")
+		flags.String(strategyOpt, "default", "")
+		flags.Bool(skipTestingPhase, false, "")
 		flags.Var(&modulesList, moduleOpt, "")
 		flags.Var(&resourcesList, resourceOpt, "")
-		return optionValues
 	}
 }
 
 // DeployProcessParametersSetter returns a new ProcessParametersSetter.
 func deployProcessParametersSetter() ProcessParametersSetter {
-	return func(optionValues map[string]interface{}, processBuilder *util.ProcessBuilder) {
-		processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(GetBoolOpt(deleteServiceKeysOpt, optionValues)))
-		processBuilder.Parameter("deleteServices", strconv.FormatBool(GetBoolOpt(deleteServicesOpt, optionValues)))
-		processBuilder.Parameter("noStart", strconv.FormatBool(GetBoolOpt(noStartOpt, optionValues)))
-		processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(GetBoolOpt(deleteServiceBrokersOpt, optionValues)))
-		processBuilder.Parameter("startTimeout", GetStringOpt(timeoutOpt, optionValues))
-		processBuilder.Parameter("versionRule", GetStringOpt(versionRuleOpt, optionValues))
-		processBuilder.Parameter("keepFiles", strconv.FormatBool(GetBoolOpt(keepFilesOpt, optionValues)))
-		processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(GetBoolOpt(noRestartSubscribedAppsOpt, optionValues)))
-		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, optionValues)))
-		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, optionValues)))
-		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, optionValues)))
-		processBuilder.Parameter("verifyArchiveSignature", strconv.FormatBool(GetBoolOpt(verifyArchiveSignatureOpt, optionValues)))
+	return func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder) {
+		processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(GetBoolOpt(deleteServiceKeysOpt, flags)))
+		processBuilder.Parameter("deleteServices", strconv.FormatBool(GetBoolOpt(deleteServicesOpt, flags)))
+		processBuilder.Parameter("noStart", strconv.FormatBool(GetBoolOpt(noStartOpt, flags)))
+		processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(GetBoolOpt(deleteServiceBrokersOpt, flags)))
+		processBuilder.Parameter("startTimeout", GetStringOpt(timeoutOpt, flags))
+		processBuilder.Parameter("versionRule", GetStringOpt(versionRuleOpt, flags))
+		processBuilder.Parameter("keepFiles", strconv.FormatBool(GetBoolOpt(keepFilesOpt, flags)))
+		processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(GetBoolOpt(noRestartSubscribedAppsOpt, flags)))
+		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, flags)))
+		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, flags)))
+		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, flags)))
+		processBuilder.Parameter("verifyArchiveSignature", strconv.FormatBool(GetBoolOpt(verifyArchiveSignatureOpt, flags)))
 	}
-}
-
-// GetBoolOpt gets and dereferences the pointer identified by the specified name.
-func GetBoolOpt(name string, optionValues map[string]interface{}) bool {
-	return *optionValues[name].(*bool)
-}
-
-// GetStringOpt gets and dereferences the pointer identified by the specified name.
-func GetStringOpt(name string, optionValues map[string]interface{}) string {
-	return *optionValues[name].(*string)
-}
-
-// GetUintOpt gets and dereferences the pointer identified by the specified name.
-func GetUintOpt(name string, optionValues map[string]interface{}) uint {
-	return *optionValues[name].(*uint)
 }
 
 // Execute executes the command
@@ -200,7 +183,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		ui.Failed(err.Error())
 		return Failure
 	}
-	optionValues := c.commandFlagsDefiner(flags)
+	c.defineCommandFlags(flags)
 	parser := NewCommandFlagsParser(flags, newDeployCommandLineArgumentsParser(), deployCommandFlagsValidator{})
 	err = parser.Parse(args)
 	if err != nil {
@@ -208,12 +191,12 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	extDescriptors := GetStringOpt(extDescriptorsOpt, optionValues)
-	operationID := GetStringOpt(operationIDOpt, optionValues)
-	action := GetStringOpt(actionOpt, optionValues)
-	force := GetBoolOpt(forceOpt, optionValues)
-	retries := GetUintOpt(retriesOpt, optionValues)
-	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, optionValues))
+	extDescriptors := GetStringOpt(extDescriptorsOpt, flags)
+	operationID := GetStringOpt(operationIDOpt, flags)
+	action := GetStringOpt(actionOpt, flags)
+	force := GetBoolOpt(forceOpt, flags)
+	retries := GetUintOpt(retriesOpt, flags)
+	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
 
 	cfTarget, err := c.GetCFTarget()
 	if err != nil {
@@ -225,7 +208,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		return c.ExecuteAction(operationID, action, retries, host, cfTarget)
 	}
 	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
-	mtaElementsCalculator.calculateElementsToDeploy(optionValues)
+	mtaElementsCalculator.calculateElementsToDeploy(flags)
 
 	rawMtaArchive, err := getMtaArchive(parser.Args(), mtaElementsCalculator)
 	if err != nil {
@@ -322,7 +305,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Build the process instance
-	processBuilder := NewDeploymentStrategy(optionValues, c.processTypeProvider).CreateProcessBuilder()
+	processBuilder := NewDeploymentStrategy(flags, c.processTypeProvider).CreateProcessBuilder()
 	processBuilder.Namespace(namespace)
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
@@ -330,7 +313,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		processBuilder.Parameter("mtaId", mtaId)
 	}
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
-	c.processParametersSetter(optionValues, processBuilder)
+	c.setProcessParameters(flags, processBuilder)
 
 	operation := processBuilder.Build()
 
@@ -470,9 +453,9 @@ type mtaElementsToAddCalculator struct {
 	shouldAddAllResources bool
 }
 
-func (c *mtaElementsToAddCalculator) calculateElementsToDeploy(optionValues map[string]interface{}) {
-	allModulesSpecified := GetBoolOpt(allModulesOpt, optionValues)
-	allResourcesSpecified := GetBoolOpt(allResourcesOpt, optionValues)
+func (c *mtaElementsToAddCalculator) calculateElementsToDeploy(flags *flag.FlagSet) {
+	allModulesSpecified := GetBoolOpt(allModulesOpt, flags)
+	allResourcesSpecified := GetBoolOpt(allResourcesOpt, flags)
 
 	if !allResourcesSpecified && len(resourcesList.getElements()) == 0 && !allModulesSpecified && len(modulesList.getElements()) == 0 {
 		// --all-resources ==false && no -r

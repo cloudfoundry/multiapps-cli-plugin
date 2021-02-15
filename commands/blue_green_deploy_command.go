@@ -57,19 +57,17 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 }
 
 func blueGreenDeployCommandFlagsDefiner() CommandFlagsDefiner {
-	return func(flags *flag.FlagSet) map[string]interface{} {
-		optionValues := deployCommandFlagsDefiner()(flags)
-		delete(optionValues, skipTestingPhase)
-		optionValues[noConfirmOpt] = flags.Bool(noConfirmOpt, false, "")
-		return optionValues
+	return func(flags *flag.FlagSet) {
+		deployCommandFlagsDefiner()(flags)
+		flags.Bool(noConfirmOpt, false, "")
 	}
 }
 
 // BlueGreenDeployProcessParametersSetter returns a new ProcessParametersSetter.
 func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
-	return func(optionValues map[string]interface{}, processBuilder *util.ProcessBuilder) {
-		deployProcessParametersSetter()(optionValues, processBuilder)
-		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, optionValues)))
+	return func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder) {
+		deployProcessParametersSetter()(flags, processBuilder)
+		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, flags)))
 		processBuilder.Parameter("keepOriginalAppNamesAfterDeploy", strconv.FormatBool(false))
 	}
 }

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"strconv"
 )
@@ -29,15 +30,15 @@ func (b *BlueGreenDeployCommandDeploymentStrategy) CreateProcessBuilder() *util.
 	return processBuilder
 }
 
-func NewDeploymentStrategy(options map[string]interface{}, typeProvider ProcessTypeProvider) DeploymentStrategy {
+func NewDeploymentStrategy(flags *flag.FlagSet, typeProvider ProcessTypeProvider) DeploymentStrategy {
 	if typeProvider.GetProcessType() == (blueGreenDeployCommandProcessTypeProvider{}).GetProcessType() {
-		return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(noConfirmOpt, options)}
+		return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(noConfirmOpt, flags)}
 	}
-	strategy := GetStringOpt(strategyOpt, options)
+	strategy := GetStringOpt(strategyOpt, flags)
 	if strategy == "default" {
 		return &DeployCommandDeploymentStrategy{}
 	}
-	return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(skipTestingPhase, options)}
+	return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(skipTestingPhase, flags)}
 }
 
 func AvailableStrategies() []string {
