@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
@@ -63,11 +62,11 @@ var _ = Describe("MtaCommand", func() {
 			mtaV2Client := mtaV2fake.NewFakeMtaV2ClientBuilder().
 				GetMtas("any_mtaId", &namespace, "any_spaceGuid", nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(nil, mtaV2Client, nil)
-			command = &commands.MtaCommand{}
+			command = commands.NewMtaCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		// wrong arguments - error
@@ -90,7 +89,7 @@ var _ = Describe("MtaCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test", "-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test:", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test:", 1)
 			})
 		})
 

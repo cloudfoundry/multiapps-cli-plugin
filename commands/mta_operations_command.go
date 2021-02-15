@@ -1,19 +1,28 @@
 package commands
 
 import (
+	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 )
 
+const allOpt = "all"
+
 // MtaOperationsCommand is a command for listing all mta operations
 type MtaOperationsCommand struct {
-	BaseCommand
+	*BaseCommand
+}
+
+func NewMtaOperationsCommand() *MtaOperationsCommand {
+	baseCmd := &BaseCommand{flagsParser: NewDefaultCommandFlagsParser(nil), flagsValidator: NewDefaultCommandFlagsValidator(nil)}
+	mtaOpsCmd := &MtaOperationsCommand{baseCmd}
+	baseCmd.Command = mtaOpsCmd
+	return mtaOpsCmd
 }
 
 // GetPluginCommand returns the plugin command details
@@ -24,50 +33,30 @@ func (c *MtaOperationsCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: "cf mta-ops [--mta MTA] [-u URL] [--last NUM] [--all]",
 			Options: map[string]string{
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				util.GetShortOption("mta"):  "ID of the deployed package",
-				util.GetShortOption("last"): "List last NUM operations",
-				util.GetShortOption("all"):  "List all operations, not just the active ones",
+				deployServiceURLOpt:          "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				util.GetShortOption(mtaOpt):  "ID of the deployed package",
+				util.GetShortOption(lastOpt): "List last NUM operations",
+				util.GetShortOption(allOpt):  "List all operations, not just the active ones",
 			},
 		},
 	}
 }
 
-// Execute executes the command
-func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+func (c *MtaOperationsCommand) defineCommandOptions(flags *flag.FlagSet) {
+	flags.String(mtaOpt, "", "")
+	flags.Uint(lastOpt, 0, "")
+	flags.Bool(allOpt, false, "")
+}
 
-	var host string
-	var mtaId string
-	var last uint
-	var all bool
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	flags.StringVar(&mtaId, "mta", "", "")
-	flags.UintVar(&last, "last", 0, "")
-	flags.BoolVar(&all, "all", false, "")
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed("Could not get org and space: %s", baseclient.NewClientError(err))
-		return Failure
-	}
+func (c *MtaOperationsCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
+	mtaId := GetStringOpt(mtaOpt, flags)
+	last := GetUintOpt(lastOpt, flags)
+	all := GetBoolOpt(allOpt, flags)
 
 	printInitialMessage(cfTarget, mtaId, all, last)
 
 	// Create new REST client
-	mtaClient := c.NewMtaClient(host, cfTarget)
+	mtaClient := c.NewMtaClient(dsHost, cfTarget)
 
 	// Get ongoing operations
 	operationsToPrint, err := getOperationsToPrint(mtaClient, mtaId, last, all)
@@ -80,11 +69,11 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	if len(operationsToPrint) > 0 {
 		table := ui.Table([]string{"id", "type", "mta id", "namespace", "status", "started at", "started by"})
 		for _, operation := range operationsToPrint {
-			var mtaid string = operation.MtaID
+			mtaID := operation.MtaID
 			if operation.MtaID == "" {
-				mtaid = "N/A"
+				mtaID = "N/A"
 			}
-			table.Add(operation.ProcessID, string(operation.ProcessType), mtaid, operation.Namespace, string(operation.State), operation.StartedAt, operation.User)
+			table.Add(operation.ProcessID, operation.ProcessType, mtaID, operation.Namespace, string(operation.State), operation.StartedAt, operation.User)
 		}
 		table.Print()
 	} else {
@@ -95,15 +84,16 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 
 func printInitialMessage(cfTarget util.CloudFoundryTarget, mtaId string, all bool, last uint) {
 	var initialMessage string
-	if mtaId != "" {
+	switch {
+	case mtaId != "":
 		initialMessage = "Getting multi-target app operations for %[1]s in org %[3]s / space %[4]s as %[5]s..."
-	} else if all {
+	case all:
 		initialMessage = "Getting all multi-target app operations in org %[3]s / space %[4]s as %[5]s..."
-	} else if last == 1 {
+	case last == 1:
 		initialMessage = "Getting last multi-target app operation in org %[3]s / space %[4]s as %[5]s..."
-	} else if last != 0 {
+	case last != 0:
 		initialMessage = "Getting last %[2]d multi-target app operations in org %[3]s / space %[4]s as %[5]s..."
-	} else {
+	default:
 		initialMessage = "Getting active multi-target app operations in org %[3]s / space %[4]s as %[5]s..."
 	}
 	ui.Say(initialMessage, terminal.EntityNameColor(mtaId), last, terminal.EntityNameColor(cfTarget.Org.Name),

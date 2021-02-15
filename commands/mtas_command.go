@@ -1,8 +1,8 @@
 package commands
 
 import (
+	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -11,7 +11,14 @@ import (
 
 // MtasCommand is a command for listing all deployed MTAs
 type MtasCommand struct {
-	BaseCommand
+	*BaseCommand
+}
+
+func NewMtasCommand() *MtasCommand {
+	baseCmd := &BaseCommand{flagsParser: NewDefaultCommandFlagsParser(nil), flagsValidator: NewDefaultCommandFlagsValidator(nil)}
+	mtasCmd := &MtasCommand{baseCmd}
+	baseCmd.Command = mtasCmd
+	return mtasCmd
 }
 
 // GetPluginCommand returns the plugin command details
@@ -22,44 +29,24 @@ func (c *MtasCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: "cf mtas [-u URL]",
 			Options: map[string]string{
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
 }
 
-// Execute executes the command
-func (c *MtasCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+func (c *MtasCommand) defineCommandOptions(flags *flag.FlagSet) {
+	//no additional options to define
+}
 
-	var host string
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
+func (c *MtasCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
 	// Print initial message
 	ui.Say("Getting multi-target apps in org %s / space %s as %s...",
 		terminal.EntityNameColor(cfTarget.Org.Name), terminal.EntityNameColor(cfTarget.Space.Name),
 		terminal.EntityNameColor(cfTarget.Username))
 
 	// Create new REST client
-	mtaV2Client := c.NewMtaV2Client(host, cfTarget)
+	mtaV2Client := c.NewMtaV2Client(dsHost, cfTarget)
 
 	// Get all deployed components
 	mtas, err := mtaV2Client.GetMtasForThisSpace(nil, nil)

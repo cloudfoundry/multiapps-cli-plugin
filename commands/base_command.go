@@ -21,7 +21,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -49,6 +48,10 @@ const retryIntervalInSeconds = 10
 
 // BaseCommand represents a base command
 type BaseCommand struct {
+	Command
+	flagsParser                FlagsParser
+	flagsValidator             FlagsValidator
+
 	name                       string
 	cliConnection              plugin.CliConnection
 	transport                  http.RoundTripper
@@ -56,7 +59,6 @@ type BaseCommand struct {
 	clientFactory              clients.ClientFactory
 	tokenFactory               baseclient.TokenFactory
 	deployServiceURLCalculator util.DeployServiceURLCalculator
-	configurationSnapshot      configuration.Snapshot
 }
 
 // Initialize initializes the command with the specified name and CLI connection
@@ -67,12 +69,11 @@ func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
 	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, jar, tokenFactory)
 	resilientCloudFoundryClient := resilient.NewResilientCloudFoundryClient(cloudFoundryClient, maxRetriesCount, retryIntervalInSeconds)
-	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient), configuration.NewSnapshot())
+	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient))
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
-func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnection,
-	transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator, configurationSnapshot configuration.Snapshot) {
+func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnection, transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator) {
 	c.name = name
 	c.cliConnection = cliConnection
 	c.transport = transport
@@ -80,7 +81,6 @@ func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnect
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
 	c.deployServiceURLCalculator = deployServiceURLCalculator
-	c.configurationSnapshot = configurationSnapshot
 }
 
 func getApiEndpoint(cliConnection plugin.CliConnection) string {
@@ -104,17 +104,36 @@ func (c *BaseCommand) Usage(message string) {
 	}
 }
 
-// CreateFlags creates a flag set to be used for parsing command arguments
-func (c *BaseCommand) CreateFlags(host *string, args []string) (*flag.FlagSet, error) {
+// Execute executes the command
+func (c *BaseCommand) Execute(args []string) ExecutionStatus {
+	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+
 	flags := flag.NewFlagSet(c.name, flag.ContinueOnError)
-	deployServiceURL, err := c.GetDeployServiceURL(args)
+	flags.SetOutput(ioutil.Discard)
+
+	flags.String(deployServiceURLOpt, "", "")
+	c.defineCommandOptions(flags)
+
+	parser := NewCommandFlagsParser(flags, c.flagsParser, c.flagsValidator)
+	err := parser.Parse(args)
 	if err != nil {
-		return nil, err
+		c.Usage(err.Error())
+		return Failure
 	}
 
-	flags.StringVar(host, deployServiceURLOpt, deployServiceURL, "")
-	flags.SetOutput(ioutil.Discard)
-	return flags, nil
+	deployServiceUrl, err := c.deployServiceURLCalculator.ComputeDeployServiceURL(GetStringOpt(deployServiceURLOpt, flags))
+	if err != nil {
+		ui.Failed(err.Error())
+		return Failure
+	}
+
+	cfTarget, err := c.GetCFTarget()
+	if err != nil {
+		ui.Failed(err.Error())
+		return Failure
+	}
+
+	return c.executeInternal(parser.Args(), deployServiceUrl, flags, cfTarget)
 }
 
 // GetBoolOpt gets the option identified by the specified name.
@@ -132,16 +151,6 @@ func GetStringOpt(name string, flags *flag.FlagSet) string {
 func GetUintOpt(name string, flags *flag.FlagSet) uint {
 	opt, _ := strconv.ParseUint(GetStringOpt(name, flags), 0, strconv.IntSize)
 	return uint(opt)
-}
-
-func GetOptionValue(args []string, optionName string) string {
-	for index, arg := range args {
-		trimmedArg := strings.Trim(arg, "-")
-		if optionName == trimmedArg && len(args) > index+1 {
-			return args[index+1]
-		}
-	}
-	return ""
 }
 
 // NewRestClient creates a new MTA deployer REST client
@@ -175,27 +184,6 @@ func (c *BaseCommand) GetCFTarget() (util.CloudFoundryTarget, error) {
 		return util.CloudFoundryTarget{}, err
 	}
 	return util.NewCFTarget(org, space, username), nil
-}
-
-// GetDeployServiceURL returns the deploy service URL
-func (c *BaseCommand) GetDeployServiceURL(args []string) (string, error) {
-	customDeployServiceURL := c.GetCustomDeployServiceURL(args)
-	if customDeployServiceURL != "" {
-		return customDeployServiceURL, nil
-	}
-
-	return c.deployServiceURLCalculator.ComputeDeployServiceURL()
-}
-
-// GetCustomDeployServiceURL returns custom deploy service URL
-func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
-	optionDeployServiceURL := GetOptionValue(args, deployServiceURLOpt)
-
-	if optionDeployServiceURL != "" {
-		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", optionDeployServiceURL))
-		return optionDeployServiceURL
-	}
-	return c.configurationSnapshot.GetBackendURL()
 }
 
 // ExecuteAction executes the action over the process specified with operationID

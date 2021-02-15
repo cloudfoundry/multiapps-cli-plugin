@@ -23,12 +23,12 @@ type MultiappsPlugin struct{}
 var Commands = []commands.Command{
 	commands.NewDeployCommand(),
 	commands.NewBlueGreenDeployCommand(),
-	&commands.MtasCommand{},
-	&commands.DownloadMtaOperationLogsCommand{},
+	commands.NewMtasCommand(),
+	commands.NewDmolCommand(),
 	commands.NewUndeployCommand(),
-	&commands.MtaCommand{},
-	&commands.MtaOperationsCommand{},
-	&commands.PurgeConfigCommand{},
+	commands.NewMtaCommand(),
+	commands.NewMtaOperationsCommand(),
+	commands.NewPurgeConfigCommand(),
 }
 
 // Run runs this plugin

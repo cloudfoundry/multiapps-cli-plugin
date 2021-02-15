@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
@@ -19,11 +18,21 @@ import (
 
 const (
 	defaultDownloadDirPrefix string = "mta-op-"
+	mtaOpt                   string = "mta"
+	lastOpt                  string = "last"
+	directoryOpt             string = "d"
 )
 
 // DownloadMtaOperationLogsCommand is a command for retrieving the logs of an MTA operation
 type DownloadMtaOperationLogsCommand struct {
-	BaseCommand
+	*BaseCommand
+}
+
+func NewDmolCommand() *DownloadMtaOperationLogsCommand {
+	baseCmd := &BaseCommand{flagsParser: NewDefaultCommandFlagsParser([]string{}), flagsValidator: dmolCommandFlagsValidator{}}
+	dmolCmd := &DownloadMtaOperationLogsCommand{baseCmd}
+	baseCmd.Command = dmolCmd
+	return dmolCmd
 }
 
 // GetPluginCommand returns the plugin command details
@@ -37,51 +46,31 @@ func (c *DownloadMtaOperationLogsCommand) GetPluginCommand() plugin.Command {
 
    cf download-mta-op-logs --mta MTA [--last NUM] [-d DIRECTORY] [-u URL]`,
 			Options: map[string]string{
-				"i": "Operation ID",
-				util.GetShortOption("mta"):  "ID of the deployed MTA",
-				util.GetShortOption("last"): "Downloads last NUM operation logs. If not specified, logs for each process with the specified MTA_ID are downloaded",
-				"d": "Root directory to download logs, by default the current working directory",
-				"u": "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				operationIDOpt: "Operation ID",
+				util.GetShortOption(mtaOpt):  "ID of the deployed MTA",
+				util.GetShortOption(lastOpt): "Downloads last NUM operation logs. If not specified, logs for each process with the specified MTA_ID are downloaded",
+				directoryOpt: "Root directory to download logs, by default the current working directory",
+				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
 }
 
-// Execute executes the command
-func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+func (c *DownloadMtaOperationLogsCommand) defineCommandOptions(flags *flag.FlagSet) {
+	flags.String(operationIDOpt, "", "")
+	flags.String(directoryOpt, "", "")
+	flags.String(mtaOpt, "", "")
+	flags.Uint(lastOpt, 0, "")
+}
 
-	var host string
-	var operationId string
-	var mtaId string
-	var last uint
-	var downloadDirName string
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	flags.StringVar(&operationId, "i", "", "")
-	flags.StringVar(&downloadDirName, "d", "", "")
-	flags.StringVar(&mtaId, "mta", "", "")
-	flags.UintVar(&last, "last", 0, "")
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{}), dmolCommandFlagsValidator{})
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
+func (c *DownloadMtaOperationLogsCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
 	// Create new SLMP client
-	mtaClient := c.NewMtaClient(host, cfTarget)
+	mtaClient := c.NewMtaClient(dsHost, cfTarget)
+
+	mtaId := GetStringOpt(mtaOpt, flags)
+	last := GetUintOpt(lastOpt, flags)
+	operationId := GetStringOpt(operationIDOpt, flags)
+	downloadDirName := GetStringOpt(directoryOpt, flags)
 
 	var operationIds []string
 
@@ -100,7 +89,7 @@ func (c *DownloadMtaOperationLogsCommand) Execute(args []string) ExecutionStatus
 
 	for _, opId := range operationIds {
 		downloadPath := filepath.Join(downloadDirName, defaultDownloadDirPrefix+opId)
-		err = downloadLogsForProcess(opId, downloadPath, mtaClient, cfTarget)
+		err := downloadLogsForProcess(opId, downloadPath, mtaClient, cfTarget)
 		if err != nil {
 			ui.Failed(err.Error())
 			return Failure
@@ -182,10 +171,10 @@ func (dmolCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error 
 		return fmt.Errorf("Option -i and option --mta are incompatible")
 	}
 	return NewDefaultCommandFlagsValidator(map[string]bool{
-		"i":   !hasValue(flags, "mta"),
-		"mta": hasValue(flags, "mta")}).ValidateParsedFlags(flags)
+		operationIDOpt: !hasValue(flags, mtaOpt),
+		mtaOpt:         hasValue(flags, mtaOpt)}).ValidateParsedFlags(flags)
 }
 
 func hasValue(flags *flag.FlagSet, flagName string) bool {
-	return flags.Lookup(flagName).Value.String() != ""
+	return GetStringOpt(flagName, flags) != ""
 }

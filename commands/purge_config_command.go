@@ -1,15 +1,23 @@
 package commands
 
 import (
+	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 )
 
 type PurgeConfigCommand struct {
-	BaseCommand
+	*BaseCommand
+}
+
+func NewPurgeConfigCommand() *PurgeConfigCommand {
+	baseCmd := &BaseCommand{flagsParser: NewDefaultCommandFlagsParser(nil), flagsValidator: NewDefaultCommandFlagsValidator(nil)}
+	purgeConfigCmd := &PurgeConfigCommand{baseCmd}
+	baseCmd.Command = purgeConfigCmd
+	return purgeConfigCmd
 }
 
 func (c *PurgeConfigCommand) GetPluginCommand() plugin.Command {
@@ -25,33 +33,16 @@ func (c *PurgeConfigCommand) GetPluginCommand() plugin.Command {
 	}
 }
 
-func (c *PurgeConfigCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command %q with args %v\n", c.name, args)
+func (c *PurgeConfigCommand) defineCommandOptions(flags *flag.FlagSet) {
+	//no additional options to define
+}
 
-	var host string
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser(nil), NewDefaultCommandFlagsValidator(nil))
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
+func (c *PurgeConfigCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
 	ui.Say("Purging configuration entries in org %s / space %s as %s",
 		terminal.EntityNameColor(cfTarget.Org.Name), terminal.EntityNameColor(cfTarget.Space.Name),
 		terminal.EntityNameColor(cfTarget.Username))
 
-	rc := c.NewRestClient(host)
+	rc := c.NewRestClient(dsHost)
 	// TODO: ensure session
 
 	if err := rc.PurgeConfiguration(cfTarget.Org.Name, cfTarget.Space.Name); err != nil {

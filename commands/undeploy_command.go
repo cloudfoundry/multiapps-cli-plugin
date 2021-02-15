@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -18,12 +17,15 @@ import (
 
 //UndeployCommand is a command for undeploying MTAs
 type UndeployCommand struct {
-	BaseCommand
+	*BaseCommand
 	processTypeProvider ProcessTypeProvider
 }
 
 func NewUndeployCommand() *UndeployCommand {
-	return &UndeployCommand{BaseCommand: BaseCommand{}, processTypeProvider: &undeployCommandProcessTypeProvider{}}
+	baseCmd := &BaseCommand{flagsParser: NewProcessActionExecutorCommandArgumentsParser([]string{"MTA_ID"}), flagsValidator: NewDefaultCommandFlagsValidator(nil)}
+	undeployCmd := &UndeployCommand{baseCmd, &undeployCommandProcessTypeProvider{}}
+	baseCmd.Command = undeployCmd
+	return undeployCmd
 }
 
 // GetPluginCommand returns the plugin command details
@@ -55,58 +57,31 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
 	}
 }
 
-// Execute executes the command
-func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+func (c *UndeployCommand) defineCommandOptions(flags *flag.FlagSet) {
+	flags.Bool(forceOpt, false, "")
+	flags.String(operationIDOpt, "", "")
+	flags.String(namespaceOpt, "", "")
+	flags.String(actionOpt, "", "")
+	flags.Bool(deleteServicesOpt, false, "")
+	flags.Bool(deleteServiceKeysOpt, false, "")
+	flags.Bool(noRestartSubscribedAppsOpt, false, "")
+	flags.Bool(deleteServiceBrokersOpt, false, "")
+	flags.Bool(noFailOnMissingPermissionsOpt, false, "")
+	flags.Bool(abortOnErrorOpt, false, "")
+	flags.Uint(retriesOpt, 3, "")
+}
 
-	var host string
-	var operationID string
-	var namespace string
-	var actionID string
-	var force bool
-	var deleteServices bool
-	var deleteServiceKeys bool
-	var noRestartSubscribedApps bool
-	var deleteServiceBrokers bool
-	var noFailOnMissingPermissions bool
-	var abortOnError bool
-	var retries uint
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	flags.BoolVar(&force, forceOpt, false, "")
-	flags.StringVar(&operationID, operationIDOpt, "", "")
-	flags.StringVar(&namespace, namespaceOpt, "", "")
-	flags.StringVar(&actionID, actionOpt, "", "")
-	flags.BoolVar(&deleteServices, deleteServicesOpt, false, "")
-	flags.BoolVar(&deleteServiceKeys, deleteServiceKeysOpt, false, "")
-	flags.BoolVar(&noRestartSubscribedApps, noRestartSubscribedAppsOpt, false, "")
-	flags.BoolVar(&deleteServiceBrokers, deleteServiceBrokersOpt, false, "")
-	flags.BoolVar(&noFailOnMissingPermissions, noFailOnMissingPermissionsOpt, false, "")
-	flags.BoolVar(&abortOnError, abortOnErrorOpt, false, "")
-	flags.UintVar(&retries, retriesOpt, 3, "")
-
-	parser := NewCommandFlagsParser(flags, NewProcessActionExecutorCommandArgumentsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(nil))
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-	namespace = strings.TrimSpace(namespace)
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
+func (c *UndeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
+	operationID := GetStringOpt(operationIDOpt, flags)
+	actionID := GetStringOpt(actionOpt, flags)
+	retries := GetUintOpt(retriesOpt, flags)
 
 	if operationID != "" || actionID != "" {
-		return c.ExecuteAction(operationID, actionID, retries, host, cfTarget)
+		return c.ExecuteAction(operationID, actionID, retries, dsHost, cfTarget)
 	}
 
-	mtaID := args[0]
+	force := GetBoolOpt(forceOpt, flags)
+	mtaID := positionalArgs[0]
 	if !force && !ui.Confirm("Really undeploy multi-target app %s? (y/n)", terminal.EntityNameColor(mtaID)) {
 		ui.Warn("Undeploy cancelled")
 		return Failure
@@ -118,12 +93,13 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		terminal.EntityNameColor(cfTarget.Space.Name), terminal.EntityNameColor(cfTarget.Username))
 
 	// Create rest client
-	mtaClient := c.NewMtaClient(host, cfTarget)
+	mtaClient := c.NewMtaClient(dsHost, cfTarget)
 	// Create new REST client for mtas V2 api
-	mtaV2Client := c.NewMtaV2Client(host, cfTarget)
+	mtaV2Client := c.NewMtaV2Client(dsHost, cfTarget)
 
+	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
 	// Check if a deployed MTA with the specified ID exists
-	_, err = mtaV2Client.GetMtasForThisSpace(&mtaID, &namespace)
+	_, err := mtaV2Client.GetMtasForThisSpace(&mtaID, &namespace)
 	if err != nil {
 		ce, ok := err.(*baseclient.ClientError)
 		if ok && ce.Code == 404 && strings.Contains(fmt.Sprint(ce.Description), mtaID) {
@@ -139,7 +115,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	}
 
 	// Check for an ongoing operation for this MTA ID and abort it
-	wasAborted, err := c.CheckOngoingOperation(mtaID, namespace, host, force, cfTarget)
+	wasAborted, err := c.CheckOngoingOperation(mtaID, namespace, dsHost, force, cfTarget)
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
@@ -151,12 +127,12 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	processBuilder := util.NewProcessBuilder()
 	processBuilder.ProcessType(c.processTypeProvider.GetProcessType())
 	processBuilder.Parameter("mtaId", mtaID)
-	processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(noRestartSubscribedApps))
-	processBuilder.Parameter("deleteServices", strconv.FormatBool(deleteServices))
-	processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(deleteServiceKeys))
-	processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(deleteServiceBrokers))
-	processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(noFailOnMissingPermissions))
-	processBuilder.Parameter("abortOnError", strconv.FormatBool(abortOnError))
+	processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(GetBoolOpt(noRestartSubscribedAppsOpt, flags)))
+	processBuilder.Parameter("deleteServices", strconv.FormatBool(GetBoolOpt(deleteServicesOpt, flags)))
+	processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(GetBoolOpt(deleteServiceKeysOpt, flags)))
+	processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(GetBoolOpt(deleteServiceBrokersOpt, flags)))
+	processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, flags)))
+	processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, flags)))
 	processBuilder.Parameter("namespace", namespace)
 	operation := processBuilder.Build()
 

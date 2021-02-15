@@ -1,10 +1,12 @@
 package commands_test
 
 import (
+	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
 	"strconv"
 )
 
@@ -15,18 +17,19 @@ var _ = Describe("Deployment Strategy", func() {
 	var deployProcessTypeProvider = &fakes.FakeDeployCommandProcessTypeProvider{}
 	var bgDeployProcessTypeProvider = &fakes.FakeBlueGreenCommandProcessTypeProvider{}
 
-	var createOptionsMap = func(noConfirm bool, strategy string) map[string]interface{} {
-		options := make(map[string]interface{}, 3)
-		skipTestingPhaseOption := true
-		options["strategy"] = &strategy
-		options["no-confirm"] = &noConfirm
-		options["skip-testing-phase"] = &skipTestingPhaseOption
-		return options
+	var createFlags = func(noConfirm bool, strategy string) *flag.FlagSet {
+		flags := flag.NewFlagSet("", flag.ContinueOnError)
+		flags.SetOutput(ioutil.Discard)
+
+		flags.String("strategy", strategy, "")
+		flags.Bool("no-confirm", noConfirm, "")
+		flags.Bool("skip-testing-phase", true, "")
+		return flags
 	}
 
 	var testInputAndOperationProcessTypesMatch = func(provider commands.ProcessTypeProvider) {
-		options := createOptionsMap(false, "default")
-		processBuilder := commands.NewDeploymentStrategy(options, provider).CreateProcessBuilder()
+		flags := createFlags(false, "default")
+		processBuilder := commands.NewDeploymentStrategy(flags, provider).CreateProcessBuilder()
 		operation := processBuilder.Build()
 		Expect(operation.ProcessType).To(Equal(provider.GetProcessType()))
 	}
@@ -39,9 +42,9 @@ var _ = Describe("Deployment Strategy", func() {
 
 	Context("with a blue-green deploy command and --no-confirm flag", func() {
 		It("should build a blue-green deploy operation with the noConfirm parameter set to true", func() {
-			options := createOptionsMap(true, "default")
+			flags := createFlags(true, "default")
 
-			processBuilder := commands.NewDeploymentStrategy(options, bgDeployProcessTypeProvider).CreateProcessBuilder()
+			processBuilder := commands.NewDeploymentStrategy(flags, bgDeployProcessTypeProvider).CreateProcessBuilder()
 			operation := processBuilder.Build()
 
 			Expect(operation.Parameters[noConfirmOpt]).To(Equal(strconv.FormatBool(true)))
@@ -56,9 +59,9 @@ var _ = Describe("Deployment Strategy", func() {
 
 	Context("with a deploy command with strategy flag set to blue-green", func() {
 		It("should build a blue-green deploy operation", func() {
-			options := createOptionsMap(false, "blue-green")
+			flags := createFlags(false, "blue-green")
 
-			processBuilder := commands.NewDeploymentStrategy(options, deployProcessTypeProvider).CreateProcessBuilder()
+			processBuilder := commands.NewDeploymentStrategy(flags, deployProcessTypeProvider).CreateProcessBuilder()
 			operation := processBuilder.Build()
 
 			Expect(operation.ProcessType).To(Equal(bgDeployProcessTypeProvider.GetProcessType()))
@@ -68,9 +71,9 @@ var _ = Describe("Deployment Strategy", func() {
 
 	Context("with a deploy command with strategy flag set to blue-green and --no-confirm flag present", func() {
 		It("should build a blue-green deploy operation with the noConfirm parameter set to true", func() {
-			options := createOptionsMap(true, "blue-green")
+			flags := createFlags(true, "blue-green")
 
-			processBuilder := commands.NewDeploymentStrategy(options, deployProcessTypeProvider).CreateProcessBuilder()
+			processBuilder := commands.NewDeploymentStrategy(flags, deployProcessTypeProvider).CreateProcessBuilder()
 			operation := processBuilder.Build()
 
 			Expect(operation.ProcessType).To(Equal(bgDeployProcessTypeProvider.GetProcessType()))

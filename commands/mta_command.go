@@ -1,13 +1,13 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 	"strings"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	mtamodels "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	mta_models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/formatters"
@@ -18,7 +18,14 @@ import (
 
 // MtaCommand is a command for listing a deployed MTA
 type MtaCommand struct {
-	BaseCommand
+	*BaseCommand
+}
+
+func NewMtaCommand() *MtaCommand {
+	baseCmd := &BaseCommand{flagsParser: NewDefaultCommandFlagsParser([]string{"MTA_ID"}), flagsValidator: NewDefaultCommandFlagsValidator(nil)}
+	mtaCmd := &MtaCommand{baseCmd}
+	baseCmd.Command = mtaCmd
+	return mtaCmd
 }
 
 // GetPluginCommand returns the plugin command details
@@ -30,50 +37,27 @@ func (c *MtaCommand) GetPluginCommand() plugin.Command {
 			Usage: "cf mta MTA_ID [--namespace NAMESPACE] [-u URL]",
 			Options: map[string]string{
 				util.GetShortOption(namespaceOpt): "(EXPERIMENTAL) namespace of the requested mta, empty by default",
-				"u":                               "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				deployServiceURLOpt:               "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
 }
 
-// Execute executes the command
-func (c *MtaCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+func (c *MtaCommand) defineCommandOptions(flags *flag.FlagSet) {
+	flags.String(namespaceOpt, "", "")
+}
 
-	var host string
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-
-	var namespace string
-	flags.StringVar(&namespace, namespaceOpt, "", "")
-	namespace = strings.TrimSpace(namespace)
-	parser := NewCommandFlagsParser(flags, NewDefaultCommandFlagsParser([]string{"MTA_ID"}), NewDefaultCommandFlagsValidator(map[string]bool{}))
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-	mtaID := args[0]
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed("Could not get org and space: %s", baseclient.NewClientError(err))
-		return Failure
-	}
-
+func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
+	mtaID := positionalArgs[0]
 	// Print initial message
 	ui.Say("Showing health and status for multi-target app %s in org %s / space %s as %s...",
 		terminal.EntityNameColor(mtaID), terminal.EntityNameColor(cfTarget.Org.Name),
 		terminal.EntityNameColor(cfTarget.Space.Name), terminal.EntityNameColor(cfTarget.Username))
 
 	// Create new REST client
-	mtaV2Client := c.NewMtaV2Client(host, cfTarget)
+	mtaV2Client := c.NewMtaV2Client(dsHost, cfTarget)
 
+	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
 	// Get the MTA
 	mtas, err := mtaV2Client.GetMtasForThisSpace(&mtaID, &namespace)
 	if err != nil {
@@ -155,7 +139,7 @@ func getLastOperation(service plugin_models.GetServices_Model) string {
 	return service.LastOperation.Type + " " + service.LastOperation.State
 }
 
-func isMtaAssociatedApp(mta *mtamodels.Mta, app plugin_models.GetAppsModel) bool {
+func isMtaAssociatedApp(mta *mta_models.Mta, app plugin_models.GetAppsModel) bool {
 	for _, module := range mta.Modules {
 		if module.AppName == app.Name {
 			return true
@@ -164,7 +148,7 @@ func isMtaAssociatedApp(mta *mtamodels.Mta, app plugin_models.GetAppsModel) bool
 	return false
 }
 
-func isMtaAssociatedService(mta *mtamodels.Mta, service plugin_models.GetServices_Model) bool {
+func isMtaAssociatedService(mta *mta_models.Mta, service plugin_models.GetServices_Model) bool {
 	for _, serviceName := range mta.Services {
 		if serviceName == service.Name {
 			return true
