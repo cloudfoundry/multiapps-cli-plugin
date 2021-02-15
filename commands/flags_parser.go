@@ -9,10 +9,8 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
 
-// CommandFlagsDefiner is a function used during the execution of the deploy
-// command. It defines the flags supported by the command and returns a map
-// containing pointers to the parsed flags.
-type CommandFlagsDefiner func(flag *flag.FlagSet) map[string]interface{}
+// CommandFlagsDefiner defines the flags supported by a command
+type CommandFlagsDefiner func(flags *flag.FlagSet)
 
 // CommandFlagsParser used for parsing the arguments
 type CommandFlagsParser struct {

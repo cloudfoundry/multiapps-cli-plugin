@@ -79,7 +79,6 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 	flags.BoolVar(&force, forceOpt, false, "")
 	flags.StringVar(&operationID, operationIDOpt, "", "")
 	flags.StringVar(&namespace, namespaceOpt, "", "")
-	namespace = strings.TrimSpace(namespace)
 	flags.StringVar(&actionID, actionOpt, "", "")
 	flags.BoolVar(&deleteServices, deleteServicesOpt, false, "")
 	flags.BoolVar(&deleteServiceKeys, deleteServiceKeysOpt, false, "")
@@ -95,6 +94,7 @@ func (c *UndeployCommand) Execute(args []string) ExecutionStatus {
 		c.Usage(err.Error())
 		return Failure
 	}
+	namespace = strings.TrimSpace(namespace)
 
 	cfTarget, err := c.GetCFTarget()
 	if err != nil {

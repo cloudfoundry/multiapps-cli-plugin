@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -114,6 +115,23 @@ func (c *BaseCommand) CreateFlags(host *string, args []string) (*flag.FlagSet, e
 	flags.StringVar(host, deployServiceURLOpt, deployServiceURL, "")
 	flags.SetOutput(ioutil.Discard)
 	return flags, nil
+}
+
+// GetBoolOpt gets the option identified by the specified name.
+func GetBoolOpt(name string, flags *flag.FlagSet) bool {
+	opt, _ := strconv.ParseBool(GetStringOpt(name, flags))
+	return opt
+}
+
+// GetStringOpt gets the option identified by the specified name.
+func GetStringOpt(name string, flags *flag.FlagSet) string {
+	return flags.Lookup(name).Value.String()
+}
+
+// GetUintOpt gets the option identified by the specified name.
+func GetUintOpt(name string, flags *flag.FlagSet) uint {
+	opt, _ := strconv.ParseUint(GetStringOpt(name, flags), 0, strconv.IntSize)
+	return uint(opt)
 }
 
 func GetOptionValue(args []string, optionName string) string {
