@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
@@ -51,10 +50,10 @@ var _ = Describe("MtaOperationsCommand", func() {
 			mtaClient := mtafake.NewFakeMtaClientBuilder().
 				GetMta("test", nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(mtaClient, nil, nil)
-			command = &commands.MtaOperationsCommand{}
+			command = commands.NewMtaOperationsCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		Context("with an unknown flag", func() {
@@ -87,7 +86,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 1)
 			})
 		})
 

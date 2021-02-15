@@ -12,12 +12,16 @@ const noConfirmOpt = "no-confirm"
 
 // BlueGreenDeployCommand is a command for blue green deployment of MTAs.
 type BlueGreenDeployCommand struct {
-	DeployCommand
+	*DeployCommand
 }
 
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
-	return &BlueGreenDeployCommand{DeployCommand{BaseCommand{}, blueGreenDeployCommandFlagsDefiner(), blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}}
+	baseCmd := &BaseCommand{flagsParser: newDeployCommandLineArgumentsParser(), flagsValidator: deployCommandFlagsValidator{}}
+	deployCmd := &DeployCommand{baseCmd, blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}
+	bgDeployCmd := &BlueGreenDeployCommand{deployCmd}
+	baseCmd.Command = bgDeployCmd
+	return bgDeployCmd
 }
 
 // GetPluginCommand returns more information for the blue green deploy command.
@@ -56,14 +60,12 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 	}
 }
 
-func blueGreenDeployCommandFlagsDefiner() CommandFlagsDefiner {
-	return func(flags *flag.FlagSet) {
-		deployCommandFlagsDefiner()(flags)
-		flags.Bool(noConfirmOpt, false, "")
-	}
+func (c *BlueGreenDeployCommand) defineCommandOptions(flags *flag.FlagSet) {
+	c.DeployCommand.defineCommandOptions(flags)
+	flags.Bool(noConfirmOpt, false, "")
 }
 
-// BlueGreenDeployProcessParametersSetter returns a new ProcessParametersSetter.
+// blueGreenDeployProcessParametersSetter returns a new ProcessParametersSetter.
 func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
 	return func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder) {
 		deployProcessParametersSetter()(flags, processBuilder)

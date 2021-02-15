@@ -5,8 +5,10 @@ import (
 	"strings"
 	"time"
 
-	cfrestclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 const deployServiceHost = "deploy-service"
@@ -16,7 +18,7 @@ const defaultMaxRetriesCount = 3
 const defaultRetryInterval = time.Second * 2
 
 type DeployServiceURLCalculator interface {
-	ComputeDeployServiceURL() (string, error)
+	ComputeDeployServiceURL(cmdOption string) (string, error)
 }
 
 type deployServiceURLCalculatorImpl struct {
@@ -32,7 +34,17 @@ func NewDeployServiceURLCalculatorWithHttpExecutor(cloudFoundryClient cfrestclie
 	return deployServiceURLCalculatorImpl{cloudFoundryClient: cloudFoundryClient, httpGetExecutor: httpGetExecutor}
 }
 
-func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL() (string, error) {
+func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL(cmdOption string) (string, error) {
+	if cmdOption != "" {
+		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", cmdOption))
+		return cmdOption, nil
+	}
+
+	urlFromEnv := configuration.NewSnapshot().GetBackendURL()
+	if urlFromEnv != "" {
+		return urlFromEnv, nil
+	}
+
 	sharedDomains, err := c.cloudFoundryClient.GetSharedDomains()
 	if err != nil {
 		return "", err

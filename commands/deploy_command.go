@@ -14,7 +14,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -64,15 +64,17 @@ var resourcesList listFlag
 
 // DeployCommand is a command for deploying an MTA archive
 type DeployCommand struct {
-	BaseCommand
-	defineCommandFlags   CommandFlagsDefiner
+	*BaseCommand
 	setProcessParameters ProcessParametersSetter
 	processTypeProvider  ProcessTypeProvider
 }
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
-	return &DeployCommand{BaseCommand{}, deployCommandFlagsDefiner(), deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}}
+	baseCmd := &BaseCommand{flagsParser: newDeployCommandLineArgumentsParser(), flagsValidator: deployCommandFlagsValidator{}}
+	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}}
+	baseCmd.Command = deployCmd
+	return deployCmd
 }
 
 // GetPluginCommand returns the plugin command details
@@ -123,37 +125,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 // the deploy process. It takes them from the list of parsed flags.
 type ProcessParametersSetter func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder)
 
-// DeployCommandFlagsDefiner returns a new CommandFlagsDefiner.
-func deployCommandFlagsDefiner() CommandFlagsDefiner {
-	return func(flags *flag.FlagSet) {
-		flags.String(extDescriptorsOpt, "", "")
-		flags.String(operationIDOpt, "", "")
-		flags.String(actionOpt, "", "")
-		flags.Bool(forceOpt, false, "")
-		flags.String(timeoutOpt, "", "")
-		flags.String(versionRuleOpt, "", "")
-		flags.Bool(deleteServicesOpt, false, "")
-		flags.Bool(noStartOpt, false, "")
-		flags.String(namespaceOpt, "", "")
-		flags.Bool(deleteServiceKeysOpt, false, "")
-		flags.Bool(deleteServiceBrokersOpt, false, "")
-		flags.Bool(keepFilesOpt, false, "")
-		flags.Bool(noRestartSubscribedAppsOpt, false, "")
-		flags.Bool(noFailOnMissingPermissionsOpt, false, "")
-		flags.Bool(abortOnErrorOpt, false, "")
-		flags.Bool(skipOwnershipValidationOpt, false, "")
-		flags.Bool(allModulesOpt, false, "")
-		flags.Bool(allResourcesOpt, false, "")
-		flags.Bool(verifyArchiveSignatureOpt, false, "")
-		flags.Uint(retriesOpt, 3, "")
-		flags.String(strategyOpt, "default", "")
-		flags.Bool(skipTestingPhase, false, "")
-		flags.Var(&modulesList, moduleOpt, "")
-		flags.Var(&resourcesList, resourceOpt, "")
-	}
-}
-
-// DeployProcessParametersSetter returns a new ProcessParametersSetter.
+// deployProcessParametersSetter returns a new ProcessParametersSetter.
 func deployProcessParametersSetter() ProcessParametersSetter {
 	return func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder) {
 		processBuilder.Parameter("deleteServiceKeys", strconv.FormatBool(GetBoolOpt(deleteServiceKeysOpt, flags)))
@@ -171,46 +143,46 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 	}
 }
 
-// Execute executes the command
-func (c *DeployCommand) Execute(args []string) ExecutionStatus {
-	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
+func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
+	flags.String(extDescriptorsOpt, "", "")
+	flags.String(operationIDOpt, "", "")
+	flags.String(actionOpt, "", "")
+	flags.Bool(forceOpt, false, "")
+	flags.String(timeoutOpt, "", "")
+	flags.String(versionRuleOpt, "", "")
+	flags.Bool(deleteServicesOpt, false, "")
+	flags.Bool(noStartOpt, false, "")
+	flags.String(namespaceOpt, "", "")
+	flags.Bool(deleteServiceKeysOpt, false, "")
+	flags.Bool(deleteServiceBrokersOpt, false, "")
+	flags.Bool(keepFilesOpt, false, "")
+	flags.Bool(noRestartSubscribedAppsOpt, false, "")
+	flags.Bool(noFailOnMissingPermissionsOpt, false, "")
+	flags.Bool(abortOnErrorOpt, false, "")
+	flags.Bool(skipOwnershipValidationOpt, false, "")
+	flags.Bool(allModulesOpt, false, "")
+	flags.Bool(allResourcesOpt, false, "")
+	flags.Bool(verifyArchiveSignatureOpt, false, "")
+	flags.Uint(retriesOpt, 3, "")
+	flags.String(strategyOpt, "default", "")
+	flags.Bool(skipTestingPhase, false, "")
+	flags.Var(&modulesList, moduleOpt, "")
+	flags.Var(&resourcesList, resourceOpt, "")
+}
 
-	var host string
-
-	// Parse command arguments and check for required options
-	flags, err := c.CreateFlags(&host, args)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
-	c.defineCommandFlags(flags)
-	parser := NewCommandFlagsParser(flags, newDeployCommandLineArgumentsParser(), deployCommandFlagsValidator{})
-	err = parser.Parse(args)
-	if err != nil {
-		c.Usage(err.Error())
-		return Failure
-	}
-
-	extDescriptors := GetStringOpt(extDescriptorsOpt, flags)
+func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
 	operationID := GetStringOpt(operationIDOpt, flags)
 	action := GetStringOpt(actionOpt, flags)
-	force := GetBoolOpt(forceOpt, flags)
 	retries := GetUintOpt(retriesOpt, flags)
-	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
-
-	cfTarget, err := c.GetCFTarget()
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
 
 	if operationID != "" || action != "" {
-		return c.ExecuteAction(operationID, action, retries, host, cfTarget)
+		return c.ExecuteAction(operationID, action, retries, dsHost, cfTarget)
 	}
+
 	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
 	mtaElementsCalculator.calculateElementsToDeploy(flags)
 
-	rawMtaArchive, err := getMtaArchive(parser.Args(), mtaElementsCalculator)
+	rawMtaArchive, err := getMtaArchive(positionalArgs, mtaElementsCalculator)
 	if err != nil {
 		ui.Failed("Error retrieving MTA: %s", err.Error())
 		return Failure
@@ -233,7 +205,9 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 
 	// Check SLMP metadata
 	// TODO: ensure session
-	mtaClient := c.NewMtaClient(host, cfTarget)
+	mtaClient := c.NewMtaClient(dsHost, cfTarget)
+
+	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
 
 	if isUrl {
 		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(mtaArchive, &namespace)
@@ -262,8 +236,9 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		}
 		mtaId = descriptor.ID
 
+		force := GetBoolOpt(forceOpt, flags)
 		// Check for an ongoing operation for this MTA ID and abort it
-		wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, host, force, cfTarget)
+		wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, dsHost, force, cfTarget)
 		if err != nil {
 			ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
 			return Failure
@@ -280,6 +255,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedMtaArchivePartIds...)
 	}
 
+	extDescriptors := GetStringOpt(extDescriptorsOpt, flags)
 	// Get the full paths of the extension descriptors
 	var extDescriptorPaths []string
 	if extDescriptors != "" {
@@ -339,7 +315,7 @@ func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
 }
 
 func (c *DeployCommand) uploadFiles(files []string, namespace string, mtaClient mtaclient.MtaClientOperations) ([]string, ExecutionStatus) {
-	uploadChunkSizeInMB := c.configurationSnapshot.GetUploadChunkSizeInMB()
+	uploadChunkSizeInMB := configuration.NewSnapshot().GetUploadChunkSizeInMB()
 	var resultIds []string
 
 	fileUploader := NewFileUploader(files, mtaClient, namespace, uploadChunkSizeInMB)

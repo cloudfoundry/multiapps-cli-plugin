@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
@@ -55,10 +54,10 @@ var _ = Describe("MtasCommand", func() {
 			mtaV2Client := mtaV2fake.NewFakeMtaV2ClientBuilder().
 				GetMtasForThisSpace("", nil, nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(nil, mtaV2Client, nil)
-			command = &commands.MtasCommand{}
+			command = commands.NewMtasCommand()
 			testTokenFactory = commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator, configuration.NewSnapshot())
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		// unknown flag - error
@@ -92,7 +91,7 @@ var _ = Describe("MtasCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 1)
 			})
 		})
 
