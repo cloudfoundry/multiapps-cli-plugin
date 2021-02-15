@@ -58,20 +58,16 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 		return Failure
 	}
 
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed("Could not get org and space: %s", baseclient.NewClientError(err))
 		return Failure
 	}
 
-	printInitialMessage(context, mtaId, all, last)
+	printInitialMessage(cfTarget, mtaId, all, last)
 
 	// Create new REST client
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed("Could not get space ID: %s", baseclient.NewClientError(err))
-		return Failure
-	}
+	mtaClient := c.NewMtaClient(host, cfTarget)
 
 	// Get ongoing operations
 	operationsToPrint, err := getOperationsToPrint(mtaClient, mtaId, last, all)
@@ -97,7 +93,7 @@ func (c *MtaOperationsCommand) Execute(args []string) ExecutionStatus {
 	return Success
 }
 
-func printInitialMessage(context Context, mtaId string, all bool, last uint) {
+func printInitialMessage(cfTarget util.CloudFoundryTarget, mtaId string, all bool, last uint) {
 	var initialMessage string
 	if mtaId != "" {
 		initialMessage = "Getting multi-target app operations for %[1]s in org %[3]s / space %[4]s as %[5]s..."
@@ -110,8 +106,8 @@ func printInitialMessage(context Context, mtaId string, all bool, last uint) {
 	} else {
 		initialMessage = "Getting active multi-target app operations in org %[3]s / space %[4]s as %[5]s..."
 	}
-	ui.Say(initialMessage, terminal.EntityNameColor(mtaId), last, terminal.EntityNameColor(context.Org),
-		terminal.EntityNameColor(context.Space), terminal.EntityNameColor(context.Username))
+	ui.Say(initialMessage, terminal.EntityNameColor(mtaId), last, terminal.EntityNameColor(cfTarget.Org.Name),
+		terminal.EntityNameColor(cfTarget.Space.Name), terminal.EntityNameColor(cfTarget.Username))
 }
 
 func getOperationsToPrint(mtaClient mtaclient.MtaClientOperations, mtaId string, last uint, all bool) ([]*models.Operation, error) {

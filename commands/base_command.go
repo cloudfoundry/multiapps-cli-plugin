@@ -26,7 +26,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
-	plugin_models "github.com/cloudfoundry/cli/plugin/models"
 )
 
 const (
@@ -133,84 +132,31 @@ func (c *BaseCommand) NewRestClient(host string) restclient.RestClientOperations
 }
 
 // NewMtaClient creates a new MTA deployer REST client
-func (c *BaseCommand) NewMtaClient(host string) (mtaclient.MtaClientOperations, error) {
-	space, err := c.GetSpace()
-	if err != nil {
-		return nil, err
-	}
-
-	return c.clientFactory.NewMtaClient(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
+func (c *BaseCommand) NewMtaClient(host string, cfTarget util.CloudFoundryTarget) mtaclient.MtaClientOperations {
+	return c.clientFactory.NewMtaClient(host, cfTarget.Space.Guid, c.transport, c.jar, c.tokenFactory)
 }
 
 // NewMtaV2Client creates a new MTAV2 deployer REST client
-func (c *BaseCommand) NewMtaV2Client(host string) (mtaclient_v2.MtaV2ClientOperations, error) {
-	space, err := c.GetSpace()
-	if err != nil {
-		return nil, err
-	}
-
-	return c.clientFactory.NewMtaV2Client(host, space.Guid, c.transport, c.jar, c.tokenFactory), nil
+func (c *BaseCommand) NewMtaV2Client(host string, cfTarget util.CloudFoundryTarget) mtaclient_v2.MtaV2ClientOperations {
+	return c.clientFactory.NewMtaV2Client(host, cfTarget.Space.Guid, c.transport, c.jar, c.tokenFactory)
 }
 
-// Context holding the username, Org and Space of the current used
-type Context struct {
-	Username string
-	Org      string
-	Space    string
-}
-
-// GetContext initializes and retrieves the Context
-func (c *BaseCommand) GetContext() (Context, error) {
-	username, err := c.GetUsername()
+// GetCFTarget initializes and retrieves the CF Target with the current user
+func (c *BaseCommand) GetCFTarget() (util.CloudFoundryTarget, error) {
+	cfContext := util.NewCloudFoundryContext(c.cliConnection)
+	username, err := cfContext.GetUsername()
 	if err != nil {
-		return Context{}, err
+		return util.CloudFoundryTarget{}, err
 	}
-	org, err := c.GetOrg()
+	org, err := cfContext.GetOrg()
 	if err != nil {
-		return Context{}, err
+		return util.CloudFoundryTarget{}, err
 	}
-	space, err := c.GetSpace()
+	space, err := cfContext.GetSpace()
 	if err != nil {
-		return Context{}, err
+		return util.CloudFoundryTarget{}, err
 	}
-	return Context{Org: org.Name, Space: space.Name, Username: username}, nil
-}
-
-// GetOrg gets the current org name from the CLI connection
-func (c *BaseCommand) GetOrg() (plugin_models.Organization, error) {
-	org, err := c.cliConnection.GetCurrentOrg()
-	if err != nil {
-		return plugin_models.Organization{}, fmt.Errorf("Could not get current org: %s", err)
-	}
-	if org.Name == "" {
-		return plugin_models.Organization{}, fmt.Errorf("No org and space targeted, use '%s' to target an org and a space", terminal.CommandColor("cf target -o ORG -s SPACE"))
-	}
-	return org, nil
-}
-
-// GetSpace gets the current space name from the CLI connection
-func (c *BaseCommand) GetSpace() (plugin_models.Space, error) {
-	space, err := c.cliConnection.GetCurrentSpace()
-	if err != nil {
-		return plugin_models.Space{}, fmt.Errorf("Could not get current space: %s", err)
-	}
-
-	if space.Name == "" || space.Guid == "" {
-		return plugin_models.Space{}, fmt.Errorf("No space targeted, use '%s' to target a space", terminal.CommandColor("cf target -s"))
-	}
-	return space, nil
-}
-
-// GetUsername gets the username from the CLI connection
-func (c *BaseCommand) GetUsername() (string, error) {
-	username, err := c.cliConnection.Username()
-	if err != nil {
-		return "", fmt.Errorf("Could not get username: %s", err)
-	}
-	if username == "" {
-		return "", fmt.Errorf("Not logged in. Use '%s' to log in.", terminal.CommandColor("cf login"))
-	}
-	return username, nil
+	return util.NewCFTarget(org, space, username), nil
 }
 
 // GetDeployServiceURL returns the deploy service URL
@@ -235,13 +181,8 @@ func (c *BaseCommand) GetCustomDeployServiceURL(args []string) string {
 }
 
 // ExecuteAction executes the action over the process specified with operationID
-func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, host string) ExecutionStatus {
-	// Create REST client
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed(err.Error())
-		return Failure
-	}
+func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, host string, cfTarget util.CloudFoundryTarget) ExecutionStatus {
+	mtaClient := c.NewMtaClient(host, cfTarget)
 
 	// find ongoing operation by the specified operationID
 	ongoingOperation, err := c.findOngoingOperationByID(operationID, mtaClient)
@@ -267,14 +208,11 @@ func (c *BaseCommand) ExecuteAction(operationID, actionID string, retries uint, 
 }
 
 // CheckOngoingOperation checks for ongoing operation for mta with the specified id and tries to abort it
-func (c *BaseCommand) CheckOngoingOperation(mtaID string, namespace string, host string, force bool) (bool, error) {
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		return false, err
-	}
+func (c *BaseCommand) CheckOngoingOperation(mtaID string, namespace string, host string, force bool, cfTarget util.CloudFoundryTarget) (bool, error) {
+	mtaClient := c.NewMtaClient(host, cfTarget)
 
 	// Check if there is an ongoing operation for this MTA ID
-	ongoingOperation, err := c.findOngoingOperation(mtaID, namespace, mtaClient)
+	ongoingOperation, err := c.findOngoingOperation(mtaID, namespace, mtaClient, cfTarget)
 	if err != nil {
 		return false, err
 	}
@@ -310,17 +248,14 @@ func (c *BaseCommand) findOngoingOperationByID(processID string, mtaClient mtacl
 }
 
 // FindOngoingOperation finds ongoing operation for mta with the specified id
-func (c *BaseCommand) findOngoingOperation(mtaID string, namespace string, mtaClient mtaclient.MtaClientOperations) (*models.Operation, error) {
+func (c *BaseCommand) findOngoingOperation(mtaID string, namespace string, mtaClient mtaclient.MtaClientOperations, cfTarget util.CloudFoundryTarget) (*models.Operation, error) {
 	activeStatesList := []string{"RUNNING", "ERROR", "ACTION_REQUIRED"}
 	ongoingOperations, err := mtaClient.GetMtaOperations(&mtaID, nil, activeStatesList)
 	if err != nil {
 		return nil, fmt.Errorf("Could not get ongoing operations for multi-target app %s: %s", terminal.EntityNameColor(mtaID), err)
 	}
 	for _, ongoingOperation := range ongoingOperations {
-		isConflicting, err := c.isConflicting(ongoingOperation, mtaID, namespace)
-		if err != nil {
-			return nil, err
-		}
+		isConflicting := c.isConflicting(ongoingOperation, mtaID, namespace, cfTarget)
 		if isConflicting {
 			return ongoingOperation, nil
 		}
@@ -328,13 +263,11 @@ func (c *BaseCommand) findOngoingOperation(mtaID string, namespace string, mtaCl
 	return nil, nil
 }
 
-func (c *BaseCommand) isConflicting(operation *models.Operation, mtaID string, namespace string) (bool, error) {
-	space, err := c.GetSpace()
-	if err != nil {
-		return false, err
-	}
-
-	return operation.MtaID == mtaID && operation.SpaceID == space.Guid && operation.Namespace == namespace && operation.AcquiredLock, nil
+func (c *BaseCommand) isConflicting(operation *models.Operation, mtaID string, namespace string, cfTarget util.CloudFoundryTarget) bool {
+	return operation.MtaID == mtaID &&
+		operation.SpaceID == cfTarget.Space.Guid &&
+		operation.Namespace == namespace &&
+		operation.AcquiredLock
 }
 
 func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) bool {

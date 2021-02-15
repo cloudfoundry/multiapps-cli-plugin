@@ -215,14 +215,14 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 	retries := GetUintOpt(retriesOpt, optionValues)
 	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, optionValues))
 
-	context, err := c.GetContext()
+	cfTarget, err := c.GetCFTarget()
 	if err != nil {
 		ui.Failed(err.Error())
 		return Failure
 	}
 
 	if operationID != "" || action != "" {
-		return c.ExecuteAction(operationID, action, retries, host)
+		return c.ExecuteAction(operationID, action, retries, host, cfTarget)
 	}
 	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
 	mtaElementsCalculator.calculateElementsToDeploy(optionValues)
@@ -242,19 +242,15 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 
 	// Print initial message
 	ui.Say("Deploying multi-target app archive %s in org %s / space %s as %s...\n",
-		mtaNameToPrint, terminal.EntityNameColor(context.Org), terminal.EntityNameColor(context.Space),
-		terminal.EntityNameColor(context.Username))
+		mtaNameToPrint, terminal.EntityNameColor(cfTarget.Org.Name), terminal.EntityNameColor(cfTarget.Space.Name),
+		terminal.EntityNameColor(cfTarget.Username))
 
 	var uploadedArchivePartIds []string
 	var mtaId string
 
 	// Check SLMP metadata
 	// TODO: ensure session
-	mtaClient, err := c.NewMtaClient(host)
-	if err != nil {
-		ui.Failed("Could not get space guid:", baseclient.NewClientError(err))
-		return Failure
-	}
+	mtaClient := c.NewMtaClient(host, cfTarget)
 
 	if isUrl {
 		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(mtaArchive, &namespace)
@@ -284,7 +280,7 @@ func (c *DeployCommand) Execute(args []string) ExecutionStatus {
 		mtaId = descriptor.ID
 
 		// Check for an ongoing operation for this MTA ID and abort it
-		wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, host, force)
+		wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, host, force, cfTarget)
 		if err != nil {
 			ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
 			return Failure
