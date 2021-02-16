@@ -144,7 +144,7 @@ var _ = Describe("DeployCommand", func() {
 			command = commands.NewDeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), testClientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		// unknown flag - error

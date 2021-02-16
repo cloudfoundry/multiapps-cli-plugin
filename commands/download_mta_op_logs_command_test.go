@@ -76,7 +76,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 			command = commands.NewDmolCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		AfterEach(func() {

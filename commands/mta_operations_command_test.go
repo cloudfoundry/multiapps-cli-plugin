@@ -53,7 +53,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 			command = commands.NewMtaOperationsCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
 		Context("with an unknown flag", func() {

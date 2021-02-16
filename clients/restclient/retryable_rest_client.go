@@ -15,14 +15,9 @@ type RetryableRestClient struct {
 }
 
 // NewRetryableRestClient creates a new retryable REST client
-func NewRetryableRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RestClientOperations {
-	restClient := NewRestClient(host, rt, jar, tokenFactory)
+func NewRetryableRestClient(host string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) RestClientOperations {
+	restClient := NewRestClient(host, rt, tokenFactory)
 	return RetryableRestClient{restClient, 3, time.Second * 3}
-}
-
-func NewRetryableManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RetryableRestClient {
-	mtaManagementClient := NewManagementRestClient(host, rt, jar, tokenFactory)
-	return RetryableRestClient{RestClient: mtaManagementClient, MaxRetriesCount: 3, RetryInterval: time.Second * 3}
 }
 
 // PurgeConfiguration purges a configuration

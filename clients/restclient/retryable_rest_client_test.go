@@ -2,7 +2,6 @@ package restclient_test
 
 import (
 	"net/http"
-	"net/http/cookiejar"
 	"time"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
@@ -56,14 +55,13 @@ var _ = Describe("RetryableRestClient", func() {
 
 func newRetryableRestClient(statusCode int) restclient.RestClientOperations {
 	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
-	cookieJar, _ := cookiejar.New(nil)
 	roundTripper := testutil.NewCustomTransport(statusCode)
-	return NewMockRetryableRestClient("http://localhost:1000", roundTripper, cookieJar, tokenFactory)
+	return NewMockRetryableRestClient("http://localhost:1000", roundTripper, tokenFactory)
 }
 
 // NewRetryableRestClient creates a new retryable REST client
-func NewMockRetryableRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
-	restClient := NewMockRestClient(host, rt, jar, tokenFactory)
+func NewMockRetryableRestClient(host string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+	restClient := NewMockRestClient(host, rt, tokenFactory)
 	return restclient.RetryableRestClient{RestClient: restClient, MaxRetriesCount: 3, RetryInterval: time.Microsecond * 1}
 }
 
@@ -73,8 +71,8 @@ type MockRestClient struct {
 }
 
 // NewMockRestClient creates a new Rest client
-func NewMockRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
-	restClient := restclient.NewRestClient(host, rt, jar, tokenFactory)
+func NewMockRestClient(host string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+	restClient := restclient.NewRestClient(host, rt, tokenFactory)
 	return &MockRestClient{restClient, 0}
 }
 

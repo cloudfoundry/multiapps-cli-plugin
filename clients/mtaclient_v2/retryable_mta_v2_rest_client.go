@@ -14,8 +14,8 @@ type RetryableMtaRestClient struct {
 	RetryInterval   time.Duration
 }
 
-func NewRetryableMtaRestClient(host string, spaceGUID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) RetryableMtaRestClient {
-	mtaClient := NewMtaClient(host, spaceGUID, rt, jar, tokenFactory)
+func NewRetryableMtaRestClient(host string, spaceGUID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) RetryableMtaRestClient {
+	mtaClient := NewMtaClient(host, spaceGUID, rt, tokenFactory)
 	return RetryableMtaRestClient{mtaClient: mtaClient, MaxRetriesCount: 3, RetryInterval: time.Second * 3}
 }
 

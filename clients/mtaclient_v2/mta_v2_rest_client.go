@@ -19,8 +19,8 @@ type MtaV2RestClient struct {
 	spaceGUID string
 }
 
-func NewMtaClient(host string, spaceGUID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaV2ClientOperations {
-	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt, jar)
+func NewMtaClient(host string, spaceGUID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) MtaV2ClientOperations {
+	t := baseclient.NewHTTPTransport(host, restBaseURL, restBaseURL, rt)
 	httpMtaV2Client := New(t, strfmt.Default)
 	return &MtaV2RestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaV2Client, spaceGUID}
 }

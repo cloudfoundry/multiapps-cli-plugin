@@ -11,9 +11,9 @@ import (
 
 // ClientFactory is a factory for creating XxxClientOperations instances
 type ClientFactory interface {
-	NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
-	NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations
-	NewMtaV2Client(host, spaceGUID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient_v2.MtaV2ClientOperations
+	NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations
+	NewRestClient(host string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations
+	NewMtaV2Client(host, spaceGUID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) mtaclient_v2.MtaV2ClientOperations
 }
 
 // DefaultClientFactory a default implementation of the ClientFactory
@@ -29,26 +29,25 @@ func NewDefaultClientFactory() *DefaultClientFactory {
 }
 
 // NewMtaClient used for creating or returning cached value of the mta rest client
-func (d *DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
+func (d *DefaultClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
 	if d.mtaClient == nil {
-		d.mtaClient = mtaclient.NewRetryableMtaRestClient(host, spaceID, rt, jar, tokenFactory)
+		d.mtaClient = mtaclient.NewRetryableMtaRestClient(host, spaceID, rt, tokenFactory)
 	}
 	return d.mtaClient
 }
 
 // NewMtaClient used for creating or returning cached value of the mta rest client
-func (d *DefaultClientFactory) NewMtaV2Client(host, spaceGUID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient_v2.MtaV2ClientOperations {
+func (d *DefaultClientFactory) NewMtaV2Client(host, spaceGUID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) mtaclient_v2.MtaV2ClientOperations {
 	if d.mtaV2Client == nil {
-		d.mtaV2Client = mtaclient_v2.NewRetryableMtaRestClient(host, spaceGUID, rt, jar, tokenFactory)
+		d.mtaV2Client = mtaclient_v2.NewRetryableMtaRestClient(host, spaceGUID, rt, tokenFactory)
 	}
 	return d.mtaV2Client
 }
 
 // NewRestClient used for creating or returning cached value of the rest client
-func (d *DefaultClientFactory) NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar,
-	tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+func (d *DefaultClientFactory) NewRestClient(host string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
 	if d.restClient == nil {
-		d.restClient = restclient.NewRetryableRestClient(host, rt, jar, tokenFactory)
+		d.restClient = restclient.NewRetryableRestClient(host, rt, tokenFactory)
 	}
 	return d.restClient
 }

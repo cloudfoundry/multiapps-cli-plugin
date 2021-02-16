@@ -25,22 +25,14 @@ func NewTestClientFactory(mtaClient mtaclient.MtaClientOperations,
 	}
 }
 
-func (f *TestClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
+func (f *TestClientFactory) NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
 	return f.MtaClient
 }
 
-func (f *TestClientFactory) NewManagementMtaClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient.MtaClientOperations {
-	return f.MtaClient
-}
-
-func (f *TestClientFactory) NewRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
+func (f *TestClientFactory) NewRestClient(host string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
 	return f.RestClient
 }
 
-func (f *TestClientFactory) NewManagementRestClient(host string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) restclient.RestClientOperations {
-	return f.RestClient
-}
-
-func (f *TestClientFactory) NewMtaV2Client(host, spaceGUID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) mtaclient_v2.MtaV2ClientOperations {
+func (f *TestClientFactory) NewMtaV2Client(host, spaceGUID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) mtaclient_v2.MtaV2ClientOperations {
 	return f.MtaV2Client
 }
