@@ -71,7 +71,7 @@ type DeployCommand struct {
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
-	baseCmd := &BaseCommand{flagsParser: newDeployCommandLineArgumentsParser(), flagsValidator: deployCommandFlagsValidator{}}
+	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
 	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}}
 	baseCmd.Command = deployCmd
 	return deployCmd
@@ -457,37 +457,25 @@ func (d deployCommandProcessTypeProvider) GetProcessType() string {
 	return "DEPLOY"
 }
 
-type deployCommandLineArgumentsParser struct {
-}
-
-func newDeployCommandLineArgumentsParser() deployCommandLineArgumentsParser {
-	return deployCommandLineArgumentsParser{}
-}
+type deployCommandLineArgumentsParser struct {}
 
 func (p deployCommandLineArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
-	argument := findFirstNotFlagedArgument(flags, args)
-
-	positionalArgumentsToValidate := determinePositionalArgumentsToValidate(argument)
-
+	argument := p.findFirstNotFlaggedArgument(flags, args)
+	positionalArgumentsToValidate := p.determinePositionalArgumentsToValidate(argument)
 	return NewProcessActionExecutorCommandArgumentsParser(positionalArgumentsToValidate).ParseFlags(flags, args)
 }
 
-func findFirstNotFlagedArgument(flags *flag.FlagSet, args []string) string {
-	if len(args) == 0 {
+func (deployCommandLineArgumentsParser) findFirstNotFlaggedArgument(flags *flag.FlagSet, args []string) string {
+	if len(args) == 0 || flags.Lookup(strings.Replace(args[0], "-", "", 2)) != nil {
 		return ""
 	}
-	optionFlag := flags.Lookup(strings.Replace(args[0], "-", "", 2))
-	if optionFlag == nil {
-		return args[0]
-	}
-	return ""
+	return args[0]
 }
 
-func determinePositionalArgumentsToValidate(positionalArgument string) []string {
+func (deployCommandLineArgumentsParser) determinePositionalArgumentsToValidate(positionalArgument string) []string {
 	if positionalArgument == "" {
 		return []string{}
 	}
-
 	return []string{"MTA"}
 }
 

@@ -9,9 +9,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
 
-// CommandFlagsDefiner defines the flags supported by a command
-type CommandFlagsDefiner func(flags *flag.FlagSet)
-
 // CommandFlagsParser used for parsing the arguments
 type CommandFlagsParser struct {
 	flag       *flag.FlagSet
