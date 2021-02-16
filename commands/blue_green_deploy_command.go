@@ -17,7 +17,7 @@ type BlueGreenDeployCommand struct {
 
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
-	baseCmd := &BaseCommand{flagsParser: newDeployCommandLineArgumentsParser(), flagsValidator: deployCommandFlagsValidator{}}
+	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
 	deployCmd := &DeployCommand{baseCmd, blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}
 	bgDeployCmd := &BlueGreenDeployCommand{deployCmd}
 	baseCmd.Command = bgDeployCmd

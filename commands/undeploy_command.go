@@ -175,11 +175,8 @@ func (p ProcessActionExecutorCommandArgumentsParser) ParseFlags(flags *flag.Flag
 		return fmt.Errorf("Options %s and %s should be specified only once", operationIDOpt, actionOpt)
 	}
 
-	if len(operationExecutorOptions) > 0 && len(operationExecutorOptions) < len([]string{operationIDOpt, actionOpt}) {
-		var keys []string
-		for _, key := range []string{operationIDOpt, actionOpt} {
-			keys = append(keys, key)
-		}
+	if len(operationExecutorOptions) == 1 {
+		keys := append([]string{}, []string{operationIDOpt, actionOpt}...)
 		sort.Strings(keys)
 		return fmt.Errorf("All the %s options should be specified together", strings.Join(keys, " "))
 	}
@@ -191,6 +188,5 @@ func (p ProcessActionExecutorCommandArgumentsParser) determinePositionalArgument
 	if len(operationExecutorOptions) == 2 {
 		return []string{}
 	}
-
 	return p.positionalArgNames
 }
