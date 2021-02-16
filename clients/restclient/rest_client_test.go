@@ -1,14 +1,12 @@
 package restclient_test
 
 import (
-	"net/http"
-	"net/http/cookiejar"
-
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"net/http"
 )
 
 var _ = Describe("RestClient", func() {
@@ -34,7 +32,6 @@ var _ = Describe("RestClient", func() {
 
 func newRestClient(statusCode int) restclient.RestClientOperations {
 	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
-	cookieJar, _ := cookiejar.New(nil)
 	roundTripper := testutil.NewCustomTransport(statusCode)
-	return restclient.NewRestClient("http://localhost:1000", roundTripper, cookieJar, tokenFactory)
+	return restclient.NewRestClient("http://localhost:1000", roundTripper, tokenFactory)
 }

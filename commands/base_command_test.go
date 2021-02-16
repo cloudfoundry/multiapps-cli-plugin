@@ -69,7 +69,7 @@ var _ = Describe("BaseCommand", func() {
 				Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
-			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK), nil, testClientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(http.StatusOK), testClientFactory, testTokenFactory, deployServiceURLCalculator)
 			cfTarget, _ = command.GetCFTarget()
 		})
 		Context("with valid ongoing operations", func() {
@@ -148,7 +148,7 @@ var _ = Describe("BaseCommand", func() {
 				ExecuteAction("test-process-id", "abort", mtaclient.ResponseHeader{}, nil).
 				ExecuteAction("test-process-id", "retry", mtaclient.ResponseHeader{Location: "operations/test-process-id?embed=messages"}, nil).Build()
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
-			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200), nil, testClientfactory, testTokenFactory, deployServiceURLCalculator)
+			command.InitializeAll("test", fakeCliConnection, testutil.NewCustomTransport(200), testClientfactory, testTokenFactory, deployServiceURLCalculator)
 			cfTarget, _ = command.GetCFTarget()
 		})
 		Context("with valid process id and valid action id", func() {

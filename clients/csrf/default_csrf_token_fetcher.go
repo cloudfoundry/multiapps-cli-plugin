@@ -59,7 +59,7 @@ func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url string, currentRequest *htt
 }
 
 func getCsrfTokenUrl(req *http.Request) string {
-	return string(req.URL.Scheme) + "://" + string(req.URL.Host) + CsrfTokensApi
+	return req.URL.Scheme + "://" + req.URL.Host + CsrfTokensApi
 }
 
 func UpdateCookiesIfNeeded(cookies []*http.Cookie, request *http.Request) {

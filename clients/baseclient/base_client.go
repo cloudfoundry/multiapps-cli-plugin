@@ -2,6 +2,7 @@ package baseclient
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/client"
@@ -25,11 +26,12 @@ func (c *BaseClient) SetTokenFactory(tokenFactory TokenFactory) {
 }
 
 // NewHTTPTransport creates a new HTTP transport
-func NewHTTPTransport(host, url, encodedUrl string, rt http.RoundTripper, jar http.CookieJar) *client.Runtime {
+func NewHTTPTransport(host, url, encodedUrl string, rt http.RoundTripper) *client.Runtime {
 	// TODO: apply the changes made by Boyan here, as after the update of the dependencies the changes are not available
 	transport := client.New(host, url, encodedUrl, schemes)
 	transport.Consumers["text/html"] = runtime.TextConsumer()
 	transport.Transport = rt
+	jar, _ := cookiejar.New(nil)
 	transport.Jar = jar
 	return transport
 }

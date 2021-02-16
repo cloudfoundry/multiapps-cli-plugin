@@ -20,9 +20,9 @@ type MtaRestClient struct {
 	client *MtaClient
 }
 
-func NewMtaClient(host, spaceID string, rt http.RoundTripper, jar http.CookieJar, tokenFactory baseclient.TokenFactory) MtaClientOperations {
+func NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) MtaClientOperations {
 	restURL := restBaseURL + spacesURL + spaceID
-	t := baseclient.NewHTTPTransport(host, restURL, restURL, rt, jar)
+	t := baseclient.NewHTTPTransport(host, restURL, restURL, rt)
 	httpMtaClient := New(t, strfmt.Default)
 	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
 }

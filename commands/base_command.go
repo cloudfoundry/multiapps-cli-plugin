@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/cookiejar"
 	"strconv"
 	"strings"
 	"time"
@@ -55,7 +54,6 @@ type BaseCommand struct {
 	name                       string
 	cliConnection              plugin.CliConnection
 	transport                  http.RoundTripper
-	jar                        http.CookieJar
 	clientFactory              clients.ClientFactory
 	tokenFactory               baseclient.TokenFactory
 	deployServiceURLCalculator util.DeployServiceURLCalculator
@@ -65,19 +63,17 @@ type BaseCommand struct {
 func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	log.Tracef("Initializing command '%s'\n", name)
 	transport := newTransport()
-	jar := newCookieJar()
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
-	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, jar, tokenFactory)
+	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, tokenFactory)
 	resilientCloudFoundryClient := resilient.NewResilientCloudFoundryClient(cloudFoundryClient, maxRetriesCount, retryIntervalInSeconds)
-	c.InitializeAll(name, cliConnection, transport, jar, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient))
+	c.InitializeAll(name, cliConnection, transport, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient))
 }
 
-// InitializeAll initializes the command with the specified name, CLI connection, transport and cookie jar.
-func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnection, transport http.RoundTripper, jar http.CookieJar, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator) {
+// InitializeAll initializes the command with the specified name, CLI connection, transport, client & token factories and deploy service URL calculator.
+func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnection, transport http.RoundTripper, clientFactory clients.ClientFactory, tokenFactory baseclient.TokenFactory, deployServiceURLCalculator util.DeployServiceURLCalculator) {
 	c.name = name
 	c.cliConnection = cliConnection
 	c.transport = transport
-	c.jar = jar
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
 	c.deployServiceURLCalculator = deployServiceURLCalculator
@@ -155,17 +151,17 @@ func GetUintOpt(name string, flags *flag.FlagSet) uint {
 
 // NewRestClient creates a new MTA deployer REST client
 func (c *BaseCommand) NewRestClient(host string) restclient.RestClientOperations {
-	return c.clientFactory.NewRestClient(host, c.transport, c.jar, c.tokenFactory)
+	return c.clientFactory.NewRestClient(host, c.transport, c.tokenFactory)
 }
 
 // NewMtaClient creates a new MTA deployer REST client
 func (c *BaseCommand) NewMtaClient(host string, cfTarget util.CloudFoundryTarget) mtaclient.MtaClientOperations {
-	return c.clientFactory.NewMtaClient(host, cfTarget.Space.Guid, c.transport, c.jar, c.tokenFactory)
+	return c.clientFactory.NewMtaClient(host, cfTarget.Space.Guid, c.transport, c.tokenFactory)
 }
 
 // NewMtaV2Client creates a new MTAV2 deployer REST client
 func (c *BaseCommand) NewMtaV2Client(host string, cfTarget util.CloudFoundryTarget) mtaclient_v2.MtaV2ClientOperations {
-	return c.clientFactory.NewMtaV2Client(host, cfTarget.Space.Guid, c.transport, c.jar, c.tokenFactory)
+	return c.clientFactory.NewMtaV2Client(host, cfTarget.Space.Guid, c.transport, c.tokenFactory)
 }
 
 // GetCFTarget initializes and retrieves the CF Target with the current user
@@ -302,14 +298,6 @@ func getNonProtectedMethods() map[string]bool {
 	nonProtectedMethods[http.MethodOptions] = true
 
 	return nonProtectedMethods
-}
-
-func newCookieJar() http.CookieJar {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		panic(fmt.Sprintf("Could not create cookie jar: %s", err))
-	}
-	return jar
 }
 
 func getTokenValue(tokenString string) string {

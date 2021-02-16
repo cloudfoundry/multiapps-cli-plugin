@@ -43,7 +43,7 @@ var _ = Describe("PurgeConfigCommand", func() {
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
 			command = commands.NewPurgeConfigCommand()
-			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), nil, clientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), clientFactory, testTokenFactory, deployServiceURLCalculator)
 
 			oc = testutil.NewUIOutputCapturer()
 			ex = testutil.NewUIExpector()
