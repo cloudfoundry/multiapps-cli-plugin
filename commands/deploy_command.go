@@ -13,7 +13,6 @@ import (
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -201,6 +200,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		terminal.EntityNameColor(cfTarget.Username))
 
 	var uploadedArchivePartIds []string
+	var uploadStatus ExecutionStatus
 	var mtaId string
 
 	// Check SLMP metadata
@@ -208,6 +208,8 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	mtaClient := c.NewMtaClient(dsHost, cfTarget)
 
 	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
+	uploadChunkSizeInMB := configuration.NewSnapshot().GetUploadChunkSizeInMB()
+	fileUploader := NewFileUploader(mtaClient, namespace, uploadChunkSizeInMB)
 
 	if isUrl {
 		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(mtaArchive, &namespace)
@@ -248,11 +250,10 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		}
 
 		// Upload the MTA archive file
-		uploadedMtaArchivePartIds, status := c.uploadFiles([]string{mtaArchivePath}, namespace, mtaClient)
-		if status == Failure {
+		uploadedArchivePartIds, uploadStatus = c.uploadFiles([]string{mtaArchivePath}, fileUploader)
+		if uploadStatus == Failure {
 			return Failure
 		}
-		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedMtaArchivePartIds...)
 	}
 
 	extDescriptors := GetStringOpt(extDescriptorsOpt, flags)
@@ -269,15 +270,10 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 			extDescriptorPaths = append(extDescriptorPaths, extDescriptorPath)
 		}
 	}
-
 	// Upload the extension descriptor files
-	var uploadedExtDescriptorIDs []string
-	if len(extDescriptorPaths) != 0 {
-		uploadedExtDescriptorIds, status := c.uploadFiles(extDescriptorPaths, namespace, mtaClient)
-		if status == Failure {
-			return Failure
-		}
-		uploadedExtDescriptorIDs = append(uploadedExtDescriptorIDs, uploadedExtDescriptorIds...)
+	uploadedExtDescriptorIDs, uploadStatus := c.uploadFiles(extDescriptorPaths, fileUploader)
+	if uploadStatus == Failure {
+		return Failure
 	}
 
 	// Build the process instance
@@ -314,15 +310,14 @@ func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
 	return false, ""
 }
 
-func (c *DeployCommand) uploadFiles(files []string, namespace string, mtaClient mtaclient.MtaClientOperations) ([]string, ExecutionStatus) {
-	uploadChunkSizeInMB := configuration.NewSnapshot().GetUploadChunkSizeInMB()
+func (c *DeployCommand) uploadFiles(files []string, fileUploader *FileUploader) ([]string, ExecutionStatus) {
 	var resultIds []string
 
-	fileUploader := NewFileUploader(files, mtaClient, namespace, uploadChunkSizeInMB)
-	uploadedFiles, status := fileUploader.UploadFiles()
+	uploadedFiles, status := fileUploader.UploadFiles(files)
 	if status == Failure {
-		return nil, Failure
+		return resultIds, Failure
 	}
+
 	for _, uploadedFilePart := range uploadedFiles {
 		resultIds = append(resultIds, uploadedFilePart.ID)
 	}

@@ -15,21 +15,18 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"golang.org/x/sync/errgroup"
 )
 
-//FileUploader uploads files for the service with the specified service ID
+//FileUploader uploads files in chunks for the specified namespace
 type FileUploader struct {
-	files               []string
 	mtaClient           mtaclient.MtaClientOperations
 	namespace           string
 	uploadChunkSizeInMB uint64
 }
 
-//NewFileUploader creates a new file uploader for the specified service ID, files, and SLMP client
-func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64) *FileUploader {
+//NewFileUploader creates a new file uploader for the specified namespace
+func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64) *FileUploader {
 	return &FileUploader{
-		files:               files,
 		mtaClient:           mtaClient,
 		namespace:           namespace,
 		uploadChunkSizeInMB: uploadChunkSizeInMB,
@@ -37,8 +34,8 @@ func NewFileUploader(files []string, mtaClient mtaclient.MtaClientOperations, na
 }
 
 //UploadFiles uploads the files
-func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
-	log.Tracef("Uploading files '%v'\n", f.files)
+func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, ExecutionStatus) {
+	log.Tracef("Uploading files '%v'\n", files)
 
 	// Get all files that are already uploaded
 	uploadedMtaFiles, err := f.mtaClient.GetMtaFiles(&f.namespace)
@@ -50,7 +47,7 @@ func (f *FileUploader) UploadFiles() ([]*models.FileMetadata, ExecutionStatus) {
 	// Determine which files to upload
 	var filesToUpload []os.File
 	var alreadyUploadedFiles []*models.FileMetadata
-	for _, file := range f.files {
+	for _, file := range files {
 		// Check if the file exists
 		fileInfo, err := os.Stat(file)
 		if os.IsNotExist(err) {
@@ -115,44 +112,37 @@ func (f *FileUploader) uploadInChunks(fullPath string, fileToUpload os.File) ([]
 	}
 	defer attemptToRemoveFileParts(fileToUploadParts)
 
-	var uploaderGroup errgroup.Group
 	uploadedFilesChannel := make(chan *models.FileMetadata)
 	defer close(uploadedFilesChannel)
-	for _, fileToUploadPart := range fileToUploadParts {
-		filePart, err := os.Open(fileToUploadPart)
-		if err != nil {
-			return nil, fmt.Errorf("Could not open file part %s of file %s", filePart.Name(), fullPath)
-		}
-		fileInfo, _ := filePart.Stat()
+	errorChannel := make(chan error)
+	defer close(errorChannel)
 
-		uploaderGroup.Go(func() error {
+	for _, fileToUploadPart := range fileToUploadParts {
+		go func() {
+			filePart, err := os.Open(fileToUploadPart)
+			if err != nil {
+				errorChannel <- fmt.Errorf("Could not open file part %s of file %s", fileToUploadPart, fullPath)
+				return
+			}
+			fileInfo, _ := filePart.Stat()
+
 			file, err := f.uploadFilePart(filePart, fileToUpload.Name(), fileInfo.Size())
 			if err != nil {
-				return err
+				errorChannel <- err
+				return
 			}
 			uploadedFilesChannel <- file
-			return nil
-		})
+		}()
 	}
-	var uploadedFileParts []*models.FileMetadata
-	var retrieverGroup errgroup.Group
-	retrieverGroup.Go(func() error {
-		for uploadedFile := range uploadedFilesChannel {
-			uploadedFileParts = append(uploadedFileParts, uploadedFile)
-			if len(uploadedFileParts) == len(fileToUploadParts) {
-				break
-			}
-		}
-		return nil
-	})
 
-	err = uploaderGroup.Wait()
-	if err != nil {
-		return nil, err
-	}
-	err = retrieverGroup.Wait()
-	if err != nil {
-		return nil, err
+	var uploadedFileParts []*models.FileMetadata
+	for len(uploadedFileParts) < len(fileToUploadParts) {
+		select {
+		case uploadedFile := <-uploadedFilesChannel:
+			uploadedFileParts = append(uploadedFileParts, uploadedFile)
+		case err := <-errorChannel:
+			return nil, err
+		}
 	}
 	return uploadedFileParts, nil
 }

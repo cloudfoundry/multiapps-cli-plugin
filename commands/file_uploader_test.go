@@ -45,8 +45,8 @@ var _ = Describe("FileUploader", func() {
 				client := fakeMtaClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
 
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{}, client, namespace, properties.DefaultUploadChunkSizeInMB)
-					uploadedFiles, status = fileUploader.UploadFiles()
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					uploadedFiles, status = fileUploader.UploadFiles([]string{})
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
 				Expect(uploadedFiles).To(BeNil())
@@ -58,8 +58,8 @@ var _ = Describe("FileUploader", func() {
 				client := fakeMtaClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{}, client, namespace, properties.DefaultUploadChunkSizeInMB)
-					uploadedFiles, status = fileUploader.UploadFiles()
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					uploadedFiles, status = fileUploader.UploadFiles([]string{})
 				})
 				ex.ExpectSuccess(status.ToInt(), output)
 				Expect(uploadedFiles).To(BeNil())
@@ -74,8 +74,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, namespace), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
-					uploadedFiles, status = fileUploader.UploadFiles()
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
 				fullPath, _ := filepath.Abs(testFile.Name())
@@ -96,8 +96,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, "namespace"), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
-					uploadedFiles, status = fileUploader.UploadFiles()
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
 					"Previously uploaded file test.mtar with same digest detected, new upload will be skipped.\n"})
@@ -114,8 +114,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, fileMetadata, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
-					uploadedFiles, status = fileUploader.UploadFiles()
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
 				fullPath, _ := filepath.Abs(testFile.Name())
@@ -136,8 +136,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
 				// var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader([]string{testFileAbsolutePath}, client, namespace, properties.DefaultUploadChunkSizeInMB)
-					_, status = fileUploader.UploadFiles()
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					_, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))
 				// fullPath, _ := filepath.Abs(testFile.Name())
