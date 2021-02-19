@@ -178,8 +178,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		return c.ExecuteAction(operationID, action, retries, dsHost, cfTarget)
 	}
 
-	mtaElementsCalculator := mtaElementsToAddCalculator{shouldAddAllModules: false, shouldAddAllResources: false}
-	mtaElementsCalculator.calculateElementsToDeploy(flags)
+	mtaElementsCalculator := createMtaElementsCalculator(flags)
 
 	rawMtaArchive, err := getMtaArchive(positionalArgs, mtaElementsCalculator)
 	if err != nil {
@@ -325,23 +324,12 @@ func (c *DeployCommand) uploadFiles(files []string, fileUploader *FileUploader) 
 }
 
 func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, processBuilder *util.ProcessBuilder, mtaElementsCalculator mtaElementsToAddCalculator) {
-
-	if mtaElementsCalculator.shouldAddAllModules && mtaElementsCalculator.shouldAddAllResources {
-		return
-	}
-
-	if mtaElementsCalculator.shouldAddAllModules && !mtaElementsCalculator.shouldAddAllResources {
-		processBuilder.SetParameterWithoutCheck("resourcesForDeployment", resourcesList.getProcessList())
-		return
-	}
-
-	if !mtaElementsCalculator.shouldAddAllModules && mtaElementsCalculator.shouldAddAllResources {
+	if !mtaElementsCalculator.shouldAddAllModules {
 		processBuilder.SetParameterWithoutCheck("modulesForDeployment", modulesList.getProcessList())
-		return
 	}
-
-	processBuilder.SetParameterWithoutCheck("resourcesForDeployment", resourcesList.getProcessList())
-	processBuilder.SetParameterWithoutCheck("modulesForDeployment", modulesList.getProcessList())
+	if !mtaElementsCalculator.shouldAddAllResources {
+		processBuilder.SetParameterWithoutCheck("resourcesForDeployment", resourcesList.getProcessList())
+	}
 }
 
 func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsToAddCalculator) (interface{}, error) {
@@ -372,51 +360,15 @@ func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsTo
 }
 
 func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) (string, error) {
-	modulesToAdd, err := getModulesToAdd(mtaDirectoryLocation, mtaElementsCalculator)
+	deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
 	if err != nil {
 		return "", err
 	}
 
-	resourcesToAdd, err := getResourcesToAdd(mtaDirectoryLocation, mtaElementsCalculator)
-	if err != nil {
-		return "", err
-	}
+	modulesToAdd := mtaElementsCalculator.getModulesToAdd(deploymentDescriptor)
+	resourcesToAdd := mtaElementsCalculator.getResourcesToAdd(deploymentDescriptor)
 
 	return util.NewMtaArchiveBuilder(modulesToAdd, resourcesToAdd).Build(mtaDirectoryLocation)
-}
-
-func getModulesToAdd(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) ([]string, error) {
-	if mtaElementsCalculator.shouldAddAllModules {
-		deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
-		if err != nil {
-			return []string{}, err
-		}
-
-		modulesToAdd := make([]string, 0)
-		for _, module := range deploymentDescriptor.Modules {
-			modulesToAdd = append(modulesToAdd, module.Name)
-		}
-		return modulesToAdd, nil
-	}
-
-	return modulesList.getElements(), nil
-}
-
-func getResourcesToAdd(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) ([]string, error) {
-	if mtaElementsCalculator.shouldAddAllResources {
-		deploymentDescriptor, _, err := util.ParseDeploymentDescriptor(mtaDirectoryLocation)
-		if err != nil {
-			return []string{}, err
-		}
-
-		resourcesToAdd := make([]string, 0)
-		for _, resource := range deploymentDescriptor.Resources {
-			resourcesToAdd = append(resourcesToAdd, resource.Name)
-		}
-		return resourcesToAdd, nil
-	}
-
-	return resourcesList.getElements(), nil
 }
 
 type mtaElementsToAddCalculator struct {
@@ -424,26 +376,35 @@ type mtaElementsToAddCalculator struct {
 	shouldAddAllResources bool
 }
 
-func (c *mtaElementsToAddCalculator) calculateElementsToDeploy(flags *flag.FlagSet) {
-	allModulesSpecified := GetBoolOpt(allModulesOpt, flags)
-	allResourcesSpecified := GetBoolOpt(allResourcesOpt, flags)
+func createMtaElementsCalculator(flags *flag.FlagSet) mtaElementsToAddCalculator {
+	return mtaElementsToAddCalculator{
+		shouldAddAllModules: GetBoolOpt(allModulesOpt, flags) || len(modulesList.getElements()) == 0,
+		shouldAddAllResources: GetBoolOpt(allResourcesOpt, flags) || len(resourcesList.getElements()) == 0,
+	}
+}
 
-	if !allResourcesSpecified && len(resourcesList.getElements()) == 0 && !allModulesSpecified && len(modulesList.getElements()) == 0 {
-		// --all-resources ==false && no -r
-		c.shouldAddAllResources = true
-		c.shouldAddAllModules = true
-		return
+func (c mtaElementsToAddCalculator) getModulesToAdd(deploymentDescriptor util.MtaDeploymentDescriptor) []string {
+	if c.shouldAddAllModules {
+		modulesToAdd := make([]string, 0)
+		for _, module := range deploymentDescriptor.Modules {
+			modulesToAdd = append(modulesToAdd, module.Name)
+		}
+		return modulesToAdd
 	}
 
-	if allModulesSpecified {
-		// --all-modules ==true , no matter if there is -m
-		c.shouldAddAllModules = true
+	return modulesList.getElements()
+}
+
+func (c mtaElementsToAddCalculator) getResourcesToAdd(deploymentDescriptor util.MtaDeploymentDescriptor) []string {
+	if c.shouldAddAllResources {
+		resourcesToAdd := make([]string, 0)
+		for _, resource := range deploymentDescriptor.Resources {
+			resourcesToAdd = append(resourcesToAdd, resource.Name)
+		}
+		return resourcesToAdd
 	}
 
-	if allResourcesSpecified {
-		// --all-modules ==true , no matter if there is -m
-		c.shouldAddAllResources = true
-	}
+	return resourcesList.getElements()
 }
 
 type deployCommandProcessTypeProvider struct{}
