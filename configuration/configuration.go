@@ -9,31 +9,23 @@ import (
 const unknownError = "An unknown error occurred during the parsing of the environment variable \"%s\". Please report this! Value type: %T"
 
 type Snapshot struct {
-	backendURL          string
-	uploadChunkSizeInMB uint64
+	backendURL          properties.ConfigurableProperty
+	uploadChunkSizeInMB properties.ConfigurableProperty
 }
 
 func NewSnapshot() Snapshot {
 	return Snapshot{
-		backendURL:          getBackendURLFromEnvironment(),
-		uploadChunkSizeInMB: getUploadChunkSizeInMBFromEnvironment(),
+		backendURL:          properties.BackendURL,
+		uploadChunkSizeInMB: properties.UploadChunkSizeInMB,
 	}
 }
 
 func (c Snapshot) GetBackendURL() string {
-	return c.backendURL
+	return getStringProperty(c.backendURL)
 }
 
 func (c Snapshot) GetUploadChunkSizeInMB() uint64 {
-	return c.uploadChunkSizeInMB
-}
-
-func getBackendURLFromEnvironment() string {
-	return getStringProperty(properties.BackendURL)
-}
-
-func getUploadChunkSizeInMBFromEnvironment() uint64 {
-	return getUint64Property(properties.UploadChunkSizeInMB)
+	return getUint64Property(c.uploadChunkSizeInMB)
 }
 
 func getStringProperty(property properties.ConfigurableProperty) string {
