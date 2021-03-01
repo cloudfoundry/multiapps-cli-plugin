@@ -118,14 +118,16 @@ func (f *FileUploader) uploadInChunks(fullPath string, fileToUpload os.File) ([]
 	defer close(errorChannel)
 
 	for _, fileToUploadPart := range fileToUploadParts {
+		filePart, err := os.Open(fileToUploadPart)
+		if err != nil {
+			return nil, fmt.Errorf("Could not open file part %s of file %s", fileToUploadPart, fullPath)
+		}
 		go func() {
-			filePart, err := os.Open(fileToUploadPart)
+			fileInfo, err := filePart.Stat()
 			if err != nil {
-				errorChannel <- fmt.Errorf("Could not open file part %s of file %s", fileToUploadPart, fullPath)
+				errorChannel <- err
 				return
 			}
-			fileInfo, _ := filePart.Stat()
-
 			file, err := f.uploadFilePart(filePart, fileToUpload.Name(), fileInfo.Size())
 			if err != nil {
 				errorChannel <- err
