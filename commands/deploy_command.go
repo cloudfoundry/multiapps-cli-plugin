@@ -91,18 +91,18 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
    cf deploy <MTA archive URL> [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]`,
 			Options: map[string]string{
-				extDescriptorsOpt:                      "Extension descriptors",
-				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                             "Start timeout in seconds",
-				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                         "Active deploy operation ID",
-				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
-				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
-				moduleOpt:                              "Deploy list of modules which are contained in the deployment descriptor, in the current location",
-				resourceOpt:                            "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(noStartOpt):        "Do not start apps",
-				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
-				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
+				extDescriptorsOpt:                                  "Extension descriptors",
+				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				timeoutOpt:                                         "Start timeout in seconds",
+				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
+				operationIDOpt:                                     "Active deploy operation ID",
+				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, resume, monitor)",
+				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                                          "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                                        "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(noStartOpt):                    "Do not start apps",
+				util.GetShortOption(namespaceOpt):                  "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
+				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
 				util.GetShortOption(keepFilesOpt):                  "Keep files used for deployment",
@@ -295,7 +295,6 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		return Failure
 	}
 	executionMonitor := NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient)
-	ui.Say("Operation ID: %s", terminal.EntityNameColor(executionMonitor.operationID))
 	return executionMonitor.Monitor()
 }
 
@@ -378,7 +377,7 @@ type mtaElementsToAddCalculator struct {
 
 func createMtaElementsCalculator(flags *flag.FlagSet) mtaElementsToAddCalculator {
 	return mtaElementsToAddCalculator{
-		shouldAddAllModules: GetBoolOpt(allModulesOpt, flags) || len(modulesList.getElements()) == 0,
+		shouldAddAllModules:   GetBoolOpt(allModulesOpt, flags) || len(modulesList.getElements()) == 0,
 		shouldAddAllResources: GetBoolOpt(allResourcesOpt, flags) || len(resourcesList.getElements()) == 0,
 	}
 }
@@ -413,7 +412,7 @@ func (d deployCommandProcessTypeProvider) GetProcessType() string {
 	return "DEPLOY"
 }
 
-type deployCommandLineArgumentsParser struct {}
+type deployCommandLineArgumentsParser struct{}
 
 func (p deployCommandLineArgumentsParser) ParseFlags(flags *flag.FlagSet, args []string) error {
 	argument := p.findFirstNotFlaggedArgument(flags, args)
