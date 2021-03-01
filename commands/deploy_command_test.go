@@ -82,7 +82,6 @@ var _ = Describe("DeployCommand", func() {
 					"  "+fullExtDescriptorPath+"\n",
 					"OK\n")
 			}
-			lines = append(lines, "Operation ID: 1000\n")
 			lines = append(lines,
 				"Test message\n",
 				"Process finished.\n",
