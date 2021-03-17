@@ -1,3 +1,8 @@
+## v2.6.1
+* Fixed bug with retry mechanism when switching from crashed DS instance
+* BaseCommand made abstract and lowered code duplication
+* General code improvements and refactoring
+
 ## v2.6.0
 * Added functionality for MTAR deployment from URL
 * Custom header for the size of the MTA file is added in the request to the deploy-service
