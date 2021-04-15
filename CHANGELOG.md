@@ -1,3 +1,6 @@
+## v2.6.2
+* Operation ID is printed as progress message (by the backend) rather than in the command
+
 ## v2.6.1
 * Fixed bug with retry mechanism when switching from crashed DS instance
 * BaseCommand made abstract and lowered code duplication
