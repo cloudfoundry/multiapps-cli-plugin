@@ -43,7 +43,7 @@ var _ = Describe("ClientUtil", func() {
 
 		Context("when the backend returns status code with first digit 4 (4xx)", func() {
 			It("Retry operation call is expected to be made", func() {
-				err := ClientError{404, "Not Found", "The server cannot find requesred resource"}
+				err := ClientError{404, "Not Found", "The server cannot find requested resource"}
 				result := shouldRetry(&err)
 				Expect(result).To(Equal(true))
 			})
@@ -58,10 +58,10 @@ var _ = Describe("ClientUtil", func() {
 		})
 
 		Context("when the passed error is not of type 'ClientError'", func() {
-			It("Retry operation call shouldn't be made", func() {
+			It("Retry operation call is expected to be made", func() {
 				err := MockError{999, "Not ClientError"}
 				result := shouldRetry(&err)
-				Expect(result).To(Equal(false))
+				Expect(result).To(Equal(true))
 			})
 		})
 	})
