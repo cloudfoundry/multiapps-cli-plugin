@@ -2,6 +2,8 @@ package baseclient
 
 import (
 	"time"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 // CallWithRetry executes callback with retry
@@ -11,6 +13,7 @@ func CallWithRetry(callback func() (interface{}, error), maxRetriesCount int, re
 		if !shouldRetry(err) {
 			return resp, err
 		}
+		ui.Warn("Error occurred: %s. Retrying after: %s.", err.Error(), retryInterval)
 		time.Sleep(retryInterval)
 	}
 	return callback()
