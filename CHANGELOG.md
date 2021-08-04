@@ -1,3 +1,6 @@
+## v2.6.3
+* All get operation calls that fail will be retried
+
 ## v2.6.2
 * Operation ID is printed as progress message (by the backend) rather than in the command
 
