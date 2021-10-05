@@ -98,16 +98,6 @@ The version will be automatically included in the plugin, so it will be reported
 
 This will produce `mta_plugin_linux_amd64`, `mta_plugin_darwin_amd64` and `mta_plugin_windows_amd64` in the repo's root directory.
 
-## Adding dependency into the multiapps-cli-plugin
-#### If you want to add a dependecy which to be used later on during the build and development process, you need to follow these steps:
-1.  Make sure that you have godep installed(try to run `godep version`). If you do not have it, run the command: `go get github.com/tools/godep`. !!!IMPORTANT!!! Make sure that you are running on latest version of GO and godep!!!
-2.  Get the dependency by executing the command: `go get github.com/<package-full-name>` . If you want to update it use the -u option.
-3.  Use the dependecy into your code(just import and use)
-4.  Make sure that the dependency is not in the Godeps/Godeps.json file(if it is, delete the entry related to it). Godeps.json file is holding information about all the dependencies which are used in the project.
-5.  Run `godep save ./...` - this will add all the newly used dependecies into the Godeps/Godeps.json and into the vendor/ folder.
-
-For more information about the godep tool, please refer to: [godep](https://github.com/tools/godep)
-
 # Further reading
 Presentations, documents, and tutorials:
 - [Managing Distributed Cloud Native Applications Made Easy (CF Summit EU 2017 slides)](https://www.slideshare.net/NikolayValchev/managing-distributedcloudapps-80697059)
