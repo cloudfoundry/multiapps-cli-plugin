@@ -6,7 +6,7 @@ function build() {
     local arch=$3
     local plugin_name=$4
 
-    echo calling to build for $platform $arch
+    echo "building for $platform $arch"
     GOOS=$platform GOARCH=$arch go build \
         -ldflags "-X main.Version=${version}" \
         -o ${plugin_name}
@@ -18,19 +18,10 @@ function buildstatic() {
     local arch=$3
     local plugin_name=$4
 
-    echo calling to build static for $platform $arch
+    echo "building static for $platform $arch"
     CGO_ENABLED=0 GOOS=$platform GOARCH=$arch go build -a -tags netgo \
         -ldflags "-w -extldflags \"-static\" -X main.Version=${version}" \
         -o ${plugin_name}
-}
-
-function copyPluginsWithOldNames() {
-    cp $PLUGIN_NAME_WIN_64 $OLD_PLUGIN_NAME_WIN_64
-    cp $PLUGIN_NAME_LINUX_64 $OLD_PLUGIN_NAME_LINUX_64
-    cp $PLUGIN_NAME_OSX $OLD_PLUGIN_NAME_OSX
-    cp $PLUGIN_NAME_STATIC_WIN_64 $OLD_PLUGIN_NAME_STATIC_WIN_64
-    cp $PLUGIN_NAME_STATIC_LINUX_64 $OLD_PLUGIN_NAME_STATIC_LINUX_64
-    cp $PLUGIN_NAME_STATIC_OSX $OLD_PLUGIN_NAME_STATIC_OSX
 }
 
 function movePluginsToBuildFolder() {
@@ -58,23 +49,17 @@ script_dir="$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")"
 cd "${script_dir}"
 
 BUILD_FOLDER=build
-PLUGIN_NAME_WIN_32=multiapps-plugin.win32
-PLUGIN_NAME_WIN_64=multiapps-plugin.win64
+PLUGIN_NAME_WIN_32=multiapps-plugin.win32.exe
+PLUGIN_NAME_WIN_64=multiapps-plugin.win64.exe
 PLUGIN_NAME_LINUX_32=multiapps-plugin.linux32
 PLUGIN_NAME_LINUX_64=multiapps-plugin.linux64
 PLUGIN_NAME_OSX=multiapps-plugin.osx
-OLD_PLUGIN_NAME_WIN_64=mta_plugin_windows_amd64.exe
-OLD_PLUGIN_NAME_LINUX_64=mta_plugin_linux_amd64
-OLD_PLUGIN_NAME_OSX=mta_plugin_darwin_amd64
 
-PLUGIN_NAME_STATIC_WIN_32=multiapps-plugin-static.win32
-PLUGIN_NAME_STATIC_WIN_64=multiapps-plugin-static.win64
+PLUGIN_NAME_STATIC_WIN_32=multiapps-plugin-static.win32.exe
+PLUGIN_NAME_STATIC_WIN_64=multiapps-plugin-static.win64.exe
 PLUGIN_NAME_STATIC_LINUX_32=multiapps-plugin-static.linux32
 PLUGIN_NAME_STATIC_LINUX_64=multiapps-plugin-static.linux64
 PLUGIN_NAME_STATIC_OSX=multiapps-plugin-static.osx
-OLD_PLUGIN_NAME_STATIC_WIN_64=mta_plugin_static_windows_amd64.exe
-OLD_PLUGIN_NAME_STATIC_LINUX_64=mta_plugin_static_linux_amd64
-OLD_PLUGIN_NAME_STATIC_OSX=mta_plugin_static_darwin_amd64
 
 version=$(<cfg/VERSION)
 build $version linux 386 $PLUGIN_NAME_LINUX_32
@@ -92,6 +77,3 @@ buildstatic $version darwin amd64 $PLUGIN_NAME_STATIC_OSX
 mkdir $BUILD_FOLDER -p
 createBuildMetadataFiles $version $BUILD_FOLDER
 movePluginsToBuildFolder $BUILD_FOLDER
-cd $BUILD_FOLDER
-copyPluginsWithOldNames
-
