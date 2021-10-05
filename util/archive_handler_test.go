@@ -28,16 +28,19 @@ var _ = Describe("ArchiveHandler", func() {
 		})
 
 		Context("with invalid mta archive", func() {
+			const testMtarName = "test.mtar"
+			var testFile *os.File
 			BeforeEach(func() {
-				os.Create("test.mtar")
-				mtaArchiveFilePath, _ = filepath.Abs("test.mtar")
+				testFile, _ = os.Create(testMtarName)
+				mtaArchiveFilePath, _ = filepath.Abs(testMtarName)
 			})
 			It("should return error for not a valid zip archive", func() {
 				_, err := util.GetMtaDescriptorFromArchive(mtaArchiveFilePath)
 				Expect(err).To(MatchError("zip: not a valid zip file"))
 			})
 			AfterEach(func() {
-				os.Remove(mtaArchiveFilePath)
+				testFile.Close()
+				os.Remove(testMtarName)
 			})
 		})
 	})
