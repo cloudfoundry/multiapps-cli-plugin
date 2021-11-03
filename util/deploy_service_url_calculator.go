@@ -73,7 +73,7 @@ func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models
 	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly.")
 }
 
-func (c deployServiceURLCalculatorImpl) computeStableDeployServiceURL(possibleDeployServiceURLs []string) (string) {
+func (c deployServiceURLCalculatorImpl) computeStableDeployServiceURL(possibleDeployServiceURLs []string) string {
 	for index := 0; index < defaultMaxRetriesCount; index++ {
 		for _, possibleDeployServiceURL := range possibleDeployServiceURLs {
 			if c.isCorrectURL(possibleDeployServiceURL) {

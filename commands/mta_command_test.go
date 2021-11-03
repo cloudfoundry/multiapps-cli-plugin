@@ -3,6 +3,8 @@ package commands_test
 import (
 	"fmt"
 
+	plugin_models "code.cloudfoundry.org/cli/plugin/models"
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
@@ -10,8 +12,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
-	plugin_models "github.com/cloudfoundry/cli/plugin/models"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -33,15 +33,17 @@ var _ = Describe("MtaCommand", func() {
 		var getOutputLines = func(mtaID, version, namespace string, apps, services [][]string) []string {
 			lines := []string{}
 			lines = append(lines,
-				fmt.Sprintf("Showing health and status for multi-target app %s in org %s / space %s as %s...\n", mtaID, org, space, user))
-			lines = append(lines, "OK\n")
-			lines = append(lines, fmt.Sprintf("Version: %s\n", version))
-			lines = append(lines, fmt.Sprintf("Namespace: %s\n", namespace))
-			lines = append(lines, "\nApps:\n")
+				fmt.Sprintf("Showing health and status for multi-target app %s in org %s / space %s as %s...", mtaID, org, space, user))
+			lines = append(lines, "OK")
+			lines = append(lines, fmt.Sprintf("Version: %s", version))
+			lines = append(lines, fmt.Sprintf("Namespace: %s", namespace))
+			lines = append(lines, "")
+			lines = append(lines, "Apps:")
 			lines = append(lines, testutil.GetTableOutputLines(
 				[]string{"name", "requested state", "instances", "memory", "disk", "urls"}, apps)...)
 			if len(services) > 0 {
-				lines = append(lines, "\nServices:\n")
+				lines = append(lines, "")
+				lines = append(lines, "Services:")
 				lines = append(lines, testutil.GetTableOutputLines(
 					[]string{"name", "service", "plan", "bound apps", "last operation"}, services)...)
 			}
@@ -89,7 +91,7 @@ var _ = Describe("MtaCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test", "-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test:", 2)
 			})
 		})
 
@@ -101,7 +103,7 @@ var _ = Describe("MtaCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Multi-target app test not found", 1)
+				ex.ExpectFailureOnLine(status, output, "Multi-target app test not found", 2)
 			})
 		})
 
@@ -117,8 +119,8 @@ var _ = Describe("MtaCommand", func() {
 				})
 				ex.ExpectSuccessWithOutput(status, output,
 					getOutputLines("test-mta-id", "test-version", "namespace",
-						[][]string{[]string{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
-						[][]string{[]string{"test-service-1", "test", "free", "test-mta-module-1", "create succeeded"}}))
+						[][]string{{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
+						[][]string{{"test-service-1", "test", "free", "test-mta-module-1", "create succeeded"}}))
 			})
 		})
 
@@ -134,8 +136,8 @@ var _ = Describe("MtaCommand", func() {
 				})
 				ex.ExpectSuccessWithOutput(status, output,
 					getOutputLines("test-mta-id", "test-version", "",
-						[][]string{[]string{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
-						[][]string{[]string{"test-service-1", "test", "free", "test-mta-module-1", "create succeeded"}}))
+						[][]string{{"test-mta-module-1", "started", "1/1", "512M", "1G", "test-1.bosh-lite.com"}},
+						[][]string{{"test-service-1", "test", "free", "test-mta-module-1", "create succeeded"}}))
 			})
 		})
 

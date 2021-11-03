@@ -1,14 +1,14 @@
 package commands
 
 import (
+	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/plugin"
 	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
 )
 
 const allOpt = "all"

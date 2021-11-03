@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"fmt"
+	"io"
 	"os"
 
-	"github.com/cloudfoundry/cli/cf/i18n"
-	"github.com/cloudfoundry/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/cf/i18n"
+	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/cf/trace"
 )
 
 var teePrinter *terminal.TeePrinter
@@ -14,12 +17,11 @@ func init() {
 	i18n.T = func(translationID string, args ...interface{}) string {
 		return translationID
 	}
-	teePrinter = terminal.NewTeePrinter()
-	ui = terminal.NewUI(os.Stdin, teePrinter)
-	teePrinter.DisableTerminalOutput(false)
+	teePrinter = terminal.NewTeePrinter(os.Stdout)
+	ui = terminal.NewUI(os.Stdin, os.Stdout, teePrinter, trace.NewWriterPrinter(io.Discard, false))
 }
 
-func SetOutputBucket(bucket *[]string) {
+func SetOutputBucket(bucket io.Writer) {
 	teePrinter.SetOutputBucket(bucket)
 }
 
@@ -48,11 +50,11 @@ func Warn(message string, args ...interface{}) {
 }
 
 func Ask(prompt string, args ...interface{}) (answer string) {
-	return ui.Ask(prompt, args...)
+	return ui.Ask(fmt.Sprintf(prompt, args...))
 }
 
 func Confirm(message string, args ...interface{}) bool {
-	return ui.Confirm(message, args...)
+	return ui.Confirm(fmt.Sprintf(message, args...))
 }
 
 func Ok() {
@@ -63,14 +65,10 @@ func Failed(message string, args ...interface{}) {
 	ui.Failed(message, args...)
 }
 
-func PanicQuietly() {
-	ui.PanicQuietly()
-}
-
 func LoadingIndication() {
 	ui.LoadingIndication()
 }
 
-func Table(headers []string) terminal.Table {
+func Table(headers []string) *terminal.UITable {
 	return ui.Table(headers)
 }

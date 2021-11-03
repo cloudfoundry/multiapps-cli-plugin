@@ -3,6 +3,7 @@ package commands_test
 import (
 	"net/http"
 
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
@@ -15,7 +16,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -79,7 +79,7 @@ var _ = Describe("BaseCommand", func() {
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
-				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...\n", "OK\n"}))
+				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...", "OK"}))
 			})
 		})
 		Context("with one ongoing operation which does not have an MTA ID", func() {
@@ -118,7 +118,7 @@ var _ = Describe("BaseCommand", func() {
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
-				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...\n", "OK\n"}))
+				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...", "OK"}))
 			})
 		})
 		Context("with valid ongoing operations and no force option specified", func() {
@@ -128,9 +128,9 @@ var _ = Describe("BaseCommand", func() {
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeFalse())
-				Expect(output).To(Equal([]string{"",
-					"There is an ongoing operation for multi-target app mtaId. Do you want to abort it? (y/n)> ",
-					"Deploy cancelled\n"}))
+				// The confirmation message is only printed to stdout, not to the output bucket,
+				// that's why we only check for the cancellation message
+				Expect(output).To(Equal([]string{"Deploy cancelled"}))
 			})
 		})
 	})
@@ -156,7 +156,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "abort", 0, "test-host", cfTarget).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...\n", "OK\n"})
+				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...", "OK"})
 			})
 		})
 		Context("with non-valid process id and valid action id", func() {
@@ -182,8 +182,8 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "retry", 0, "test-host", cfTarget).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...\n", "OK\n",
-					"Process finished.\n", "Use \"cf dmol -i test-process-id\" to download the logs of the process.\n"})
+				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...", "OK",
+					"Process finished.", "Use \"cf dmol -i test-process-id\" to download the logs of the process."})
 			})
 		})
 	})

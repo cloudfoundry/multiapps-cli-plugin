@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 
+	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
@@ -23,8 +25,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
 )
 
 const (

@@ -22,7 +22,7 @@ type MtaRestClient struct {
 
 func NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) MtaClientOperations {
 	restURL := restBaseURL + spacesURL + spaceID
-	t := baseclient.NewHTTPTransport(host, restURL, restURL, rt)
+	t := baseclient.NewHTTPTransport(host, restURL, rt)
 	httpMtaClient := New(t, strfmt.Default)
 	return &MtaRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpMtaClient}
 }

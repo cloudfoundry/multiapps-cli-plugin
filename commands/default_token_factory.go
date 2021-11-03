@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/client"

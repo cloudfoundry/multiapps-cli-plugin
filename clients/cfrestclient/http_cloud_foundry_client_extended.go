@@ -47,7 +47,7 @@ func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *Clo
 	}
 
 	// create transport and client
-	transport := httptransport.New(cfg.Host, cfg.BasePath, cfg.RawBasePath, cfg.Schemes)
+	transport := httptransport.New(cfg.Host, cfg.BasePath, cfg.Schemes)
 	return New(transport, formats)
 }
 

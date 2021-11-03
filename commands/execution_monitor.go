@@ -6,9 +6,9 @@ import (
 
 	"net/url"
 
+	"code.cloudfoundry.org/cli/cf/terminal"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"github.com/cloudfoundry/cli/cf/terminal"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"

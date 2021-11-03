@@ -1,8 +1,10 @@
 package testutil
 
 import (
+	"bytes"
+	io_helpers "code.cloudfoundry.org/cli/cf/util/testhelpers/io"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	io_helpers "github.com/cloudfoundry/cli/testhelpers/io"
+	"strings"
 )
 
 type OutputCapturer interface {
@@ -35,17 +37,16 @@ func NewUIOutputCapturer() OutputCapturer {
 }
 
 func (oc *UIOutputCapturer) CaptureOutput(block func()) []string {
-	bucket := []string{}
-	ui.SetOutputBucket(&bucket)
+	bucket := new(bytes.Buffer)
+	ui.SetOutputBucket(bucket)
 	block()
-	return bucket
+	return strings.Split(strings.TrimSpace(bucket.String()), "\n")
 }
 
 func (oc *UIOutputCapturer) CaptureOutputAndStatus(block func() int) ([]string, int) {
-	bucket := []string{}
-	ui.SetOutputBucket(&bucket)
-	status := block()
-	return bucket, status
+	var status int
+	output := oc.CaptureOutput(func() {
+		status = block()
+	})
+	return output, status
 }
-
-var defaultOutputCapturer = NewStdoutOutputCapturer()

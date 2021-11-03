@@ -6,14 +6,14 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/cli/cf/formatters"
+	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/plugin"
+	plugin_models "code.cloudfoundry.org/cli/plugin/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	mta_models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"github.com/cloudfoundry/cli/cf/formatters"
-	"github.com/cloudfoundry/cli/cf/terminal"
-	"github.com/cloudfoundry/cli/plugin"
-	plugin_models "github.com/cloudfoundry/cli/plugin/models"
 )
 
 // MtaCommand is a command for listing a deployed MTA

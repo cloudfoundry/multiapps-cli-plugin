@@ -3,6 +3,7 @@ package commands_test
 import (
 	"fmt"
 
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
@@ -10,7 +11,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -32,12 +32,12 @@ var _ = Describe("MtasCommand", func() {
 		var getOutputLines = func(mtas [][]string) []string {
 			lines := []string{}
 			lines = append(lines,
-				fmt.Sprintf("Getting multi-target apps in org %s / space %s as %s...\n", org, space, user))
-			lines = append(lines, "OK\n")
+				fmt.Sprintf("Getting multi-target apps in org %s / space %s as %s...", org, space, user))
+			lines = append(lines, "OK")
 			if mtas != nil {
 				lines = append(lines, testutil.GetTableOutputLines([]string{"mta id", "version", "namespace"}, mtas)...)
 			} else {
-				lines = append(lines, "No multi-target apps found\n")
+				lines = append(lines, "No multi-target apps found")
 			}
 			return lines
 		}
@@ -91,7 +91,7 @@ var _ = Describe("MtasCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 2)
 			})
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("MtasCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get deployed components:", 2)
 			})
 		})
 
@@ -130,7 +130,7 @@ var _ = Describe("MtasCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output,
-					getOutputLines([][]string{[]string{"org.cloudfoundry.samples.music", "?", ""}}))
+					getOutputLines([][]string{{"org.cloudfoundry.samples.music", "?", ""}}))
 			})
 		})
 
@@ -147,7 +147,7 @@ var _ = Describe("MtasCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output,
-					getOutputLines([][]string{[]string{"org.cloudfoundry.samples.music", "1.0", ""}, []string{"org.cloudfoundry.samples.music", "1.1", ""}}))
+					getOutputLines([][]string{{"org.cloudfoundry.samples.music", "1.0", ""}, {"org.cloudfoundry.samples.music", "1.1", ""}}))
 			})
 		})
 	})

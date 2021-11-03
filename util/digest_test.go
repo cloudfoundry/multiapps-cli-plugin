@@ -24,21 +24,21 @@ var _ = Describe("Digest", func() {
 			testFilePath, _ = filepath.Abs(testFileName)
 		})
 
-		Context("with an unsupported digest alghoritm", func() {
+		Context("with an unsupported digest algorithm", func() {
 			It("should return an error", func() {
-				digest, err := util.ComputeFileChecksum(testFilePath, "unsupported-alghoritm-name")
+				digest, err := util.ComputeFileChecksum(testFilePath, "unsupported-algorithm-name")
 				testutil.ExpectErrorAndZeroResult(err, digest)
 			})
 		})
 
-		Context("with a supported digest alghoritm and an empty file", func() {
+		Context("with a supported digest algorithm and an empty file", func() {
 			It("should return the digest of the file", func() {
 				digest, err := util.ComputeFileChecksum(testFilePath, "MD5")
 				testutil.ExpectNoErrorAndResult(err, digest, "d41d8cd98f00b204e9800998ecf8427e")
 			})
 		})
 
-		Context("with a supported digest alghoritm and a non-empty file", func() {
+		Context("with a supported digest algorithm and a non-empty file", func() {
 			It("should calculate the digest of the file and exit with zero status", func() {
 				const testFileContent = "test file content"
 				ioutil.WriteFile(testFile.Name(), []byte(testFileContent), 0644)

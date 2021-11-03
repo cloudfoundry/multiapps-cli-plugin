@@ -59,14 +59,12 @@ func (ex *UIExpector) ExpectSuccessAndResult(status int, output []string, result
 }
 
 func (ex *UIExpector) ExpectFailure(status int, output []string, message string) {
-	ex.ExpectFailureOnLine(status, output, message, 0)
+	ex.ExpectFailureOnLine(status, output, message, 1)
 }
 
 func (ex *UIExpector) ExpectFailureOnLine(status int, output []string, message string, line int) {
 	ex.ExpectNonZeroStatus(status)
-	Expect(output[line+1]).To(ContainSubstring(message))
-	// Expect(output[line]).To(Equal("FAILED\n"))
-
+	Expect(output[line]).To(ContainSubstring(message))
 }
 
 func (ex *UIExpector) ExpectNonZeroStatus(status int) {

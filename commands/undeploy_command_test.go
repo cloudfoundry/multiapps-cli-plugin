@@ -12,10 +12,10 @@ import (
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 
+	pluginFakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	utilFakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	pluginFakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -60,16 +60,16 @@ var _ = Describe("UndeployCommand", func() {
 		var getOutputLines = func(processID string, abortedProcessId string) []string {
 			lines := []string{}
 			lines = append(lines,
-				"Undeploying multi-target app "+mtaID+" in org "+org+" / space "+space+" as "+user+"...\n")
+				"Undeploying multi-target app "+mtaID+" in org "+org+" / space "+space+" as "+user+"...")
 			if abortedProcessId != "" {
 				lines = append(lines,
-					"Executing action 'abort' on operation "+abortedProcessId+"...\n",
-					"OK\n")
+					"Executing action 'abort' on operation "+abortedProcessId+"...",
+					"OK")
 			}
 			lines = append(lines,
-				"Test message\n",
-				"Process finished.\n",
-				"Use \"cf dmol -i "+processID+"\" to download the logs of the process.\n")
+				"Test message",
+				"Process finished.",
+				"Use \"cf dmol -i "+processID+"\" to download the logs of the process.")
 			return lines
 		}
 
@@ -148,7 +148,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-non-existing-id", "-f"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test-non-existing-id:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app test-non-existing-id:", 2)
 			})
 		})
 
@@ -164,7 +164,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mta_id, "-f", "--namespace", namespace}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Multi-target app "+mta_id+" with namespace "+namespace+" not found", 1)
+				ex.ExpectFailureOnLine(status, output, "Multi-target app "+mta_id+" with namespace "+namespace+" not found", 2)
 			})
 		})
 
@@ -180,7 +180,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaID, "-f"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation 999: test-error", 2)
+				ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation 999: test-error", 3)
 			})
 
 			It("should try to abort the conflicting process and success", func() {
@@ -227,7 +227,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{testutil.ProcessID, "-f"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not create undeploy process: test-error", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not create undeploy process: test-error", 2)
 			})
 		})
 	})

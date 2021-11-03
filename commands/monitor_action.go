@@ -1,9 +1,9 @@
 package commands
 
 import (
+	"code.cloudfoundry.org/cli/cf/terminal"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry/cli/cf/terminal"
 )
 
 // MonitorAction monitors process execution
