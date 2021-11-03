@@ -11,7 +11,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var _ = Describe("ArchiveBuilder", func() {
@@ -185,7 +185,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				output := oc.CaptureOutput(func() {
 					util.NewMtaArchiveBuilder([]string{"TestModule", "TestModule1"}, []string{}).Build(tempDirLocation)
 				})
-				Expect(output[0]).To(Equal("Modules TestModule, TestModule1 do not have a path, specified for their binaries and will be ignored\n"))
+				Expect(output[0]).To(Equal("Modules TestModule, TestModule1 do not have a path, specified for their binaries and will be ignored"))
 			})
 
 		})

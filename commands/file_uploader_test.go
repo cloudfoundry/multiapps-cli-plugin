@@ -2,10 +2,6 @@ package commands_test
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
@@ -15,6 +11,9 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 var _ = Describe("FileUploader", func() {
@@ -48,7 +47,7 @@ var _ = Describe("FileUploader", func() {
 					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{})
 				})
-				ex.ExpectSuccess(status.ToInt(), output)
+				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{""})
 				Expect(uploadedFiles).To(BeNil())
 			})
 		})
@@ -61,7 +60,7 @@ var _ = Describe("FileUploader", func() {
 					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{})
 				})
-				ex.ExpectSuccess(status.ToInt(), output)
+				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{""})
 				Expect(uploadedFiles).To(BeNil())
 			})
 		})
@@ -80,9 +79,9 @@ var _ = Describe("FileUploader", func() {
 				Expect(len(uploadedFiles)).To(Equal(1))
 				fullPath, _ := filepath.Abs(testFile.Name())
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
-					"Uploading 1 files...\n",
-					"  " + fullPath + "\n",
-					"OK\n",
+					"Uploading 1 files...",
+					"  " + fullPath,
+					"OK",
 				})
 				Expect(uploadedFiles).To(Equal(files))
 			})
@@ -100,7 +99,7 @@ var _ = Describe("FileUploader", func() {
 					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
-					"Previously uploaded file test.mtar with same digest detected, new upload will be skipped.\n"})
+					"Previously uploaded file test.mtar with same digest detected, new upload will be skipped."})
 				Expect(len(uploadedFiles)).To(Equal(1))
 				Expect(uploadedFiles).To(Equal(files))
 			})
@@ -120,9 +119,9 @@ var _ = Describe("FileUploader", func() {
 				Expect(len(uploadedFiles)).To(Equal(1))
 				fullPath, _ := filepath.Abs(testFile.Name())
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
-					"Uploading 1 files...\n",
-					"  " + fullPath + "\n",
-					"OK\n",
+					"Uploading 1 files...",
+					"  " + fullPath,
+					"OK",
 				})
 				Expect(uploadedFiles).To(Equal([]*models.FileMetadata{fileMetadata}))
 			})
@@ -141,14 +140,14 @@ var _ = Describe("FileUploader", func() {
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))
 				// fullPath, _ := filepath.Abs(testFile.Name())
-				ex.ExpectFailureOnLine(status.ToInt(), output, "Could not upload file "+testFileAbsolutePath, 2)
+				ex.ExpectFailureOnLine(status.ToInt(), output, "Could not upload file "+testFileAbsolutePath, 3)
 				// Expect(uploadedFiles).To(Equal(files))
 			})
 		})
 
 		AfterEach(func() {
 			testFile.Close()
-			os.RemoveAll(testFileName)
+			os.Remove(testFileName)
 		})
 	})
 })

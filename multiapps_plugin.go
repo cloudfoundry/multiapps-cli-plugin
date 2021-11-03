@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
-	"github.com/cloudfoundry/cli/plugin"
 )
 
 // Version is the version of the CLI plugin. It is injected on linking time.

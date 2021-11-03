@@ -1,12 +1,12 @@
 package commands_test
 
 import (
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

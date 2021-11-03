@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	"github.com/cloudfoundry/cli/plugin/fakes"
-	plugin_models "github.com/cloudfoundry/cli/plugin/models"
+	plugin_models "code.cloudfoundry.org/cli/plugin/models"
+	fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 )
 
 // FakeCliConnectionBuilder is a builder of FakeCliConnection instances

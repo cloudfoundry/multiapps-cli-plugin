@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
@@ -15,7 +16,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -45,12 +45,12 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 		var getOutputLines = func(dir string, processId string) []string {
 			wd, _ := os.Getwd()
 			return []string{
-				fmt.Sprintf("Downloading logs of multi-target app operation with ID %s in org %s / space %s as %s...\n",
+				fmt.Sprintf("Downloading logs of multi-target app operation with ID %s in org %s / space %s as %s...",
 					processId, org, space, user),
-				"OK\n",
-				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...\n", wd, dir),
-				fmt.Sprintf("  %s\n", testutil.LogID),
-				"OK\n",
+				"OK",
+				fmt.Sprintf("Saving logs to %s"+string(os.PathSeparator)+"%s...", wd, dir),
+				fmt.Sprintf("  %s", testutil.LogID),
+				"OK",
 			}
 		}
 
@@ -126,7 +126,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", "test"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get process logs: Process with id 404 not found (status 404): Process with id 404 not found", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get process logs: Process with id 404 not found (status 404): Process with id 404 not found", 2)
 				Expect(exists("mta-op-test")).To(Equal(false))
 			})
 		})
@@ -141,7 +141,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"--mta", mtaId}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Process with id 404 not found (status 404): Process with id 404 not found", 0)
+				ex.ExpectFailure(status, output, "Process with id 404 not found (status 404): Process with id 404 not found")
 				Expect(exists("mta-op-test")).To(Equal(false))
 			})
 		})
@@ -154,7 +154,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get process logs:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get process logs:", 2)
 				Expect(exists("mta-op-" + testutil.ProcessID)).To(Equal(false))
 			})
 		})
@@ -169,7 +169,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not get content of log %s:", testutil.LogID), 1)
+				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not get content of log %s:", testutil.LogID), 2)
 				Expect(exists("mta-op-" + testutil.ProcessID)).To(Equal(false))
 			})
 		})
@@ -214,7 +214,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s%s:", filepath.Join(customDir, "mta-op-"), testutil.ProcessID), 2)
+				ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory %s%s:", filepath.Join(customDir, "mta-op-"), testutil.ProcessID), 3)
 			})
 			AfterEach(func() {
 				os.RemoveAll(customDir)

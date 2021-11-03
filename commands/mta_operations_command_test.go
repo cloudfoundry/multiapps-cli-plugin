@@ -3,6 +3,7 @@ package commands_test
 import (
 	"fmt"
 
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
@@ -10,7 +11,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -33,7 +33,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 			if len(operationsDetails) > 0 {
 				lines = append(lines, testutil.GetTableOutputLines([]string{"id", "type", "mta id", "namespace", "status", "started at", "started by"}, operationsDetails)...)
 			} else {
-				lines = append(lines, "No multi-target app operations found\n")
+				lines = append(lines, "No multi-target app operations found")
 			}
 
 			return lines
@@ -86,7 +86,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-u", host}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 2)
 			})
 		})
 
@@ -98,7 +98,7 @@ var _ = Describe("MtaOperationsCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get multi-target app operations:", 2)
 			})
 		})
 
@@ -111,8 +111,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 				})
 				expectedOutput := getOutputLines([][]string{})
 				expectedOutput = append([]string{
-					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting active multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -126,11 +126,11 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"111", "deploy", "test", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"111", "deploy", "test", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting active multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -144,11 +144,11 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"111", "deploy", "N/A", "", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"111", "deploy", "N/A", "", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting active multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -164,12 +164,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting active multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -185,12 +185,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-last", "2"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-2", "deploy", "test-mta-2", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting last 2 multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting last 2 multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -212,8 +212,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 					[]string{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting last 10 multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting last 10 multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -230,13 +230,13 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-last", "1"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting last multi-target app operation in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting last multi-target app operation in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -250,8 +250,8 @@ var _ = Describe("MtaOperationsCommand", func() {
 				})
 				expectedOutput := getOutputLines([][]string{})
 				expectedOutput = append([]string{
-					"Getting last 10 multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting last 10 multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -268,13 +268,13 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "namespace", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "namespace", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting active multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -290,12 +290,12 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "namespace", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "namespace", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting active multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting active multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -312,13 +312,13 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"-all"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-2", "deploy", "test-mta-2", "namespace", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
-					[]string{"test-3", "deploy", "test-mta-3", "namespace", "FINISHED", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-1", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-2", "deploy", "test-mta-2", "namespace", "RUNNING", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-3", "deploy", "test-mta-3", "namespace", "FINISHED", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting all multi-target app operations in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting all multi-target app operations in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})
@@ -333,11 +333,11 @@ var _ = Describe("MtaOperationsCommand", func() {
 					return command.Execute([]string{"--mta", "test-mta-id"}).ToInt()
 				})
 				expectedOutput := getOutputLines([][]string{
-					[]string{"test-1", "deploy", "test-mta-id", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
+					{"test-1", "deploy", "test-mta-id", "namespace", "ERROR", "2016-03-04T14:23:24.521Z[Etc/UTC]", "admin"},
 				})
 				expectedOutput = append([]string{
-					"Getting multi-target app operations for test-mta-id in org test-org / space test-space as test-user...\n",
-					"OK\n",
+					"Getting multi-target app operations for test-mta-id in org test-org / space test-space as test-user...",
+					"OK",
 				}, expectedOutput...)
 				ex.ExpectSuccessWithOutput(status, output, expectedOutput)
 			})

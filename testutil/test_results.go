@@ -62,6 +62,10 @@ func (r RuntimeResponse) GetHeader(header string) string {
 	return ""
 }
 
+func (r RuntimeResponse) GetHeaders(header string) []string {
+	return []string{}
+}
+
 func (r RuntimeResponse) Body() io.ReadCloser {
 	return nil
 }

@@ -30,25 +30,25 @@ var _ = Describe("ExecutionMonitor", func() {
 			}
 			switch processStatus {
 			case models.StateFINISHED:
-				lines = append(lines, "Process finished.\n")
-				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
+				lines = append(lines, "Process finished.")
+				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.", processID))
 			case models.StateABORTED:
-				lines = append(lines, "Process was aborted.\n")
-				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
+				lines = append(lines, "Process was aborted.")
+				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.", processID))
 			case models.StateACTIONREQUIRED:
-				lines = append(lines, "Process has entered validation phase. After testing your new deployment you can resume or abort the process.\n")
-				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a resume\" to resume the process.\n", commandName, processID))
-				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a abort\" to abort the process.\n", commandName, processID))
-				lines = append(lines, "Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.\n")
+				lines = append(lines, "Process has entered validation phase. After testing your new deployment you can resume or abort the process.")
+				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a resume\" to resume the process.", commandName, processID))
+				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a abort\" to abort the process.", commandName, processID))
+				lines = append(lines, "Hint: Use the '--no-confirm' option of the bg-deploy command to skip this phase.")
 			default:
 				lines = append(lines, fmt.Sprintf("Process is in illegal state %s.", processStatus))
 			}
 
 			if errorMessage != "" {
-				lines = append(lines, fmt.Sprintf("Process failed.\n"))
-				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a retry\" to retry the process.\n", commandName, processID))
-				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a abort\" to abort the process.\n", commandName, processID))
-				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.\n", processID))
+				lines = append(lines, fmt.Sprintf("Process failed."))
+				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a retry\" to retry the process.", commandName, processID))
+				lines = append(lines, fmt.Sprintf("Use \"cf %s -i %s -a abort\" to abort the process.", commandName, processID))
+				lines = append(lines, fmt.Sprintf("Use \"cf dmol -i %s\" to download the logs of the process.", processID))
 			}
 			return lines
 		}
@@ -94,7 +94,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (3 of 4 attempts left)", 2)
 				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (2 of 4 attempts left)", 3)
 				ex.ExpectMessageOnLine(output, "Proceeding with automatic retry... (1 of 4 attempts left)", 4)
-				ex.ExpectFailureOnLine(status, output, "Use \"cf deploy -i 1234 -a abort\" to abort the process.\n", 5)
+				ex.ExpectFailureOnLine(status, output, "Use \"cf deploy -i 1234 -a abort\" to abort the process.", 6)
 			})
 		})
 		Context("with process task in illegal state and no progress messages in the tasklist", func() {
@@ -143,7 +143,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"test-message-1\n", "test-message-2\n", "test-message-3\n"}))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"test-message-1", "test-message-2", "test-message-3"}))
 			})
 		})
 		Context("with process task in state finished and progress messages with repeating ids in the tasklist", func() {
@@ -163,7 +163,7 @@ var _ = Describe("ExecutionMonitor", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return monitor.Monitor().ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"test-message-1\n", "test-message-3\n", "test-message-4\n"}))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(processStatus, "", []string{"test-message-1", "test-message-3", "test-message-4"}))
 			})
 		})
 		Context("with process task in state action required", func() {

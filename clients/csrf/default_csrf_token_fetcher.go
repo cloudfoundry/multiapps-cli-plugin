@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
-	"github.com/cloudfoundry/cli/plugin"
 )
 
 const CsrfTokenHeaderFetchValue = "Fetch"

@@ -9,8 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const testUrl = "http://localhost:1000"
-
 const csrfTokenNotSet = ""
 
 var _ = Describe("DefaultCsrfTokenUpdater", func() {

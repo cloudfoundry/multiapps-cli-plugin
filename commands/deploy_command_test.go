@@ -11,12 +11,12 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 
+	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	util_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"
-	plugin_fakes "github.com/cloudfoundry/cli/plugin/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -49,8 +49,8 @@ var _ = Describe("DeployCommand", func() {
 
 		var getLinesForAbortingProcess = func() []string {
 			return []string{
-				"Executing action 'abort' on operation test-process-id...\n",
-				"OK\n",
+				"Executing action 'abort' on operation test-process-id...",
+				"OK",
 			}
 		}
 
@@ -61,31 +61,32 @@ var _ = Describe("DeployCommand", func() {
 				mtaNameToPrint = "from url"
 			}
 			lines = append(lines,
-				"Deploying multi-target app archive "+mtaNameToPrint+" in org "+org+" / space "+space+" as "+user+"...\n\n")
+				"Deploying multi-target app archive "+mtaNameToPrint+" in org "+org+" / space "+space+" as "+user+"...")
+			lines = append(lines, "")
 			if processAborted {
 				lines = append(lines,
-					"Executing action 'abort' on operation test-process-id...\n",
-					"OK\n",
+					"Executing action 'abort' on operation test-process-id...",
+					"OK",
 				)
 			}
 			if fromUrl {
-				lines = append(lines, "OK\n")
+				lines = append(lines, "OK")
 			} else {
 				lines = append(lines,
-					"Uploading 1 files...\n",
-					"  "+fullMtaArchivePath+"\n",
-					"OK\n")
+					"Uploading 1 files...",
+					"  "+fullMtaArchivePath,
+					"OK")
 			}
 			if extDescriptor {
 				lines = append(lines,
-					"Uploading 1 files...\n",
-					"  "+fullExtDescriptorPath+"\n",
-					"OK\n")
+					"Uploading 1 files...",
+					"  "+fullExtDescriptorPath,
+					"OK")
 			}
 			lines = append(lines,
-				"Test message\n",
-				"Process finished.\n",
-				"Use \"cf dmol -i 1000\" to download the logs of the process.\n")
+				"Test message",
+				"Process finished.",
+				"Use \"cf dmol -i 1000\" to download the logs of the process.")
 			return lines
 		}
 
@@ -181,7 +182,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{incorrectMtaUrl}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not upload from url: connection refused", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not upload from url: connection refused", 3)
 			})
 		})
 
@@ -203,7 +204,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{fileName}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not find MTA "+fileName, 0)
+				ex.ExpectFailure(status, output, "Could not find MTA "+fileName)
 			})
 		})
 
@@ -226,7 +227,7 @@ var _ = Describe("DeployCommand", func() {
 					return command.Execute([]string{mtaArchivePath, "--strategy", invalidStrategy}).ToInt()
 				})
 				message := fmt.Sprintf("%s is not a valid deployment strategy, available strategies: %v", invalidStrategy, commands.AvailableStrategies())
-				ex.ExpectFailureOnLine(status, output, message, 0)
+				ex.ExpectFailure(status, output, message)
 			})
 		})
 
@@ -294,7 +295,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "--namespace", "    test   "}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "There is an ongoing operation for multi-target app test", 1)
+				ex.ExpectFailureOnLine(status, output, "Deploy cancelled", 2)
 			})
 		})
 
@@ -330,7 +331,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not get ongoing operation", 1)
+				ex.ExpectFailureOnLine(status, output, "Could not get ongoing operation", 3)
 			})
 		})
 
