@@ -31,7 +31,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a multi-target app using blue-green deployment",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app using blue-green deployment
-   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f]  [--retries RETRIES] [--no-start]  [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps]  [--no-confirm] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature]
+   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -55,6 +55,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
+				util.GetShortOption(skipIdleStart):                 "Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
 			},
 		},
 	}
@@ -69,8 +70,13 @@ func (c *BlueGreenDeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 func blueGreenDeployProcessParametersSetter() ProcessParametersSetter {
 	return func(flags *flag.FlagSet, processBuilder *util.ProcessBuilder) {
 		deployProcessParametersSetter()(flags, processBuilder)
-		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, flags)))
 		processBuilder.Parameter("keepOriginalAppNamesAfterDeploy", strconv.FormatBool(false))
+		if GetBoolOpt(skipIdleStart, flags) {
+			processBuilder.Parameter("noConfirm", strconv.FormatBool(true))
+			processBuilder.Parameter("skipIdleStart", strconv.FormatBool(true))
+			return
+		}
+		processBuilder.Parameter("noConfirm", strconv.FormatBool(GetBoolOpt(noConfirmOpt, flags)))
 	}
 }
 

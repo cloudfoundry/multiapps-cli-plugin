@@ -35,6 +35,7 @@ const (
 	verifyArchiveSignatureOpt  = "verify-archive-signature"
 	strategyOpt                = "strategy"
 	skipTestingPhase           = "skip-testing-phase"
+	skipIdleStart              = "skip-idle-start"
 )
 
 type listFlag struct {
@@ -83,13 +84,13 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
-   cf deploy <MTA archive URL> [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase]`,
+   cf deploy <MTA archive URL> [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                                  "Extension descriptors",
 				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
@@ -114,7 +115,8 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
 				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
-				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA apps",
+				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
+				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
 			},
 		},
 	}
@@ -165,6 +167,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Uint(retriesOpt, 3, "")
 	flags.String(strategyOpt, "default", "")
 	flags.Bool(skipTestingPhase, false, "")
+	flags.Bool(skipIdleStart, false, "")
 	flags.Var(&modulesList, moduleOpt, "")
 	flags.Var(&resourcesList, resourceOpt, "")
 }
