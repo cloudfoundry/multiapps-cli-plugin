@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 
 	"code.cloudfoundry.org/cli/cf/i18n"
 	"code.cloudfoundry.org/cli/cf/terminal"
@@ -17,8 +18,16 @@ func init() {
 	i18n.T = func(translationID string, args ...interface{}) string {
 		return translationID
 	}
+	disableColorsIfNeeded()
 	teePrinter = terminal.NewTeePrinter(os.Stdout)
 	ui = terminal.NewUI(os.Stdin, os.Stdout, teePrinter, trace.NewWriterPrinter(io.Discard, false))
+}
+
+func disableColorsIfNeeded() {
+	if runtime.GOOS == "windows" {
+		terminal.UserAskedForColors = "false"
+		terminal.InitColorSupport()
+	}
 }
 
 func SetOutputBucket(bucket io.Writer) {
