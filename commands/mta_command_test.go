@@ -41,9 +41,9 @@ var _ = Describe("MtaCommand", func() {
 			lines = append(lines, "Apps:")
 			lines = append(lines, testutil.GetTableOutputLines(
 				[]string{"name", "requested state", "instances", "memory", "disk", "urls"}, apps)...)
+			lines = append(lines, "")
+			lines = append(lines, "Services:")
 			if len(services) > 0 {
-				lines = append(lines, "")
-				lines = append(lines, "Services:")
 				lines = append(lines, testutil.GetTableOutputLines(
 					[]string{"name", "service", "plan", "bound apps", "last operation"}, services)...)
 			}

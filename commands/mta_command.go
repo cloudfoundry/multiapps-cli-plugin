@@ -98,10 +98,10 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 	}
 	table.Print()
 
+	ui.Say("\nServices:")
 	if len(mta.Services) == 0 {
 		return Success
 	}
-	ui.Say("\nServices:")
 	table = ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
 	// Read the comment for GetApps(). The same applies for GetServices().
 	services, err := c.cliConnection.GetServices()
