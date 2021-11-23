@@ -1,3 +1,6 @@
+## v2.7.0
+* Add new paramater "skip-idle-start" in blue-green deployments
+
 ## v2.6.3
 * All get operation calls that fail will be retried
 
