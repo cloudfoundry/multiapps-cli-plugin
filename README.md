@@ -31,7 +31,7 @@ The latest version of the plugin can also be downloaded from the project's [rele
 
 Mac OS X 64 bit | Windows 32 bit | Windows 64 bit | Linux 32 bit | Linux 64 bit
 --- | --- | --- | --- | ---
-[multiapps-plugin.osx](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.osx) | [multiapps-plugin.win32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.win32) | [multiapps-plugin.win64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.win64) | [multiapps-plugin.linux32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linux32) | [multiapps-plugin.linux64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linux64)
+[multiapps-plugin.osx](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.osx) | [multiapps-plugin.win32.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.win32.exe) | [multiapps-plugin.win64.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.win64.exe) | [multiapps-plugin.linux32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linux32) | [multiapps-plugin.linux64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linux64)
 
 ### Installation
 Install the plugin, using the following command:
