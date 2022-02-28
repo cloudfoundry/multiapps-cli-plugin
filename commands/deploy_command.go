@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -214,7 +215,8 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	fileUploader := NewFileUploader(mtaClient, namespace, uploadChunkSizeInMB)
 
 	if isUrl {
-		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(mtaArchive, &namespace)
+		encodedFileUrl := base64.URLEncoding.EncodeToString([]byte(mtaArchive))
+		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
 		if err != nil {
 			ui.Failed("Could not upload from url: %s", baseclient.NewClientError(err))
 			return Failure

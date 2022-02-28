@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -134,8 +135,8 @@ var _ = Describe("DeployCommand", func() {
 				GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
 				UploadMtaFile(*mtaArchiveFile, mtaArchive, nil).
 				UploadMtaFile(*extDescriptorFile, extDescriptor, nil).
-				UploadMtaArchiveFromUrl(correctMtaUrl, mtaArchive, nil).
-				UploadMtaArchiveFromUrl(incorrectMtaUrl, nil, fmt.Errorf("connection refused")).
+				UploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(correctMtaUrl)), mtaArchive, nil).
+				UploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(incorrectMtaUrl)), nil, fmt.Errorf("connection refused")).
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
