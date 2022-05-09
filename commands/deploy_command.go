@@ -1,16 +1,18 @@
 package commands
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
@@ -68,12 +70,14 @@ type DeployCommand struct {
 	*BaseCommand
 	setProcessParameters ProcessParametersSetter
 	processTypeProvider  ProcessTypeProvider
+
+	FileUrlReader io.Reader
 }
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
 	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
-	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}}
+	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}, os.Stdin}
 	baseCmd.Command = deployCmd
 	return deployCmd
 }
@@ -184,7 +188,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 
 	mtaElementsCalculator := createMtaElementsCalculator(flags)
 
-	rawMtaArchive, err := getMtaArchive(positionalArgs, mtaElementsCalculator)
+	rawMtaArchive, err := c.getMtaArchive(positionalArgs, mtaElementsCalculator)
 	if err != nil {
 		ui.Failed("Error retrieving MTA: %s", err.Error())
 		return Failure
@@ -336,8 +340,13 @@ func setModulesAndResourcesListParameters(modulesList, resourcesList listFlag, p
 	}
 }
 
-func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsToAddCalculator) (interface{}, error) {
+func (c *DeployCommand) getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsToAddCalculator) (interface{}, error) {
 	if len(parsedArguments) == 0 {
+		fileUrl := c.tryReadingFileUrl()
+		if len(fileUrl) > 0 {
+			return url.Parse(fileUrl)
+		}
+
 		currentWorkingDirectory, err := os.Getwd()
 		if err != nil {
 			return "", fmt.Errorf("Could not get the current working directory: %s", err.Error())
@@ -346,11 +355,6 @@ func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsTo
 	}
 
 	mtaArgument := parsedArguments[0]
-
-	if matched, _ := regexp.MatchString("^http[s]?://.+", mtaArgument); matched {
-		return url.Parse(mtaArgument)
-	}
-
 	fileInfo, err := os.Stat(mtaArgument)
 	if err != nil && os.IsNotExist(err) {
 		return "", fmt.Errorf("Could not find MTA %s", mtaArgument)
@@ -361,6 +365,21 @@ func getMtaArchive(parsedArguments []string, mtaElementsCalculator mtaElementsTo
 	}
 
 	return buildMtaArchiveFromDirectory(mtaArgument, mtaElementsCalculator)
+}
+
+func (c *DeployCommand) tryReadingFileUrl() string {
+	fileUrlChan := make(chan []byte)
+	go func() {
+		fileUrl, _ := io.ReadAll(c.FileUrlReader)
+		fileUrlChan <- bytes.TrimSpace(fileUrl)
+	}()
+
+	select {
+	case fileUrl := <-fileUrlChan:
+		return string(fileUrl)
+	case <-time.After(time.Millisecond * 100):
+		return ""
+	}
 }
 
 func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) (string, error) {
