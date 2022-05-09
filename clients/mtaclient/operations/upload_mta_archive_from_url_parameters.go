@@ -149,7 +149,7 @@ func (o *UploadMtaArchiveFromUrlParams) WriteToRequest(r runtime.ClientRequest, 
 
 	}
 
-	if err := r.SetQueryParam("file-url", o.FileUrl); err != nil {
+	if err := r.SetHeaderParam("X-File-URL", o.FileUrl); err != nil {
 		return err
 	}
 

@@ -45,8 +45,8 @@ var _ = Describe("DeployCommand", func() {
 
 		var fullMtaArchivePath, _ = filepath.Abs(mtaArchivePath)
 		var fullExtDescriptorPath, _ = filepath.Abs(extDescriptorPath)
-		var correctMtaUrl = "http://host/path/anatz.mtar?query=true"
-		var incorrectMtaUrl = "http://alabala.com"
+		var correctMtaUrl = "https://host/path/anatz.mtar?query=true"
+		var incorrectMtaUrl = "https://alabala.com"
 
 		var getLinesForAbortingProcess = func() []string {
 			return []string{
@@ -171,8 +171,10 @@ var _ = Describe("DeployCommand", func() {
 
 		Context("with a correct URL argument", func() {
 			It("should upload the MTAR from the correct URL and initiate a deploy", func() {
+				reader := strings.NewReader(correctMtaUrl)
+				command.FileUrlReader = reader
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{correctMtaUrl}).ToInt()
+					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true))
 			})
@@ -180,8 +182,10 @@ var _ = Describe("DeployCommand", func() {
 
 		Context("with an incorrect URL argument", func() {
 			It("should fail with the error returned from the server", func() {
+				reader := strings.NewReader(incorrectMtaUrl)
+				command.FileUrlReader = reader
 				output, status := oc.CaptureOutputAndStatus(func() int {
-					return command.Execute([]string{incorrectMtaUrl}).ToInt()
+					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectFailureOnLine(status, output, "Could not upload from url: connection refused", 3)
 			})

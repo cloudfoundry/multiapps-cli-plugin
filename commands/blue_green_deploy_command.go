@@ -2,6 +2,7 @@ package commands
 
 import (
 	"flag"
+	"os"
 	"strconv"
 
 	"code.cloudfoundry.org/cli/plugin"
@@ -18,7 +19,7 @@ type BlueGreenDeployCommand struct {
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
 	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
-	deployCmd := &DeployCommand{baseCmd, blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}}
+	deployCmd := &DeployCommand{baseCmd, blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}, os.Stdin}
 	bgDeployCmd := &BlueGreenDeployCommand{deployCmd}
 	baseCmd.Command = bgDeployCmd
 	return bgDeployCmd
