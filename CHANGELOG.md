@@ -1,3 +1,6 @@
+## v2.8.0
+* Encode remote MTAR URL as base64 string & send it via header
+
 ## v2.7.0
 * Add new paramater "skip-idle-start" in blue-green deployments
 
