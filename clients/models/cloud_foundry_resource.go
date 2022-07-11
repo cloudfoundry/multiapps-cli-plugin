@@ -6,9 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
@@ -17,14 +16,23 @@ import (
 
 type CloudFoundryResource struct {
 
-	// entity
-	Entity *CloudFoundryResourceEntity `json:"entity,omitempty"`
+	// guid
+	GUID string `json:"guid,omitempty"`
+
+	// name
+	Name string `json:"name,omitempty"`
+
+	// internal
+	Internal bool `json:"internal,omitempty"`
+
+	// relationships
+	Relationships *CloudFoundryResourceRelationships `json:"relationships,omitempty"`
 
 	// metadata
 	Metadata *CloudFoundryResourceMetadata `json:"metadata,omitempty"`
 }
 
-/* polymorph CloudFoundryResource entity false */
+/* polymorph CloudFoundryResource relationships false */
 
 /* polymorph CloudFoundryResource metadata false */
 
@@ -32,7 +40,7 @@ type CloudFoundryResource struct {
 func (m *CloudFoundryResource) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateEntity(formats); err != nil {
+	if err := m.validateRelationships(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -48,15 +56,15 @@ func (m *CloudFoundryResource) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *CloudFoundryResource) validateEntity(formats strfmt.Registry) error {
+func (m *CloudFoundryResource) validateRelationships(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Entity) { // not required
+	if swag.IsZero(m.Relationships) { // not required
 		return nil
 	}
 
-	if m.Entity != nil {
+	if m.Relationships != nil {
 
-		if err := m.Entity.Validate(formats); err != nil {
+		if err := m.Relationships.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("entity")
 			}

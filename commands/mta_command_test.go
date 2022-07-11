@@ -3,9 +3,9 @@ package commands_test
 import (
 	"fmt"
 
-	plugin_models "code.cloudfoundry.org/cli/plugin/models"
 	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
+	cf_client_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
@@ -26,12 +26,13 @@ var _ = Describe("MtaCommand", func() {
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		var clientFactory *commands.TestClientFactory
+		var cfClient cf_client_fakes.FakeCloudFoundryClient
 		var command *commands.MtaCommand
 		var oc = testutil.NewUIOutputCapturer()
 		var ex = testutil.NewUIExpector()
 
 		var getOutputLines = func(mtaID, version, namespace string, apps, services [][]string) []string {
-			lines := []string{}
+			var lines []string
 			lines = append(lines,
 				fmt.Sprintf("Showing health and status for multi-target app %s in org %s / space %s as %s...", mtaID, org, space, user))
 			lines = append(lines, "OK")
@@ -58,9 +59,15 @@ var _ = Describe("MtaCommand", func() {
 				CurrentSpace("test-space-guid", space, nil).
 				Username(user, nil).
 				AccessToken("bearer test-token", nil).
-				GetApps([]plugin_models.GetAppsModel{getGetAppsModel("test-mta-module-1", "started", 1, 1, 512, 1024, "test-1", "bosh-lite.com")}, nil).
-				GetServices([]plugin_models.GetServices_Model{getGetServicesModel("test-service-1", "test", "free", "create", "succeeded", []string{"test-mta-module-1"})}, nil).
+				APIEndpoint("https://example.com", nil).
 				Build()
+			cfClient = cf_client_fakes.FakeCloudFoundryClient{
+				Apps:            getApps("test-mta-module-1", "started"),
+				AppProcessStats: getProcessStats(1, 1, 512*1024*1024, 1024*1024*1024),
+				AppRoutes:       getAppRoutes("test-1", "bosh-lite.com"),
+				Services:        getServices("test-service-1", "test", "free", "create", "succeeded"),
+				ServiceBindings: getServiceBindings([]string{"test-mta-module-1"}),
+			}
 			mtaV2Client := mtaV2fake.NewFakeMtaV2ClientBuilder().
 				GetMtas("any_mtaId", &namespace, "any_spaceGuid", nil, nil).Build()
 			clientFactory = commands.NewTestClientFactory(nil, mtaV2Client, nil)
@@ -69,6 +76,7 @@ var _ = Describe("MtaCommand", func() {
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), clientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.CfClient = cfClient
 		})
 
 		// wrong arguments - error
@@ -186,39 +194,85 @@ var _ = Describe("MtaCommand", func() {
 	})
 })
 
-func getGetAppsModel(name, state string, runningInstances, totalInstances int,
-	memory, diskQuota int64, host, domain string) plugin_models.GetAppsModel {
-	return plugin_models.GetAppsModel{
-		Name:             name,
-		State:            state,
-		RunningInstances: runningInstances,
-		TotalInstances:   totalInstances,
-		Memory:           memory,
-		DiskQuota:        diskQuota,
-		Routes: []plugin_models.GetAppsRouteSummary{
-			plugin_models.GetAppsRouteSummary{
-				Host: host,
-				Domain: plugin_models.GetAppsDomainFields{
-					Name: domain,
-				},
+func getApps(name, state string) []models.CloudFoundryApplication {
+	return []models.CloudFoundryApplication{
+		{
+			Name:  name,
+			Guid:  "app-guid",
+			State: state,
+		},
+	}
+}
+
+func getProcessStats(runningInstances, totalInstances int64, memory, diskQuota int64) []models.ApplicationProcessStatistics {
+	var processes []models.ApplicationProcessStatistics
+	for i := int64(0); i < runningInstances; i++ {
+		processMemory := memory / runningInstances
+		if i == 0 {
+			processMemory += memory % runningInstances
+		}
+		disk := diskQuota / runningInstances
+		if i == 0 {
+			disk += diskQuota % runningInstances
+		}
+		processes = append(processes, models.ApplicationProcessStatistics{
+			State:  "RUNNING",
+			Memory: processMemory,
+			Disk:   disk,
+		})
+	}
+	for i := runningInstances; i < totalInstances; i++ {
+		processes = append(processes, models.ApplicationProcessStatistics{
+			State:  "STOPPED",
+			Memory: 0,
+			Disk:   0,
+		})
+	}
+	return processes
+}
+
+func getAppRoutes(host, domain string) []models.ApplicationRoute {
+	return []models.ApplicationRoute{
+		{
+			Host: host,
+			Url:  host + "." + domain,
+		},
+	}
+}
+
+func getServices(name, offering, plan, opType, opState string) []models.CloudFoundryServiceInstance {
+	return []models.CloudFoundryServiceInstance{
+		{
+			Guid: "service-guid",
+			Name: name,
+			Type: "managed",
+			LastOperation: models.LastOperation{
+				Type:  opType,
+				State: opState,
+			},
+			PlanGuid:  "plan-guid",
+			SpaceGuid: "space-guid",
+			Plan: models.ServicePlan{
+				Guid:         "plan-guid",
+				Name:         plan,
+				OfferingGuid: "offering-guid",
+			},
+			Offering: models.ServiceOffering{
+				Guid: "offering-guid",
+				Name: offering,
 			},
 		},
 	}
 }
 
-func getGetServicesModel(name, offering, plan, opType, opState string, boundApplications []string) plugin_models.GetServices_Model {
-	return plugin_models.GetServices_Model{
-		Name: name,
-		Service: plugin_models.GetServices_ServiceFields{
-			Name: offering,
-		},
-		ServicePlan: plugin_models.GetServices_ServicePlan{
-			Name: plan,
-		},
-		LastOperation: plugin_models.GetServices_LastOperation{
-			Type:  opType,
-			State: opState,
-		},
-		ApplicationNames: boundApplications,
+func getServiceBindings(boundApplications []string) []models.ServiceBinding {
+	var bindings []models.ServiceBinding
+	for _, appName := range boundApplications {
+		bindings = append(bindings, models.ServiceBinding{
+			Guid:    "binding-guid",
+			AppGuid: "app-guid",
+			AppName: appName,
+		})
 	}
+	return bindings
 }

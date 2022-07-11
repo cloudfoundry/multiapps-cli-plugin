@@ -37,7 +37,7 @@ func (a *Client) GetSharedDomains(params *GetSharedDomainsParams, authInfo runti
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "GetSharedDomains",
 		Method:             "GET",
-		PathPattern:        "/shared_domains",
+		PathPattern:        "/domains",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

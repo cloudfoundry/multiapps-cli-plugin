@@ -17,8 +17,8 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 
 		Context("when a space is targeted and there is one shared domain", func() {
 			It("should return a URL constructed based on the first shared domain", func() {
-				domains := []models.SharedDomain{
-					models.SharedDomain{Name: "test.ondemand.com"},
+				domains := []models.Domain{
+					models.Domain{Name: "test.ondemand.com"},
 				}
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test.ondemand.com/public/ping": 200,
@@ -29,9 +29,9 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 		})
 		Context("when a space is targeted and there are two shared domains", func() {
 			It("should return a URL constructed based on the first shared domain", func() {
-				domains := []models.SharedDomain{
-					models.SharedDomain{Name: "test1.ondemand.com"},
-					models.SharedDomain{Name: "test2.ondemand.com"},
+				domains := []models.Domain{
+					models.Domain{Name: "test1.ondemand.com"},
+					models.Domain{Name: "test2.ondemand.com"},
 				}
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 200,
@@ -43,9 +43,9 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 		})
 		Context("when a space is targeted and there are two shared domains, but the Deploy Service does not respond on either of them", func() {
 			It("should return an error", func() {
-				domains := []models.SharedDomain{
-					models.SharedDomain{Name: "test1.ondemand.com"},
-					models.SharedDomain{Name: "test2.ondemand.com"},
+				domains := []models.Domain{
+					models.Domain{Name: "test1.ondemand.com"},
+					models.Domain{Name: "test2.ondemand.com"},
 				}
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 404,
@@ -58,9 +58,9 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 		})
 		Context("when a space is targeted and there are two shared domains, but the Deploy Service is broken on one of them", func() {
 			It("should return an error", func() {
-				domains := []models.SharedDomain{
-					models.SharedDomain{Name: "test1.ondemand.com"},
-					models.SharedDomain{Name: "test2.ondemand.com"},
+				domains := []models.Domain{
+					models.Domain{Name: "test1.ondemand.com"},
+					models.Domain{Name: "test2.ondemand.com"},
 				}
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 404,
@@ -73,15 +73,15 @@ var _ = Describe("DeployServiceURLCalculator", func() {
 		})
 		Context("when a space is targeted and there are no shared domains", func() {
 			It("should return an error", func() {
-				deployServiceURLCalculator := util.NewDeployServiceURLCalculator(cfrestclient_fakes.NewFakeCloudFoundryClient([]models.SharedDomain{}, nil))
+				deployServiceURLCalculator := util.NewDeployServiceURLCalculator(cfrestclient_fakes.NewFakeCloudFoundryClient([]models.Domain{}, nil))
 				_, err := deployServiceURLCalculator.ComputeDeployServiceURL("")
 				Expect(err).Should(MatchError("Could not compute the Deploy Service's URL as there are no shared domains on the landscape."))
 			})
 		})
 		Context("when a command line option for the url is present and there is a shared domain", func() {
 			It("should return the value of the command line option", func() {
-				domains := []models.SharedDomain{
-					models.SharedDomain{Name: "test1.ondemand.com"},
+				domains := []models.Domain{
+					models.Domain{Name: "test1.ondemand.com"},
 				}
 				fakeHttpExecutor := fakes.NewFakeHttpGetExecutor(map[string]int{
 					"https://deploy-service.test1.ondemand.com/public/ping": 200,

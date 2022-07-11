@@ -16,16 +16,53 @@ func NewResilientCloudFoundryClient(cloudFoundryRestClient cfrestclient.CloudFou
 	return &ResilientCloudFoundryRestClient{cloudFoundryRestClient, maxRetriesCount, time.Second * time.Duration(retryIntervalInSeconds)}
 }
 
-func (c ResilientCloudFoundryRestClient) GetSharedDomains() ([]models.SharedDomain, error) {
-	sharedDomains, err := c.CloudFoundryRestClient.GetSharedDomains()
-	for shouldRetry(c.MaxRetriesCount, err) {
-		sharedDomains, err = c.CloudFoundryRestClient.GetSharedDomains()
-		c.MaxRetriesCount--
-		time.Sleep(c.RetryInterval)
+func (c ResilientCloudFoundryRestClient) GetSharedDomains() ([]models.Domain, error) {
+	return retryOnError(func() ([]models.Domain, error) {
+		return c.CloudFoundryRestClient.GetSharedDomains()
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error) {
+	return retryOnError(func() ([]models.CloudFoundryApplication, error) {
+		return c.CloudFoundryRestClient.GetApplications(mtaId, spaceGuid)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) GetAppProcessStatistics(appGuid string) ([]models.ApplicationProcessStatistics, error) {
+	return retryOnError(func() ([]models.ApplicationProcessStatistics, error) {
+		return c.CloudFoundryRestClient.GetAppProcessStatistics(appGuid)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) GetApplicationRoutes(appGuid string) ([]models.ApplicationRoute, error) {
+	return retryOnError(func() ([]models.ApplicationRoute, error) {
+		return c.CloudFoundryRestClient.GetApplicationRoutes(appGuid)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) GetServiceInstances(mtaId, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
+	return retryOnError(func() ([]models.CloudFoundryServiceInstance, error) {
+		return c.CloudFoundryRestClient.GetServiceInstances(mtaId, spaceGuid)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models.ServiceBinding, error) {
+	return retryOnError(func() ([]models.ServiceBinding, error) {
+		return c.CloudFoundryRestClient.GetServiceBindings(serviceName)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func retryOnError[T any](operation func() (T, error), retries int, retryInterval time.Duration) (T, error) {
+	result, err := operation()
+	for shouldRetry(retries, err) {
+		time.Sleep(retryInterval)
+		retries--
+		result, err = operation()
 	}
-	return sharedDomains, err
+	return result, err
 }
 
 func shouldRetry(retries int, err error) bool {
-	return err != nil && retries > 0
+	_, isResponseError := err.(models.HttpResponseError)
+	return isResponseError && retries > 0
 }

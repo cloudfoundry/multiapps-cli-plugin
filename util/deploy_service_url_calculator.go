@@ -36,7 +36,8 @@ func NewDeployServiceURLCalculatorWithHttpExecutor(cloudFoundryClient cfrestclie
 
 func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL(cmdOption string) (string, error) {
 	if cmdOption != "" {
-		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", cmdOption))
+		ui.Say(fmt.Sprintf("**Attention: You've specified a custom Deploy Service URL (%s) via the command line option 'u'. "+
+			"The application listening on that URL may be outdated, contain bugs or unreleased features or may even be modified by a potentially untrused person. Use at your own risk.**\n", cmdOption))
 		return cmdOption, nil
 	}
 
@@ -45,7 +46,7 @@ func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL(cmdOption string
 		return urlFromEnv, nil
 	}
 
-	sharedDomains, err := c.cloudFoundryClient.GetSharedDomains()
+	sharedDomains, err := c.cloudFoundryClient.GetSharedDomains() //this is a bit slow because it retrieves all domains available to the current user
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +59,7 @@ func (c deployServiceURLCalculatorImpl) ComputeDeployServiceURL(cmdOption string
 	return deployServiceURL, nil
 }
 
-func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models.SharedDomain) (string, error) {
+func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models.Domain) (string, error) {
 	if len(domains) == 0 {
 		return "", fmt.Errorf("Could not compute the Deploy Service's URL as there are no shared domains on the landscape.")
 	}
@@ -69,8 +70,10 @@ func (c deployServiceURLCalculatorImpl) computeDeployServiceURL(domains []models
 	if stableDeployServiceURL != "" {
 		return stableDeployServiceURL, nil
 	}
-	
-	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" + strings.Join(possibleDeployServiceURLs, "\n") + "\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly.")
+
+	return "", fmt.Errorf("The Deploy Service does not respond on any of the default URLs:\n" +
+		strings.Join(possibleDeployServiceURLs, "\n") +
+		"\n\nYou can use the command line option -u or the MULTIAPPS_CONTROLLER_URL environment variable to specify a custom URL explicitly.")
 }
 
 func (c deployServiceURLCalculatorImpl) computeStableDeployServiceURL(possibleDeployServiceURLs []string) string {
@@ -85,7 +88,7 @@ func (c deployServiceURLCalculatorImpl) computeStableDeployServiceURL(possibleDe
 	return ""
 }
 
-func buildPossibleDeployServiceURLs(domains []models.SharedDomain) []string {
+func buildPossibleDeployServiceURLs(domains []models.Domain) []string {
 	var possibleDeployServiceURLs []string
 	for _, domain := range domains {
 		possibleDeployServiceURLs = append(possibleDeployServiceURLs, deployServiceHost+"."+domain.Name)
