@@ -48,8 +48,8 @@ const retryIntervalInSeconds = 10
 // BaseCommand represents a base command
 type BaseCommand struct {
 	Command
-	flagsParser                FlagsParser
-	flagsValidator             FlagsValidator
+	flagsParser    FlagsParser
+	flagsValidator FlagsValidator
 
 	name                       string
 	cliConnection              plugin.CliConnection
@@ -64,7 +64,7 @@ func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection
 	log.Tracef("Initializing command '%s'\n", name)
 	transport := newTransport()
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
-	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(getApiEndpoint(cliConnection), transport, tokenFactory)
+	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(cliConnection, transport, tokenFactory)
 	resilientCloudFoundryClient := resilient.NewResilientCloudFoundryClient(cloudFoundryClient, maxRetriesCount, retryIntervalInSeconds)
 	c.InitializeAll(name, cliConnection, transport, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient))
 }
@@ -77,17 +77,6 @@ func (c *BaseCommand) InitializeAll(name string, cliConnection plugin.CliConnect
 	c.clientFactory = clientFactory
 	c.tokenFactory = tokenFactory
 	c.deployServiceURLCalculator = deployServiceURLCalculator
-}
-
-func getApiEndpoint(cliConnection plugin.CliConnection) string {
-	api, err := cliConnection.ApiEndpoint()
-	if err != nil {
-		return ""
-	}
-	if strings.HasPrefix(api, "https://") {
-		api = strings.Replace(api, "https://", "", -1)
-	}
-	return api
 }
 
 // Usage reports incorrect command usage

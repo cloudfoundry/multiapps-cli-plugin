@@ -1,31 +1,39 @@
 package commands
 
 import (
-	"flag"
-	"fmt"
-	"strconv"
-	"strings"
-
 	"code.cloudfoundry.org/cli/cf/formatters"
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	plugin_models "code.cloudfoundry.org/cli/plugin/models"
+	"flag"
+	"fmt"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	mta_models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/resilient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"strconv"
+	"strings"
 )
 
 // MtaCommand is a command for listing a deployed MTA
 type MtaCommand struct {
 	*BaseCommand
+
+	CfClient cfrestclient.CloudFoundryOperationsExtended
 }
 
 func NewMtaCommand() *MtaCommand {
 	baseCmd := &BaseCommand{flagsParser: NewDefaultCommandFlagsParser([]string{"MTA_ID"}), flagsValidator: NewDefaultCommandFlagsValidator(nil)}
-	mtaCmd := &MtaCommand{baseCmd}
+	mtaCmd := &MtaCommand{BaseCommand: baseCmd}
 	baseCmd.Command = mtaCmd
 	return mtaCmd
+}
+
+func (c *MtaCommand) Initialize(name string, cliConnection plugin.CliConnection) {
+	c.BaseCommand.Initialize(name, cliConnection)
+	delegate := cfrestclient.NewCloudFoundryRestClient(cliConnection, c.transport, c.tokenFactory)
+	c.CfClient = resilient.NewResilientCloudFoundryClient(delegate, maxRetriesCount, retryIntervalInSeconds)
 }
 
 // GetPluginCommand returns the plugin command details
@@ -81,19 +89,36 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 	ui.Say("Version: %s", util.GetMtaVersionAsString(mta))
 	ui.Say("Namespace: %s", mta.Metadata.Namespace)
 	ui.Say("\nApps:")
-	table := ui.Table([]string{"name", "requested state", "instances", "memory", "disk", "urls"})
-	// GetApps() is more safe than GetApp(), because it retrieves all application statistics through a single call,
-	// whereas GetApp(name) makes several calls, some of which may fail under specific conditions. For example,
-	// the call to /v2/apps/<GUID>/instances may fail if the application is not yet staged. Weirdly enough, a call
-	// to GetApps() is also faster than several calls to GetApp(name).
-	apps, err := c.cliConnection.GetApps()
+
+	apps, err := c.CfClient.GetApplications(mta.Metadata.ID, cfTarget.Space.Guid)
 	if err != nil {
-		ui.Failed("Could not get apps: %s", baseclient.NewClientError(err))
+		ui.Failed("Could not get apps: %s", err)
 		return Failure
 	}
+
+	table := ui.Table([]string{"name", "requested state", "instances", "memory", "disk", "urls"})
+
 	for _, app := range apps {
 		if isMtaAssociatedApp(mta, app) {
-			table.Add(app.Name, app.State, getInstances(app), size(app.Memory), size(app.DiskQuota), getRoutes(app))
+			processes, err := c.CfClient.GetAppProcessStatistics(app.Guid)
+			if err != nil {
+				ui.Failed("Could not get app %q process statistics: %s", app.Name, err)
+				return Failure
+			}
+
+			routes, err := c.CfClient.GetApplicationRoutes(app.Guid)
+			if err != nil {
+				ui.Failed("Could not get app %q routes: %s", app.Name, err)
+				return Failure
+			}
+
+			memory := int64(0)
+			disk := int64(0)
+			if len(processes) > 0 {
+				memory = processes[0].Memory
+				disk = processes[0].Disk
+			}
+			table.Add(app.Name, app.State, getInstances(processes), size(memory), size(disk), formatRoutes(routes))
 		}
 	}
 	table.Print()
@@ -102,16 +127,24 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 	if len(mta.Services) == 0 {
 		return Success
 	}
-	table = ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
-	// Read the comment for GetApps(). The same applies for GetServices().
-	services, err := c.cliConnection.GetServices()
+
+	services, err := c.CfClient.GetServiceInstances(mta.Metadata.ID, cfTarget.Space.Guid)
 	if err != nil {
-		ui.Failed("Could not get services: %s", baseclient.NewClientError(err))
+		ui.Failed("Could not get services: %s", err)
 		return Failure
 	}
+
+	table = ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
+
 	for _, service := range services {
 		if isMtaAssociatedService(mta, service) {
-			table.Add(service.Name, service.Service.Name, service.ServicePlan.Name, strings.Join(service.ApplicationNames, ", "), getLastOperation(service))
+			serviceBindings, err := c.CfClient.GetServiceBindings(service.Name)
+			if err != nil {
+				ui.Failed("Could not get service bindings: %s", err)
+				return Failure
+			}
+
+			table.Add(service.Name, service.Offering.Name, service.Plan.Name, formatAppNames(serviceBindings), getLastOperation(service))
 		}
 	}
 	table.Print()
@@ -120,26 +153,40 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 }
 
 func size(n int64) string {
-	return formatters.ByteSize(n * formatters.MEGABYTE)
+	return formatters.ByteSize(n)
 }
 
-func getInstances(app plugin_models.GetAppsModel) string {
-	return strconv.Itoa(app.RunningInstances) + "/" + strconv.Itoa(app.TotalInstances)
+func getInstances(processes []models.ApplicationProcessStatistics) string {
+	var runningProcesses []models.ApplicationProcessStatistics
+	for _, process := range processes {
+		if process.State == "RUNNING" {
+			runningProcesses = append(runningProcesses, process)
+		}
+	}
+	return strconv.Itoa(len(runningProcesses)) + "/" + strconv.Itoa(len(processes))
 }
 
-func getRoutes(app plugin_models.GetAppsModel) string {
+func formatRoutes(routes []models.ApplicationRoute) string {
 	var urls []string
-	for _, route := range app.Routes {
-		urls = append(urls, route.Host+"."+route.Domain.Name)
+	for _, route := range routes {
+		urls = append(urls, route.Url)
 	}
 	return strings.Join(urls, ", ")
 }
 
-func getLastOperation(service plugin_models.GetServices_Model) string {
+func formatAppNames(bindings []models.ServiceBinding) string {
+	var appNames []string
+	for _, binding := range bindings {
+		appNames = append(appNames, binding.AppName)
+	}
+	return strings.Join(appNames, ", ")
+}
+
+func getLastOperation(service models.CloudFoundryServiceInstance) string {
 	return service.LastOperation.Type + " " + service.LastOperation.State
 }
 
-func isMtaAssociatedApp(mta *mta_models.Mta, app plugin_models.GetAppsModel) bool {
+func isMtaAssociatedApp(mta *models.Mta, app models.CloudFoundryApplication) bool {
 	for _, module := range mta.Modules {
 		if module.AppName == app.Name {
 			return true
@@ -148,7 +195,7 @@ func isMtaAssociatedApp(mta *mta_models.Mta, app plugin_models.GetAppsModel) boo
 	return false
 }
 
-func isMtaAssociatedService(mta *mta_models.Mta, service plugin_models.GetServices_Model) bool {
+func isMtaAssociatedService(mta *models.Mta, service models.CloudFoundryServiceInstance) bool {
 	for _, serviceName := range mta.Services {
 		if serviceName == service.Name {
 			return true

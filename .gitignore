@@ -1,5 +1,6 @@
 build/
 tmp/
+vendor/
 out/
 cf-cli-plugin
 mta-op-*/

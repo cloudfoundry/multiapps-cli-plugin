@@ -17,26 +17,16 @@ import (
 
 type CloudFoundryResourceMetadata struct {
 
-	// created at
-	CreatedAt string `json:"created_at,omitempty"`
+	// labels
+	Labels map[string]string `json:"labels,omitempty"`
 
-	// guid
-	GUID string `json:"guid,omitempty"`
-
-	// updated at
-	UpdatedAt string `json:"updated_at,omitempty"`
-
-	// url
-	URL string `json:"url,omitempty"`
+	// annotations
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-/* polymorph CloudFoundryResource_metadata created_at false */
+/* polymorph CloudFoundryResource_metadata labels false */
 
-/* polymorph CloudFoundryResource_metadata guid false */
-
-/* polymorph CloudFoundryResource_metadata updated_at false */
-
-/* polymorph CloudFoundryResource_metadata url false */
+/* polymorph CloudFoundryResource_metadata annotations false */
 
 // Validate validates this cloud foundry resource metadata
 func (m *CloudFoundryResourceMetadata) Validate(formats strfmt.Registry) error {

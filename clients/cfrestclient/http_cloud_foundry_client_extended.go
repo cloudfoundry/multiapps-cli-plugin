@@ -23,8 +23,8 @@ const (
 	DefaultHost string = "api.cf.sap.hana.ondemand.com"
 	// DefaultBasePath is the default BasePath
 	// found in Meta (info) section of spec file
-	DefaultBasePath    string = "/v2/"
-	DefaultRawBasePath string = "/v2/"
+	DefaultBasePath    string = "/v3/"
+	DefaultRawBasePath string = "/v3/"
 )
 
 // DefaultSchemes are the default schemes found in Meta (info) section of spec file

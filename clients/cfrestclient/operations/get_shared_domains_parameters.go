@@ -62,8 +62,6 @@ for the get shared domains operation typically these are written to a http.Reque
 */
 type GetSharedDomainsParams struct {
 
-	/*OrderDirection*/
-	OrderDirection *string
 	/*Page*/
 	Page *string
 	/*ResultsPerPage*/
@@ -107,17 +105,6 @@ func (o *GetSharedDomainsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithOrderDirection adds the orderDirection to the get shared domains params
-func (o *GetSharedDomainsParams) WithOrderDirection(orderDirection *string) *GetSharedDomainsParams {
-	o.SetOrderDirection(orderDirection)
-	return o
-}
-
-// SetOrderDirection adds the orderDirection to the get shared domains params
-func (o *GetSharedDomainsParams) SetOrderDirection(orderDirection *string) {
-	o.OrderDirection = orderDirection
-}
-
 // WithPage adds the page to the get shared domains params
 func (o *GetSharedDomainsParams) WithPage(page *string) *GetSharedDomainsParams {
 	o.SetPage(page)
@@ -148,22 +135,6 @@ func (o *GetSharedDomainsParams) WriteToRequest(r runtime.ClientRequest, reg str
 	}
 	var res []error
 
-	if o.OrderDirection != nil {
-
-		// query param order-direction
-		var qrOrderDirection string
-		if o.OrderDirection != nil {
-			qrOrderDirection = *o.OrderDirection
-		}
-		qOrderDirection := qrOrderDirection
-		if qOrderDirection != "" {
-			if err := r.SetQueryParam("order-direction", qOrderDirection); err != nil {
-				return err
-			}
-		}
-
-	}
-
 	if o.Page != nil {
 
 		// query param page
@@ -189,7 +160,7 @@ func (o *GetSharedDomainsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		}
 		qResultsPerPage := qrResultsPerPage
 		if qResultsPerPage != "" {
-			if err := r.SetQueryParam("results-per-page", qResultsPerPage); err != nil {
+			if err := r.SetQueryParam("per_page", qResultsPerPage); err != nil {
 				return err
 			}
 		}

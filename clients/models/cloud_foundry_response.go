@@ -17,31 +17,16 @@ import (
 
 type CloudFoundryResponse struct {
 
-	// next url
-	NextURL string `json:"next_url,omitempty"`
-
-	// prev url
-	PrevURL string `json:"prev_url,omitempty"`
+	// pagination
+	Pagination CloudFoundryPagination `json:"pagination"`
 
 	// resources
 	Resources CloudFoundryResponseResources `json:"resources"`
-
-	// total pages
-	TotalPages int64 `json:"total_pages,omitempty"`
-
-	// total results
-	TotalResults int64 `json:"total_results,omitempty"`
 }
 
-/* polymorph CloudFoundryResponse next_url false */
-
-/* polymorph CloudFoundryResponse prev_url false */
+/* polymorph CloudFoundryResponse pagination false */
 
 /* polymorph CloudFoundryResponse resources false */
-
-/* polymorph CloudFoundryResponse total_pages false */
-
-/* polymorph CloudFoundryResponse total_results false */
 
 // Validate validates this cloud foundry response
 func (m *CloudFoundryResponse) Validate(formats strfmt.Registry) error {
