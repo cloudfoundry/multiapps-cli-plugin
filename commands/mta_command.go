@@ -32,7 +32,7 @@ func NewMtaCommand() *MtaCommand {
 
 func (c *MtaCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	c.BaseCommand.Initialize(name, cliConnection)
-	delegate := cfrestclient.NewCloudFoundryRestClient(cliConnection, c.transport, c.tokenFactory)
+	delegate := cfrestclient.NewCloudFoundryRestClient(cliConnection)
 	c.CfClient = resilient.NewResilientCloudFoundryClient(delegate, maxRetriesCount, retryIntervalInSeconds)
 }
 

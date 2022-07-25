@@ -1,14 +1,8 @@
 package fakes
 
-import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-)
+import "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 
 type FakeCloudFoundryClient struct {
-	domains []models.Domain
-	err     error
-
 	Apps               []models.CloudFoundryApplication
 	AppsErr            error
 	AppProcessStats    []models.ApplicationProcessStatistics
@@ -19,14 +13,6 @@ type FakeCloudFoundryClient struct {
 	ServicesErr        error
 	ServiceBindings    []models.ServiceBinding
 	ServiceBindingsErr error
-}
-
-func NewFakeCloudFoundryClient(domains []models.Domain, err error) cfrestclient.CloudFoundryOperationsExtended {
-	return FakeCloudFoundryClient{domains: domains, err: err}
-}
-
-func (f FakeCloudFoundryClient) GetSharedDomains() ([]models.Domain, error) {
-	return f.domains, f.err
 }
 
 func (f FakeCloudFoundryClient) GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error) {

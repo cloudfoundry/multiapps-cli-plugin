@@ -3,68 +3,23 @@ package cfrestclient
 import (
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/jsonry"
-	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
-
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/operations"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/go-openapi/strfmt"
 )
 
 const cfBaseUrl = "v3/"
-const defaultDomainsPathPattern = "/domains"
 
 type CloudFoundryRestClient struct {
-	baseclient.BaseClient
-	httpCloudFoundryClient *CloudFoundryClientExtended
-	cliConn                plugin.CliConnection
+	cliConn plugin.CliConnection
 }
 
-func NewCloudFoundryRestClient(cliConn plugin.CliConnection, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) CloudFoundryOperationsExtended {
-	t := baseclient.NewHTTPTransport(getApiEndpoint(cliConn), cfBaseUrl, rt)
-	httpCloudFoundryClient := New(t, strfmt.Default)
-	return &CloudFoundryRestClient{baseclient.BaseClient{TokenFactory: tokenFactory}, httpCloudFoundryClient, cliConn}
-}
-
-func getApiEndpoint(cliConnection plugin.CliConnection) string {
-	api, err := cliConnection.ApiEndpoint()
-	if err != nil {
-		return ""
-	}
-	if strings.HasPrefix(api, "https://") {
-		api = strings.Replace(api, "https://", "", -1)
-	}
-	return api
-}
-
-func (c CloudFoundryRestClient) GetSharedDomains() ([]models.Domain, error) {
-	var result []models.Domain
-	var response *models.CloudFoundryResponse
-	var err error
-	var cloudFoundryUrlElements CloudFoundryUrlElements
-	pathPattern := defaultDomainsPathPattern
-	for pathPattern != "" {
-		response, err = c.getSharedDomainsInternal(cloudFoundryUrlElements)
-		if err != nil {
-			return []models.Domain{}, models.HttpResponseError{Underlying: err}
-		}
-		result = append(result, toSharedDomains(response)...)
-		cloudFoundryUrlElements, err = getPathQueryElements(response)
-		if err != nil {
-			return []models.Domain{}, models.HttpResponseError{Underlying: baseclient.NewClientError(err)}
-		}
-		pathPattern = response.Pagination.Next.Href
-	}
-
-	return result, nil
+func NewCloudFoundryRestClient(cliConn plugin.CliConnection) CloudFoundryOperationsExtended {
+	return &CloudFoundryRestClient{cliConn}
 }
 
 func (c CloudFoundryRestClient) GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error) {
@@ -133,47 +88,6 @@ func (c CloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models
 
 	getServiceBindingsUrl := fmt.Sprintf("%s/%sservice_credential_bindings?type=app&include=app&service_instance_names=%s", apiEndpoint, cfBaseUrl, serviceName)
 	return getPaginatedResourcesWithIncluded(getServiceBindingsUrl, token, buildServiceBinding)
-}
-
-func (c CloudFoundryRestClient) getSharedDomainsInternal(cloudFoundryUrlElements CloudFoundryUrlElements) (*models.CloudFoundryResponse, error) {
-	params := &operations.GetSharedDomainsParams{
-		Page:           cloudFoundryUrlElements.Page,
-		ResultsPerPage: cloudFoundryUrlElements.ResultsPerPage,
-		Context:        context.TODO(),
-	}
-	token, err := c.TokenFactory.NewToken()
-	if err != nil {
-		return nil, baseclient.NewClientError(err)
-	}
-
-	//TODO filter by domains that have an owning organization
-	// and maybe validate that organization is the current one targeted
-	result, err := c.httpCloudFoundryClient.Operations.GetSharedDomains(params, token)
-	if err != nil {
-		return nil, baseclient.NewClientError(err)
-	}
-	return result.Payload, nil
-}
-
-func getPathQueryElements(response *models.CloudFoundryResponse) (CloudFoundryUrlElements, error) {
-	nextUrl, err := url.Parse(response.Pagination.Next.Href)
-	if err != nil {
-		return CloudFoundryUrlElements{}, fmt.Errorf("could not parse pagintaion.next for getting shared domains: %s", response.Pagination.Next.Href)
-	}
-	nextUrlQuery := nextUrl.Query()
-	page := nextUrlQuery.Get("page")
-	resultsPerPage := nextUrlQuery.Get("per_page")
-
-	return CloudFoundryUrlElements{Page: &page, ResultsPerPage: &resultsPerPage}, nil
-
-}
-
-func toSharedDomains(response *models.CloudFoundryResponse) []models.Domain {
-	var result []models.Domain
-	for _, cloudResource := range response.Resources {
-		result = append(result, models.NewDomain(cloudResource.Name, cloudResource.GUID))
-	}
-	return result
 }
 
 func getPaginatedResources[T any](url, token string) ([]T, error) {

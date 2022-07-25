@@ -16,12 +16,6 @@ func NewResilientCloudFoundryClient(cloudFoundryRestClient cfrestclient.CloudFou
 	return &ResilientCloudFoundryRestClient{cloudFoundryRestClient, maxRetriesCount, time.Second * time.Duration(retryIntervalInSeconds)}
 }
 
-func (c ResilientCloudFoundryRestClient) GetSharedDomains() ([]models.Domain, error) {
-	return retryOnError(func() ([]models.Domain, error) {
-		return c.CloudFoundryRestClient.GetSharedDomains()
-	}, c.MaxRetriesCount, c.RetryInterval)
-}
-
 func (c ResilientCloudFoundryRestClient) GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error) {
 	return retryOnError(func() ([]models.CloudFoundryApplication, error) {
 		return c.CloudFoundryRestClient.GetApplications(mtaId, spaceGuid)
