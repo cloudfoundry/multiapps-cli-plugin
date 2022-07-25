@@ -15,8 +15,6 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/resilient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
@@ -64,9 +62,7 @@ func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection
 	log.Tracef("Initializing command '%s'\n", name)
 	transport := newTransport()
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
-	cloudFoundryClient := cfrestclient.NewCloudFoundryRestClient(cliConnection, transport, tokenFactory)
-	resilientCloudFoundryClient := resilient.NewResilientCloudFoundryClient(cloudFoundryClient, maxRetriesCount, retryIntervalInSeconds)
-	c.InitializeAll(name, cliConnection, transport, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(resilientCloudFoundryClient))
+	c.InitializeAll(name, cliConnection, transport, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cliConnection))
 }
 
 // InitializeAll initializes the command with the specified name, CLI connection, transport, client & token factories and deploy service URL calculator.
