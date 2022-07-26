@@ -20,9 +20,6 @@ var _ = Describe("Configuration", func() {
 
 		BeforeEach(func() {
 			os.Unsetenv(properties.BackendURL.Name)
-			for _, name := range properties.BackendURL.DeprecatedNames {
-				os.Unsetenv(name)
-			}
 		})
 
 		Context("with a set environment variable", func() {
@@ -31,16 +28,6 @@ var _ = Describe("Configuration", func() {
 				os.Setenv(properties.BackendURL.Name, backendURL)
 				configurationSnapshot := configuration.NewSnapshot()
 				Expect(configurationSnapshot.GetBackendURL()).To(Equal(backendURL))
-			})
-		})
-		Context("with a set environment variable (deprecated)", func() {
-			It("should return its value", func() {
-				if len(properties.BackendURL.DeprecatedNames) > 0 {
-					backendURL := "http://my-multiapps-controller.domain.com"
-					os.Setenv(properties.BackendURL.DeprecatedNames[0], backendURL)
-					configurationSnapshot := configuration.NewSnapshot()
-					Expect(configurationSnapshot.GetBackendURL()).To(Equal(backendURL))
-				}
 			})
 		})
 		Context("without a set environment variable", func() {
@@ -56,9 +43,6 @@ var _ = Describe("Configuration", func() {
 
 		BeforeEach(func() {
 			os.Unsetenv(properties.UploadChunkSizeInMB.Name)
-			for _, name := range properties.UploadChunkSizeInMB.DeprecatedNames {
-				os.Unsetenv(name)
-			}
 		})
 
 		Context("with a set environment variable", func() {
@@ -85,16 +69,6 @@ var _ = Describe("Configuration", func() {
 					configurationSnapshot := configuration.NewSnapshot()
 					Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(properties.DefaultUploadChunkSizeInMB))
 				})
-			})
-		})
-		Context("with a set environment variable (deprecated)", func() {
-			It("should return its value", func() {
-				if len(properties.UploadChunkSizeInMB.DeprecatedNames) > 0 {
-					uploadChunkSizeInMB := uint64(5)
-					os.Setenv(properties.UploadChunkSizeInMB.DeprecatedNames[0], strconv.Itoa(int(uploadChunkSizeInMB)))
-					configurationSnapshot := configuration.NewSnapshot()
-					Expect(configurationSnapshot.GetUploadChunkSizeInMB()).To(Equal(uploadChunkSizeInMB))
-				}
 			})
 		})
 		Context("without a set environment variable", func() {

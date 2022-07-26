@@ -2,7 +2,6 @@ package properties
 
 type ConfigurableProperty struct {
 	Name                  string
-	DeprecatedNames       []string
 	Parser                Parser
 	ParsingSuccessMessage string
 	ParsingFailureMessage string
