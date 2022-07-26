@@ -8,10 +8,7 @@ import (
 const DefaultUploadChunkSizeInMB = uint64(45)
 
 var UploadChunkSizeInMB = ConfigurableProperty{
-	Name: "MULTIAPPS_UPLOAD_CHUNK_SIZE",
-	DeprecatedNames: []string{
-		"CHUNK_SIZE_IN_MB",
-	},
+	Name:                  "MULTIAPPS_UPLOAD_CHUNK_SIZE",
 	Parser:                uploadChunkSizeParser{},
 	ParsingSuccessMessage: "Attention: You've specified a custom chunk size (%d MB) via the environment variable \"%s\".\n",
 	ParsingFailureMessage: "Attention: You've specified an INVALID custom chunk size (%s) via the environment variable \"%s\". Using default: %d\n",

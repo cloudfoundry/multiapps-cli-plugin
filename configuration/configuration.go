@@ -51,13 +51,6 @@ func getPropertyOrDefault(property properties.ConfigurableProperty) interface{} 
 	if value != nil {
 		return value
 	}
-	for _, deprecatedName := range property.DeprecatedNames {
-		value := getPropertyWithNameOrDefaultIfInvalid(property, deprecatedName)
-		if value != nil {
-			fmt.Printf("Attention: You're using a deprecated environment variable \"%s\". Use \"%s\" instead.\n\n", deprecatedName, property.Name)
-			return value
-		}
-	}
 	return property.DefaultValue
 }
 
