@@ -99,27 +99,25 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 	table := ui.Table([]string{"name", "requested state", "instances", "memory", "disk", "urls"})
 
 	for _, app := range apps {
-		if isMtaAssociatedApp(mta, app) {
-			processes, err := c.CfClient.GetAppProcessStatistics(app.Guid)
-			if err != nil {
-				ui.Failed("Could not get app %q process statistics: %s", app.Name, err)
-				return Failure
-			}
-
-			routes, err := c.CfClient.GetApplicationRoutes(app.Guid)
-			if err != nil {
-				ui.Failed("Could not get app %q routes: %s", app.Name, err)
-				return Failure
-			}
-
-			memory := int64(0)
-			disk := int64(0)
-			if len(processes) > 0 {
-				memory = processes[0].Memory
-				disk = processes[0].Disk
-			}
-			table.Add(app.Name, app.State, getInstances(processes), size(memory), size(disk), formatRoutes(routes))
+		processes, err := c.CfClient.GetAppProcessStatistics(app.Guid)
+		if err != nil {
+			ui.Failed("Could not get app %q process statistics: %s", app.Name, err)
+			return Failure
 		}
+
+		routes, err := c.CfClient.GetApplicationRoutes(app.Guid)
+		if err != nil {
+			ui.Failed("Could not get app %q routes: %s", app.Name, err)
+			return Failure
+		}
+
+		memory := int64(0)
+		disk := int64(0)
+		if len(processes) > 0 {
+			memory = processes[0].Memory
+			disk = processes[0].Disk
+		}
+		table.Add(app.Name, app.State, getInstances(processes), size(memory), size(disk), formatRoutes(routes))
 	}
 	table.Print()
 
@@ -137,15 +135,13 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 	table = ui.Table([]string{"name", "service", "plan", "bound apps", "last operation"})
 
 	for _, service := range services {
-		if isMtaAssociatedService(mta, service) {
-			serviceBindings, err := c.CfClient.GetServiceBindings(service.Name)
-			if err != nil {
-				ui.Failed("Could not get service bindings: %s", err)
-				return Failure
-			}
-
-			table.Add(service.Name, service.Offering.Name, service.Plan.Name, formatAppNames(serviceBindings), getLastOperation(service))
+		serviceBindings, err := c.CfClient.GetServiceBindings(service.Name)
+		if err != nil {
+			ui.Failed("Could not get service bindings: %s", err)
+			return Failure
 		}
+
+		table.Add(service.Name, service.Offering.Name, service.Plan.Name, formatAppNames(serviceBindings), getLastOperation(service))
 	}
 	table.Print()
 
@@ -184,22 +180,4 @@ func formatAppNames(bindings []models.ServiceBinding) string {
 
 func getLastOperation(service models.CloudFoundryServiceInstance) string {
 	return service.LastOperation.Type + " " + service.LastOperation.State
-}
-
-func isMtaAssociatedApp(mta *models.Mta, app models.CloudFoundryApplication) bool {
-	for _, module := range mta.Modules {
-		if module.AppName == app.Name {
-			return true
-		}
-	}
-	return false
-}
-
-func isMtaAssociatedService(mta *models.Mta, service models.CloudFoundryServiceInstance) bool {
-	for _, serviceName := range mta.Services {
-		if serviceName == service.Name {
-			return true
-		}
-	}
-	return false
 }
