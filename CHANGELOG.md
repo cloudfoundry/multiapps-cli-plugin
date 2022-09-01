@@ -1,7 +1,7 @@
 ## v3.0.0
 * Use V3 Cloud Foundry API in `mtas` and `mta` commands
 * Update Go to 1.18
-* Change Deploy Service discovery mechanism - the Deploy Service URL is now calculated based on the CF API
+* Change Deploy Service discovery mechanism - the Deploy Service URL is now calculated based on the CF API 
 instead of querying the shared domains and trying each one
 * Delete deprecated configuration parameters
 * Print org and space names in undeploy
