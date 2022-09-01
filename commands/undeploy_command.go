@@ -40,11 +40,11 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
    Perform action on an active undeploy operation
    cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
-				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				operationIDOpt:      "Active undeploy operation ID",
-				actionOpt:           "Action to perform on the active undeploy operation (abort, retry, monitor)",
-				forceOpt:            "Force undeploy without confirmation",
-				util.GetShortOption(deleteServicesOpt):             "Delete services",
+				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				operationIDOpt:                         "Active undeploy operation ID",
+				actionOpt:                              "Action to perform on the active undeploy operation (abort, retry, monitor)",
+				forceOpt:                               "Force undeploy without confirmation",
+				util.GetShortOption(deleteServicesOpt): "Delete services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete service brokers",
 				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the undeployment",
@@ -82,7 +82,9 @@ func (c *UndeployCommand) executeInternal(positionalArgs []string, dsHost string
 
 	force := GetBoolOpt(forceOpt, flags)
 	mtaID := positionalArgs[0]
-	if !force && !ui.Confirm("Really undeploy multi-target app %s? (y/n)", terminal.EntityNameColor(mtaID)) {
+	if !force && !ui.Confirm("Really undeploy multi-target app %s in org %s / space %s? (y/n)", terminal.EntityNameColor(mtaID),
+		terminal.EntityNameColor(cfTarget.Org.Name),
+		terminal.EntityNameColor(cfTarget.Space.Name)) {
 		ui.Warn("Undeploy cancelled")
 		return Failure
 	}
