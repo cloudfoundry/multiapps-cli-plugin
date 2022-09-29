@@ -113,9 +113,7 @@ func (f *FileUploader) uploadInChunks(fullPath string, fileToUpload os.File) ([]
 	defer attemptToRemoveFileParts(fileToUploadParts)
 
 	uploadedFilesChannel := make(chan *models.FileMetadata)
-	defer close(uploadedFilesChannel)
 	errorChannel := make(chan error)
-	defer close(errorChannel)
 
 	for _, fileToUploadPart := range fileToUploadParts {
 		filePart, err := os.Open(fileToUploadPart)
