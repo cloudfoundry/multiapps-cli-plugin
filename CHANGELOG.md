@@ -1,3 +1,6 @@
+## v3.0.1
+* Do not close channels when uploading file chunks
+
 ## v3.0.0
 * Use V3 Cloud Foundry API in `mtas` and `mta` commands
 * Update Go to 1.18
