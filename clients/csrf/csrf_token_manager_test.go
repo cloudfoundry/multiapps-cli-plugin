@@ -3,6 +3,7 @@ package csrf
 import (
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/fakes"
 	. "github.com/onsi/ginkgo"
@@ -108,6 +109,16 @@ var _ = Describe("DefaultCsrfTokenUpdater", func() {
 				UpdateCookiesIfNeeded(cookies, request)
 				Expect(cookies).To(Equal(request.Cookies()))
 			})
+			It("should not get unauthorized", func() {
+				transport, cookies, request := createTransport(), createValidCookies(), createRequest(http.MethodPost)
+				transport.Cookies.Cookies = cookies
+				csrfTokenManager := NewDefaultCsrfTokenManagerWithFetcher(transport, request, fakes.NewFakeCsrfTokenFetcher())
+				err := csrfTokenManager.updateToken()
+				Ω(err).ShouldNot(HaveOccurred())
+				Expect(request.Header.Get("X-Csrf-Token")).To(Equal(transport.Csrf.Token))
+				Expect(request.Header.Get("Cookie")).To(Equal(extractCookieString(transport)))
+
+			})
 		})
 	})
 })
@@ -165,4 +176,12 @@ func createRequest(method string) *http.Request {
 	request.Method = method
 
 	return request
+}
+
+func extractCookieString(transport *Transport) string {
+	var cookieString string
+	for _, cookie := range transport.Cookies.Cookies {
+		cookieString += cookie.Name + "=" + cookie.Value + "; "
+	}
+	return strings.TrimSuffix(cookieString, "; ")
 }

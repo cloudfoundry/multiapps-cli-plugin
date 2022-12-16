@@ -29,8 +29,6 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req2 := http.Request{}
 	copier.Copy(&req2, req)
 
-	UpdateCookiesIfNeeded(t.Cookies.Cookies, &req2)
-
 	csrfTokenManager := NewDefaultCsrfTokenManager(&t, &req2)
 	err := csrfTokenManager.updateToken()
 	if err != nil {
@@ -54,17 +52,6 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	return res, err
-}
-
-func UpdateCookiesIfNeeded(cookies []*http.Cookie, request *http.Request) {
-	if len(cookies) == 0 {
-		return
-	}
-
-	request.Header.Del(CookieHeader)
-	for _, cookie := range cookies {
-		request.AddCookie(cookie)
-	}
 }
 
 func prettyPrintCookies(cookies []*http.Cookie) string {
