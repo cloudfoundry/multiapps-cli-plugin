@@ -77,6 +77,7 @@ func (c *DefaultCsrfTokenManager) updateTokenInRequest() {
 	if c.transport.Csrf.Token != "" && c.transport.Csrf.Header != "" {
 		c.request.Header.Set(XCsrfToken, c.transport.Csrf.Token)
 		c.request.Header.Set(XCsrfHeader, c.transport.Csrf.Header)
+		UpdateCookiesIfNeeded(c.transport.Cookies.Cookies, c.request)
 	}
 }
 
@@ -86,4 +87,15 @@ func (c *DefaultCsrfTokenManager) isProtectionRequired(req *http.Request, t *Tra
 
 func (c *DefaultCsrfTokenManager) shouldInitialize() bool {
 	return c.request != nil && c.isProtectionRequired(c.request, c.transport)
+}
+
+func UpdateCookiesIfNeeded(cookies []*http.Cookie, request *http.Request) {
+	if len(cookies) == 0 {
+		return
+	}
+
+	request.Header.Del(CookieHeader)
+	for _, cookie := range cookies {
+		request.AddCookie(cookie)
+	}
 }
