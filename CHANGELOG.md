@@ -1,3 +1,6 @@
+## v3.0.2
+* Fix first request failure during deploy with url
+
 ## v3.0.1
 * Do not close channels when uploading file chunks
 
