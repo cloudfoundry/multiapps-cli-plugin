@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultDescriptorLocation string = "META-INF/mtad.yaml"
+const defaultDescriptorPath string = "META-INF/mtad.yaml"
 
 type MtaDescriptor struct {
 	SchemaVersion string `yaml:"_schema-version,omitempty"`
@@ -23,37 +23,40 @@ type MtaDescriptor struct {
 
 // GetMtaDescriptorFromArchive retrieves MTA ID from MTA archive
 func GetMtaDescriptorFromArchive(mtaArchiveFilePath string) (MtaDescriptor, error) {
-	var descriptor MtaDescriptor
-	// Open the mta archive
 	mtaArchiveReader, err := zip.OpenReader(mtaArchiveFilePath)
 	if err != nil {
 		return MtaDescriptor{}, err
 	}
 	defer mtaArchiveReader.Close()
 
-	for _, file := range mtaArchiveReader.File {
-		// Check for the mta descriptor
-		if file.Name == defaultDescriptorLocation {
-
-			descriptorBytes, err := readZipFile(file)
-			if err != nil {
-				return MtaDescriptor{}, err
-			}
-
-			// Unmarshal the content of the temporary deployment descriptor into struct
-			err = yaml.Unmarshal(descriptorBytes, &descriptor)
-			if err != nil {
-				return MtaDescriptor{}, err
-			}
-
-			// Return the MTA deployment descriptor, if it is valid
-			if descriptor.ID != "" {
-				return descriptor, nil
-			}
-		}
+	descriptorFile := findMtaDescriptorFile(mtaArchiveReader.File)
+	if descriptorFile == nil {
+		return MtaDescriptor{}, errors.New("Could not get a valid MTA descriptor from archive")
 	}
 
+	descriptorBytes, err := readZipFile(descriptorFile)
+	if err != nil {
+		return MtaDescriptor{}, err
+	}
+
+	var descriptor MtaDescriptor
+	if err = yaml.Unmarshal(descriptorBytes, &descriptor); err != nil {
+		return MtaDescriptor{}, err
+	}
+
+	if descriptor.ID != "" {
+		return descriptor, nil
+	}
 	return MtaDescriptor{}, errors.New("Could not get a valid MTA descriptor from archive")
+}
+
+func findMtaDescriptorFile(files []*zip.File) *zip.File {
+	for _, file := range files {
+		if file.Name == defaultDescriptorPath {
+			return file
+		}
+	}
+	return nil
 }
 
 func CreateMtaArchive(source, target string) error {
