@@ -43,7 +43,7 @@ type FakeMtaV2ClientOperations struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake FakeMtaV2ClientOperations) GetMtas(name, namespace *string, spaceGuid string) ([]*models.Mta, error) {
+func (fake *FakeMtaV2ClientOperations) GetMtas(name, namespace *string, spaceGuid string) ([]*models.Mta, error) {
 	fake.getMtasMutex.Lock()
 	ret, specificReturn := fake.getMtasReturnsOnCall[len(fake.getMtasArgsForCall)]
 	fake.getMtasArgsForCall = append(fake.getMtasArgsForCall, struct {
@@ -96,7 +96,7 @@ func (fake *FakeMtaV2ClientOperations) GetMtasReturnsOnCall(i int, result1 []*mo
 	}{result1, result2}
 }
 
-func (fake FakeMtaV2ClientOperations) GetMtasForThisSpace(name, namespace *string) ([]*models.Mta, error) {
+func (fake *FakeMtaV2ClientOperations) GetMtasForThisSpace(name, namespace *string) ([]*models.Mta, error) {
 	fake.getMtasForThisSpaceMutex.Lock()
 	ret, specificReturn := fake.getMtasForThisSpaceReturnsOnCall[len(fake.getMtasForThisSpaceArgsForCall)]
 	fake.getMtasForThisSpaceArgsForCall = append(fake.getMtasForThisSpaceArgsForCall, struct {

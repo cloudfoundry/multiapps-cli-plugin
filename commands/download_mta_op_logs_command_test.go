@@ -231,7 +231,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
 						return command.Execute([]string{"-i", testutil.ProcessID, "-d", customDir + "/subdir"}).ToInt()
 					})
-					ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory test/subdir/mta-op-%s:", testutil.ProcessID), 2)
+					ex.ExpectFailureOnLine(status, output, fmt.Sprintf("Could not create download directory test/subdir/mta-op-%s:", testutil.ProcessID), 3)
 				})
 				AfterEach(func() {
 					os.Chmod(customDir, 0755)

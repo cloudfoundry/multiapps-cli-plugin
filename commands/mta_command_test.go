@@ -171,6 +171,7 @@ var _ = Describe("MtaCommand", func() {
 			It("should print information about the deployed MTA and exit with zero status", func() {
 				clientFactory.MtaV2Client = mtaV2fake.NewFakeMtaV2ClientBuilder().
 					GetMtasForThisSpace("test-mta-id", nil, []*models.Mta{testutil.GetMta("test-mta-id", "0.0.0-unknown", "", []*models.Module{}, []string{})}, nil).Build()
+				command.CfClient = cf_client_fakes.FakeCloudFoundryClient{}
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-mta-id"}).ToInt()
 				})
@@ -184,6 +185,7 @@ var _ = Describe("MtaCommand", func() {
 			It("should print information about the deployed MTA and exit with zero status", func() {
 				clientFactory.MtaV2Client = mtaV2fake.NewFakeMtaV2ClientBuilder().
 					GetMtasForThisSpace("test-mta-id", &namespace, []*models.Mta{testutil.GetMta("test-mta-id", "test-version", "namespace", []*models.Module{}, []string{})}, nil).Build()
+				command.CfClient = cf_client_fakes.FakeCloudFoundryClient{}
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-mta-id", "--namespace", namespace}).ToInt()
 				})

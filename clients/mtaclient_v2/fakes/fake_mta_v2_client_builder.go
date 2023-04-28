@@ -5,11 +5,11 @@ import (
 )
 
 type FakeMtaV2ClientBuilder struct {
-	FakeMtaV2Client FakeMtaV2ClientOperations
+	FakeMtaV2Client *FakeMtaV2ClientOperations
 }
 
 func NewFakeMtaV2ClientBuilder() *FakeMtaV2ClientBuilder {
-	return &FakeMtaV2ClientBuilder{}
+	return &FakeMtaV2ClientBuilder{&FakeMtaV2ClientOperations{}}
 }
 
 func (fb *FakeMtaV2ClientBuilder) GetMtas(mtaID string, namespace *string, spaceGuid string, resultMta []*models.Mta, resultError error) *FakeMtaV2ClientBuilder {
@@ -22,6 +22,6 @@ func (fb *FakeMtaV2ClientBuilder) GetMtasForThisSpace(mtaID string, namespace *s
 	return fb
 }
 
-func (fb *FakeMtaV2ClientBuilder) Build() FakeMtaV2ClientOperations {
+func (fb *FakeMtaV2ClientBuilder) Build() *FakeMtaV2ClientOperations {
 	return fb.FakeMtaV2Client
 }
