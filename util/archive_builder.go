@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -61,7 +60,7 @@ func (builder MtaArchiveBuilder) Build(deploymentDescriptorLocation string) (str
 	}
 	defer os.Remove(manifestLocation)
 
-	mtaAssembly, err := ioutil.TempDir("", "mta-assembly")
+	mtaAssembly, err := os.MkdirTemp("", "mta-assembly")
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +143,7 @@ func copyContent(sourceDirectory string, elementsPaths map[string]string, target
 
 func copyDirectory(src, dest string) error {
 	var err error
-	var filesInDestinationInfo []os.FileInfo
+	var filesInDestinationInfo []os.DirEntry
 	var sourceInfo os.FileInfo
 
 	if sourceInfo, err = os.Stat(src); err != nil {
@@ -155,7 +154,7 @@ func copyDirectory(src, dest string) error {
 		return err
 	}
 
-	if filesInDestinationInfo, err = ioutil.ReadDir(src); err != nil {
+	if filesInDestinationInfo, err = os.ReadDir(src); err != nil {
 		return err
 	}
 	for _, fd := range filesInDestinationInfo {

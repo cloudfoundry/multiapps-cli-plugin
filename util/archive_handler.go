@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -130,7 +129,7 @@ func readZipFile(file *zip.File) ([]byte, error) {
 		return nil, err
 	}
 	defer reader.Close()
-	return ioutil.ReadAll(reader)
+	return io.ReadAll(reader)
 }
 
 // ParseDeploymentDescriptor parses the deployment descriptor which is located in the provided direcotry
@@ -142,7 +141,7 @@ func ParseDeploymentDescriptor(deploymentDescriptorLocation string) (MtaDeployme
 	if err != nil {
 		return MtaDeploymentDescriptor{}, "", err
 	}
-	deploymentDescriptorYaml, err := ioutil.ReadFile(deploymentDescriptor)
+	deploymentDescriptorYaml, err := os.ReadFile(deploymentDescriptor)
 	if err != nil {
 		return MtaDeploymentDescriptor{}, "", fmt.Errorf("Could not read deployment descriptor: %s", err.Error())
 	}

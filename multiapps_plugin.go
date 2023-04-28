@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	defaultlog "log"
 	"os"
 	"strconv"
@@ -67,7 +67,7 @@ func main() {
 
 func disableStdOut() {
 	defaultlog.SetFlags(0)
-	defaultlog.SetOutput(ioutil.Discard)
+	defaultlog.SetOutput(io.Discard)
 }
 
 func findCommand(name string) (commands.Command, error) {

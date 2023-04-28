@@ -2,7 +2,6 @@ package util
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -41,7 +40,7 @@ func (builder *MtaManifestBuilder) ManifestSections(sections []ManifestSection) 
 }
 
 func (builder *MtaManifestBuilder) Build() (string, error) {
-	location, err := ioutil.TempDir("", "mta-manifest")
+	location, err := os.MkdirTemp("", "mta-manifest")
 	if err != nil {
 		return "", err
 	}

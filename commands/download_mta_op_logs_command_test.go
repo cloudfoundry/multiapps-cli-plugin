@@ -2,7 +2,6 @@ package commands_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -322,14 +321,11 @@ func newOperation(operationId string, spaceId string, user string, mtaId string)
 }
 
 func contentOf(fileName string) string {
-	content, _ := ioutil.ReadFile(fileName)
+	content, _ := os.ReadFile(fileName)
 	return string(content)
 }
 
 func exists(dirName string) bool {
 	_, err := os.Stat(dirName)
-	if err == nil {
-		return true
-	}
-	return false
+	return err == nil
 }
