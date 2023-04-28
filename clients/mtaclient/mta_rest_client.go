@@ -217,7 +217,10 @@ func (c MtaRestClient) GetMtaOperationLogContent(operationID, logID string) (str
 		return c.client.Operations.GetMtaOperationLogContent(params, token)
 	})
 
-	return result.(*operations.GetMtaOperationLogContentOK).Payload, baseclient.NewClientError(err)
+	if err != nil {
+		return "", baseclient.NewClientError(err)
+	}
+	return result.(*operations.GetMtaOperationLogContentOK).Payload, nil
 }
 
 func executeRestOperation(tokenProvider baseclient.TokenFactory, restOperation func(token runtime.ClientAuthInfoWriter) (interface{}, error)) (interface{}, error) {
