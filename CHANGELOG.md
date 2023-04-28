@@ -1,3 +1,6 @@
+## v3.0.3
+* Fix nil panic when downloading MTA Operation logs
+
 ## v3.0.2
 * Fix first request failure during deploy with url
 
