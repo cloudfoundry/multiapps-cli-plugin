@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,11 +45,11 @@ func (c *DownloadMtaOperationLogsCommand) GetPluginCommand() plugin.Command {
 
    cf download-mta-op-logs --mta MTA [--last NUM] [-d DIRECTORY] [-u URL]`,
 			Options: map[string]string{
-				operationIDOpt: "Operation ID",
+				operationIDOpt:               "Operation ID",
 				util.GetShortOption(mtaOpt):  "ID of the deployed MTA",
 				util.GetShortOption(lastOpt): "Downloads last NUM operation logs. If not specified, logs for each process with the specified MTA_ID are downloaded",
-				directoryOpt: "Root directory to download logs, by default the current working directory",
-				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				directoryOpt:                 "Root directory to download logs, by default the current working directory",
+				deployServiceURLOpt:          "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},
 	}
@@ -161,7 +160,7 @@ func createDownloadDirectory(downloadDirName string) (string, error) {
 
 func saveLogContent(downloadDir, logID string, content *string) error {
 	ui.Say("  %s", logID)
-	return ioutil.WriteFile(filepath.Join(downloadDir, logID), []byte(*content), 0644)
+	return os.WriteFile(filepath.Join(downloadDir, logID), []byte(*content), 0644)
 }
 
 type dmolCommandFlagsValidator struct{}

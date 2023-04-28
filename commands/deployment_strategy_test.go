@@ -2,7 +2,7 @@ package commands_test
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 	"strconv"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
@@ -21,7 +21,7 @@ var _ = Describe("Deployment Strategy", func() {
 
 	var createFlags = func(noConfirm bool, skipIdleStart bool, strategy string) *flag.FlagSet {
 		flags := flag.NewFlagSet("", flag.ContinueOnError)
-		flags.SetOutput(ioutil.Discard)
+		flags.SetOutput(io.Discard)
 
 		flags.String("strategy", strategy, "")
 		flags.Bool("no-confirm", noConfirm, "")

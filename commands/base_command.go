@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -90,7 +90,7 @@ func (c *BaseCommand) Execute(args []string) ExecutionStatus {
 	log.Tracef("Executing command '"+c.name+"': args: '%v'\n", args)
 
 	flags := flag.NewFlagSet(c.name, flag.ContinueOnError)
-	flags.SetOutput(ioutil.Discard)
+	flags.SetOutput(io.Discard)
 
 	flags.String(deployServiceURLOpt, "", "")
 	c.defineCommandOptions(flags)

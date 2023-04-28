@@ -1,7 +1,6 @@
 package util_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -41,7 +40,7 @@ var _ = Describe("Digest", func() {
 		Context("with a supported digest algorithm and a non-empty file", func() {
 			It("should calculate the digest of the file and exit with zero status", func() {
 				const testFileContent = "test file content"
-				ioutil.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
+				os.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
 				digest, err := util.ComputeFileChecksum(testFilePath, "SHA1")
 				testutil.ExpectNoErrorAndResult(err, digest, "9032bbc224ed8b39183cb93b9a7447727ce67f9d")
 			})

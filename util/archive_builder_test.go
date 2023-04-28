@@ -3,7 +3,7 @@ package util_test
 import (
 	"archive/zip"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +18,7 @@ var _ = Describe("ArchiveBuilder", func() {
 	Describe("Build", func() {
 		var tempDirLocation string
 		BeforeEach(func() {
-			tempDirLocation, _ = ioutil.TempDir("", "archive-builder")
+			tempDirLocation, _ = os.MkdirTemp("", "archive-builder")
 		})
 		Context("With not existing resources", func() {
 			It("should try to find the directory and fail with error", func() {
@@ -49,13 +49,13 @@ var _ = Describe("ArchiveBuilder", func() {
 				Expect(err).To(BeNil())
 
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: moduleName, Path: requiredDependencyContent},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 			})
 
 			It("Should find deployment descriptor with \".\" baseDirectory path", func() {
@@ -96,7 +96,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
 				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-path not found"))
 			})
@@ -109,7 +109,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{}, []string{"foo"}).Build(tempDirLocation)
 				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-resource-path not found"))
 			})
@@ -117,7 +117,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Try to parse the specified required dependencies config paths and fail as the paths are not existing", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: "TestModule", Path: "test-module-1-content", RequiredDependencies: []util.RequiredDependency{
 						util.RequiredDependency{Name: "foo", Parameters: map[string]interface{}{
@@ -127,7 +127,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
 				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: file path .*?not-existing-required-dependency-path not found"))
 			})
@@ -143,7 +143,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{"foo", "bar", "test-1", "test-2"}, []string{}).Build(tempDirLocation)
 				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: Modules test-1, test-2 are specified for deployment but are not part of deployment descriptor modules"))
 			})
@@ -165,7 +165,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				_, err := util.NewMtaArchiveBuilder([]string{}, []string{"foo", "bar", "testing", "not-existing"}).Build(tempDirLocation)
 				Expect(err.Error()).To(MatchRegexp("Error building MTA Archive: Resources testing, not-existing are specified for deployment but are not part of deployment descriptor resources"))
 			})
@@ -181,7 +181,7 @@ var _ = Describe("ArchiveBuilder", func() {
 
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				output := oc.CaptureOutput(func() {
 					util.NewMtaArchiveBuilder([]string{"TestModule", "TestModule1"}, []string{}).Build(tempDirLocation)
 				})
@@ -194,13 +194,13 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Should build the MTA Archive containing the valid modules", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: "TestModule", Path: "test-module-1-content"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
 				defer os.Remove(mtaArchiveLocation)
 				Expect(err).To(BeNil())
@@ -218,7 +218,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Should build the MTA Archive containing the valid modules", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: "TestModule", Path: "../test-module-1-content"},
 				}}
@@ -226,7 +226,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				mtadDirectory := filepath.Join(tempDirLocation, "test")
 				os.MkdirAll(mtadDirectory, os.ModePerm)
 				testDeploymentDescriptor := filepath.Join(mtadDirectory, "mtad.yaml")
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(mtadDirectory)
 				defer os.Remove(mtaArchiveLocation)
 				Expect(err).To(BeNil())
@@ -244,14 +244,14 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("should build the MTA Archive containing the valid modules", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-module-1-content")
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: "TestModule", Path: "test-module-1-content"},
 					util.Module{Name: "TestModule1", Path: "test-module-1-content"},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule", "TestModule1"}, []string{}).Build(tempDirLocation)
 				defer os.Remove(mtaArchiveLocation)
 				Expect(err).To(BeNil())
@@ -268,13 +268,13 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Should build the MTA Archive containing the valid resources", func() {
 				resourceContent := filepath.Join(tempDirLocation, "test-resource-1-content")
 				os.Create(resourceContent)
-				ioutil.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
+				os.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
 					util.Resource{Name: "TestResource", Parameters: map[string]interface{}{"path": "test-resource-1-content"}},
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{}, []string{"TestResource"}).Build(tempDirLocation)
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
@@ -290,7 +290,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Should build the MTA Archive containing the valid resources with non-normalized paths", func() {
 				resourceContent := filepath.Join(tempDirLocation, "test-resource-1-content")
 				os.Create(resourceContent)
-				ioutil.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
+				os.WriteFile(resourceContent, []byte("this is a test resource content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Resources: []util.Resource{
 					util.Resource{Name: "TestResource", Parameters: map[string]interface{}{"path": "../test-resource-1-content"}},
 				}}
@@ -298,7 +298,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				mtadDirectory := filepath.Join(tempDirLocation, "test")
 				os.MkdirAll(mtadDirectory, os.ModePerm)
 				testDeploymentDescriptor := filepath.Join(mtadDirectory, "mtad.yaml")
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{}, []string{"TestResource"}).Build(mtadDirectory)
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
@@ -317,7 +317,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{}, []string{"TestResource"}).Build(tempDirLocation)
 				Expect(err).To(BeNil())
 				_, err = os.Stat(mtaArchiveLocation)
@@ -335,7 +335,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Should build the MTA Archive containing the valid modules and required dependencies configuration", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-required-dep-1-content")
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: "TestModule", RequiredDependencies: []util.RequiredDependency{
 						util.RequiredDependency{
@@ -348,7 +348,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				}}
 				generatedYamlBytes, _ := yaml.Marshal(descriptor)
 				testDeploymentDescriptor := tempDirLocation + string(os.PathSeparator) + "mtad.yaml"
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(tempDirLocation)
 				defer os.Remove(mtaArchiveLocation)
 				Expect(err).To(BeNil())
@@ -364,7 +364,7 @@ var _ = Describe("ArchiveBuilder", func() {
 			It("Should build the MTA Archive containing the valid modules and required dependencies configuration with non-normalized paths", func() {
 				requiredDependencyContent := filepath.Join(tempDirLocation, "test-required-dep-1-content")
 				os.Create(requiredDependencyContent)
-				ioutil.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
+				os.WriteFile(requiredDependencyContent, []byte("this is a test module content"), os.ModePerm)
 				descriptor := util.MtaDeploymentDescriptor{SchemaVersion: "100", ID: "test", Modules: []util.Module{
 					util.Module{Name: "TestModule", RequiredDependencies: []util.RequiredDependency{
 						util.RequiredDependency{
@@ -379,7 +379,7 @@ var _ = Describe("ArchiveBuilder", func() {
 				mtadDirectory := filepath.Join(tempDirLocation, "test")
 				os.MkdirAll(mtadDirectory, os.ModePerm)
 				testDeploymentDescriptor := filepath.Join(mtadDirectory, "mtad.yaml")
-				ioutil.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
+				os.WriteFile(testDeploymentDescriptor, generatedYamlBytes, os.ModePerm)
 				mtaArchiveLocation, err := util.NewMtaArchiveBuilder([]string{"TestModule"}, []string{}).Build(mtadDirectory)
 				defer os.Remove(mtaArchiveLocation)
 				Expect(err).To(BeNil())
@@ -427,7 +427,7 @@ func isManifestValid(manifestLocation string, searchCriteria map[string]string, 
 				return map[string]string{}
 			}
 			defer reader.Close()
-			manifestBytes, _ := ioutil.ReadAll(reader)
+			manifestBytes, _ := io.ReadAll(reader)
 			manifestSplittedByNewLine := strings.Split(string(manifestBytes), "\n")
 			for _, manifestSectionElement := range manifestSplittedByNewLine {
 				if strings.Trim(manifestSectionElement, " ") == "" {

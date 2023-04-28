@@ -2,7 +2,7 @@ package testutil
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
@@ -24,7 +24,7 @@ func NewCustomTransport(statusCode int) *csrf.Transport {
 		resp.StatusCode = statusCode
 		resp.Header = make(http.Header)
 		buf := bytes.NewBuffer(nil)
-		resp.Body = ioutil.NopCloser(buf)
+		resp.Body = io.NopCloser(buf)
 		return &resp, nil
 	})
 	return &csrf.Transport{OriginalTransport: transport, Csrf: &csrfx, Cookies: &csrf.Cookies{Cookies: []*http.Cookie{}}}
