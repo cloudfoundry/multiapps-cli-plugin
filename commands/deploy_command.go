@@ -35,7 +35,6 @@ const (
 	resourceOpt                = "r"
 	allModulesOpt              = "all-modules"
 	allResourcesOpt            = "all-resources"
-	verifyArchiveSignatureOpt  = "verify-archive-signature"
 	strategyOpt                = "strategy"
 	skipTestingPhase           = "skip-testing-phase"
 	skipIdleStart              = "skip-idle-start"
@@ -89,26 +88,26 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--verify-archive-signature] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]`,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]`,
 			Options: map[string]string{
-				extDescriptorsOpt:                                  "Extension descriptors",
-				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                                         "Start timeout in seconds",
-				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                                     "Active deploy operation ID",
-				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, resume, monitor)",
-				forceOpt:                                           "Force deploy without confirmation for aborting conflicting processes",
-				moduleOpt:                                          "Deploy list of modules which are contained in the deployment descriptor, in the current location",
-				resourceOpt:                                        "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(noStartOpt):                    "Do not start apps",
-				util.GetShortOption(namespaceOpt):                  "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
-				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
+				extDescriptorsOpt:                      "Extension descriptors",
+				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				timeoutOpt:                             "Start timeout in seconds",
+				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
+				operationIDOpt:                         "Active deploy operation ID",
+				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
+				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                              "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                            "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(noStartOpt):        "Do not start apps",
+				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
+				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
 				util.GetShortOption(keepFilesOpt):                  "Keep files used for deployment",
@@ -117,7 +116,6 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 				util.GetShortOption(allModulesOpt):                 "Deploy all modules which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(verifyArchiveSignatureOpt):     "Verify the archive is correctly signed",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
 				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
 				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
@@ -145,7 +143,6 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, flags)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, flags)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, flags)))
-		processBuilder.Parameter("verifyArchiveSignature", strconv.FormatBool(GetBoolOpt(verifyArchiveSignatureOpt, flags)))
 	}
 }
 
@@ -168,7 +165,6 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Bool(skipOwnershipValidationOpt, false, "")
 	flags.Bool(allModulesOpt, false, "")
 	flags.Bool(allResourcesOpt, false, "")
-	flags.Bool(verifyArchiveSignatureOpt, false, "")
 	flags.Uint(retriesOpt, 3, "")
 	flags.String(strategyOpt, "default", "")
 	flags.Bool(skipTestingPhase, false, "")
