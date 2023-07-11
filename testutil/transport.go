@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/csrf"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 )

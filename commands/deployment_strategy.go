@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 )
 
 type DeploymentStrategy interface {

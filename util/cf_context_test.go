@@ -6,8 +6,8 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 
 	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
-	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	cli_fakes "github.com/cloudfoundry/multiapps-cli-plugin/cli/fakes"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

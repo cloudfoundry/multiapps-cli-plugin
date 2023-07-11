@@ -3,13 +3,13 @@ package commands_test
 import (
 	"fmt"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient/fakes"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/commands"
+	"github.com/cloudfoundry/multiapps-cli-plugin/testutil"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

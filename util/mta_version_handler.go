@@ -1,6 +1,6 @@
 package util
 
-import "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+import "github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
 
 const unknownMtaVersion string = "0.0.0-unknown"
 

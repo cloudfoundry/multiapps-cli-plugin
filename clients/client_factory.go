@@ -3,10 +3,10 @@ package clients
 import (
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient_v2"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/restclient"
 )
 
 // ClientFactory is a factory for creating XxxClientOperations instances

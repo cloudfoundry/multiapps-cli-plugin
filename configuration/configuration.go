@@ -2,7 +2,7 @@ package configuration
 
 import (
 	"fmt"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
+	"github.com/cloudfoundry/multiapps-cli-plugin/configuration/properties"
 	"os"
 )
 

@@ -2,13 +2,13 @@ package util_test
 
 import (
 	"archive/zip"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
+	"github.com/cloudfoundry/multiapps-cli-plugin/testutil"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"

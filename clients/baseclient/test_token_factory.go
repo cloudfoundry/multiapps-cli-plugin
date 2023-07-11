@@ -1,7 +1,7 @@
 package baseclient
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
+	"github.com/cloudfoundry/multiapps-cli-plugin/testutil"
 	"github.com/go-openapi/runtime"
 )
 

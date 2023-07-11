@@ -6,7 +6,7 @@ package mtaclient
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	operations "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/operations"
+	operations "github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient/operations"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 

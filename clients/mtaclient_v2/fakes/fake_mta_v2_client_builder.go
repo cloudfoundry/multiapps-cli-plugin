@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
 )
 
 type FakeMtaV2ClientBuilder struct {

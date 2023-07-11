@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
+	"github.com/cloudfoundry/multiapps-cli-plugin/configuration/properties"
 	"github.com/pborman/uuid"
 )
 

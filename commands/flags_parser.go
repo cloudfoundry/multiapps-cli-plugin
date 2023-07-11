@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry/multiapps-cli-plugin/log"
 )
 
 // CommandFlagsParser used for parsing the arguments

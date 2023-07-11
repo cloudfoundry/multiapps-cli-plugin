@@ -3,7 +3,7 @@ package commands
 import (
 	"code.cloudfoundry.org/cli/plugin"
 	"flag"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 )
 
 // Command is an interface that should be implemented by all commands

@@ -8,23 +8,23 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
 )
 
-//FileUploader uploads files in chunks for the specified namespace
+// FileUploader uploads files in chunks for the specified namespace
 type FileUploader struct {
 	mtaClient           mtaclient.MtaClientOperations
 	namespace           string
 	uploadChunkSizeInMB uint64
 }
 
-//NewFileUploader creates a new file uploader for the specified namespace
+// NewFileUploader creates a new file uploader for the specified namespace
 func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64) *FileUploader {
 	return &FileUploader{
 		mtaClient:           mtaClient,
@@ -33,7 +33,7 @@ func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, 
 	}
 }
 
-//UploadFiles uploads the files
+// UploadFiles uploads the files
 func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, ExecutionStatus) {
 	log.Tracef("Uploading files '%v'\n", files)
 

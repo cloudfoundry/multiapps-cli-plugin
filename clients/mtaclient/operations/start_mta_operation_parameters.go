@@ -17,7 +17,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
 )
 
 // NewStartMtaOperationParams creates a new StartMtaOperationParams object

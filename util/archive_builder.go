@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 )
 
 const deploymentDescriptorYamlName string = "mtad.yaml"

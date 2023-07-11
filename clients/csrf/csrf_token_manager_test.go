@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/fakes"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/csrf/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

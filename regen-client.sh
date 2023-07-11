@@ -6,17 +6,17 @@ DEFAULT_COLOUR='\033[0m' # No Color
 check_dir() {
 	if [ -d "$1" ]; then
 		echo -e "Folder $1 already exists.\nDo you want to ${GREEN_COLOUR}overwrite${DEFAULT_COLOUR} the files? [y/n]"
-		
+
 		read answer
-		
+
 		if [ "$answer" != 'y' ] && [ "$answer" != 'Y' ] && [ "$answer" != 'yes' ] && [ "$answer" != 'YES' ]; then
 			echo -e "Edit regen folder name and ${GREEN_COLOUR}restart${DEFAULT_COLOUR} script."
 			exit 1
 		fi
-		
+
 		rm -r "$1"
 	fi
-	
+
 	echo -e "${GREEN_COLOUR}Recreating folder...${DEFAULT_COLOUR}"
 	mkdir "$1"
 }
@@ -35,7 +35,7 @@ elif [ "$1" ]; then
 	tmp="$1"
 fi
 
-regen_folder="${go_home}/src/github.com/cloudfoundry-incubator/multiapps-cli-plugin/${tmp}"
+regen_folder="${go_home}/src/github.com/cloudfoundry/multiapps-cli-plugin/${tmp}"
 regen_folder_v2="${regen_folder}-v2"
 definition_file="${git_home}/multiapps-controller/com.sap.cloud.lm.sl.cf.api/src/main/resources/${swagger_file}"
 definition_file_v2="${git_home}/multiapps-controller/com.sap.cloud.lm.sl.cf.api/src/main/resources/${swagger_file_v2}"

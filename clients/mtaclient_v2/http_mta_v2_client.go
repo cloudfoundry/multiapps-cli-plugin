@@ -11,7 +11,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/operations"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient_v2/operations"
 )
 
 // Default HTTP mta v2 HTTP client.

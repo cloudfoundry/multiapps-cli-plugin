@@ -3,7 +3,7 @@ package testutil
 import (
 	"bytes"
 	io_helpers "code.cloudfoundry.org/cli/cf/util/testhelpers/io"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 	"strings"
 )
 

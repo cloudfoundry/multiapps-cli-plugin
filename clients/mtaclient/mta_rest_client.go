@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/operations"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient/operations"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 )

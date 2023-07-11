@@ -1,4 +1,4 @@
-module github.com/cloudfoundry-incubator/multiapps-cli-plugin
+module github.com/cloudfoundry/multiapps-cli-plugin
 
 go 1.18
 

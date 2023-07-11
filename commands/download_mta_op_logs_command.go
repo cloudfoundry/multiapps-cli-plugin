@@ -3,16 +3,16 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 )
 
 const (

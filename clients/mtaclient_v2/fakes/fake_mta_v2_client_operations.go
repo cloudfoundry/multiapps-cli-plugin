@@ -3,8 +3,8 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient_v2"
 )
 
 type FakeMtaV2ClientOperations struct {

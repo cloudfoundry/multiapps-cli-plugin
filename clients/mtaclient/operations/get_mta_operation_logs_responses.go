@@ -13,8 +13,8 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	baseclient "github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
 )
 
 // GetMtaOperationLogsReader is a Reader for the GetMtaOperationLogs structure.

@@ -5,8 +5,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands/fakes"
+	"github.com/cloudfoundry/multiapps-cli-plugin/commands"
+	"github.com/cloudfoundry/multiapps-cli-plugin/commands/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

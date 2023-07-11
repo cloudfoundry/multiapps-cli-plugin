@@ -13,8 +13,8 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	models "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	baseclient "github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	models "github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
 )
 
 // GetMtasV2Reader is a Reader for the GetMtasV2 structure.

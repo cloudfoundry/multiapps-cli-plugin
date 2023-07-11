@@ -3,7 +3,7 @@ package baseclient
 import (
 	"time"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 )
 
 // CallWithRetry executes callback with retry

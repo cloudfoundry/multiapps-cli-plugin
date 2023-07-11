@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	baseclient "github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
 )
 
 // RetryableRestClient represents retryable REST client for the MTA deployer REST protocol

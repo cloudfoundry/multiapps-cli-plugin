@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	restclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
+	restclient "github.com/cloudfoundry/multiapps-cli-plugin/clients/restclient"
 )
 
 type FakeRestClientOperations struct {

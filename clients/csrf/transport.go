@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry/multiapps-cli-plugin/log"
 	"github.com/jinzhu/copier"
 )
 

@@ -20,4 +20,4 @@ Create [GIST(s)](https://gist.github.com/) which is copy of your deployment and 
 
 ### Additional information
 
-If an multi-target app operation fails, download logs of the operation and provide them as a [GIST(s)](https://gist.github.com/).  For more details, see *download-mta-op-logs / dmol* command provided by [CF MTA Plugin](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin). The most important log file is *MAIN_LOG*.
+If an multi-target app operation fails, download logs of the operation and provide them as a [GIST(s)](https://gist.github.com/).  For more details, see *download-mta-op-logs / dmol* command provided by [CF MTA Plugin](https://github.com/cloudfoundry/multiapps-cli-plugin). The most important log file is *MAIN_LOG*.

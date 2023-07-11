@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 )
 
 const noConfirmOpt = "no-confirm"

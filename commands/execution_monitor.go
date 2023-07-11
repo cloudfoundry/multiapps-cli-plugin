@@ -7,15 +7,15 @@ import (
 	"net/url"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
+	mtaclient "github.com/cloudfoundry/multiapps-cli-plugin/clients/mtaclient"
 )
 
-//ExecutionMonitor monitors execution of a process
+// ExecutionMonitor monitors execution of a process
 type ExecutionMonitor struct {
 	mtaClient          mtaclient.MtaClientOperations
 	reportedMessages   map[int64]bool
@@ -45,7 +45,7 @@ func getMonitoringInformation(monitoringLocation string) (string, string) {
 	return strings.Split(path, "operations/")[1], parsedQuery["embed"][0]
 }
 
-//NewExecutionMonitor creates a new execution monitor
+// NewExecutionMonitor creates a new execution monitor
 func NewExecutionMonitor(commandName, operationID, embed string, retries uint, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	return &ExecutionMonitor{
 		mtaClient:        mtaClient,

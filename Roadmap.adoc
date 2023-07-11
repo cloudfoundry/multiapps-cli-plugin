@@ -1,21 +1,21 @@
 # Project multiapps roadmap highlights
 
-# Current status & short-term priorities can be traked on this repo's link:https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/projects/1[project kanban board ]
+# Current status & short-term priorities can be traked on this repo's link:https://github.com/cloudfoundry/multiapps-cli-plugin/projects/1[project kanban board ]
 
 
-## Outlook 
+## Outlook
 image::png/Slide1-11-26-19_13-28-21-253[outlook_snapshot_nov19]
 
 ### Features:
-  - dependencies between services (credential/service keys sharing between orchestrated service instances) 
+  - dependencies between services (credential/service keys sharing between orchestrated service instances)
   - deploy namespaces (same mta, multiple instances within a space)
   - explicit modelling for service keys (currently only modelled as part of a service instance creation/update)
 
 ### CF features / covering multiapps ocrhestration gaps on the CF Api:
-  - rolling deployment for both deploy/bg-deploy scenario (deployment resource) 
+  - rolling deployment for both deploy/bg-deploy scenario (deployment resource)
   - service sharing
   - route services
-  - modelling CF metadata 
+  - modelling CF metadata
   - support for host-less routes
 
 ### Other:
@@ -24,7 +24,7 @@ image::png/Slide1-11-26-19_13-28-21-253[outlook_snapshot_nov19]
   - mta-id based cli interface (instead of process-id)
   - blue-green deploy keeping original app names
   - additional performance improvements (via caching of hashes, skipping operations)
-  - loggregator v2 api support  
+  - loggregator v2 api support
   - autoscaling on high load (> 300 deploys/hour)
   - repository with multiapps examples on github.com
 
@@ -32,7 +32,7 @@ image::png/Slide1-11-26-19_13-28-21-253[outlook_snapshot_nov19]
 image::png/Slide2-11-26-19_13-28-21-330[achievements_snapshot_nov19]
 
 ### Features:
-  - ‘hooks’ functionality, allowing to execute cf tasks on apps in different moments during deployment. Allows for orchestration of e.g. graceful shutdown or any on-update activities – e.g. triggering update of dependent tenant aware services. 
+  - ‘hooks’ functionality, allowing to execute cf tasks on apps in different moments during deployment. Allows for orchestration of e.g. graceful shutdown or any on-update activities – e.g. triggering update of dependent tenant aware services.
   - partial deploy - ability to process only selected parts of the mta
   - many improvements toward deployment configuration (parameters) handling
   - configurable restart on app environment change
@@ -42,18 +42,18 @@ image::png/Slide2-11-26-19_13-28-21-330[achievements_snapshot_nov19]
   - configurable persistent state of service bindings / env vars / routes - merging existing deployment’s with the targeted’s
 
 ### Adopted CF features / covering orchestration gaps of our on the CF Api:
-  - adoption of the CC V3 api           
+  - adoption of the CC V3 api
   - buildpacks (plural) support
   - reuse default domain value from CC
 
-### mics 
-  - new https://github.com/SAP/cloud-mta-build-tool[cloud mta build tool] - OSS tool for buld & assembly of MTA archives! 
-  
+### mics
+  - new https://github.com/SAP/cloud-mta-build-tool[cloud mta build tool] - OSS tool for buld & assembly of MTA archives!
+
 
 ### Stability/resilience/performance improvements:
   - automatic retry of deployments on certain types of failure
   - handling backing service state during deployment e.g. last operation ‘in progress‘
   - support for up-to 4GB deployables
   - regularly executed load & stress tests
-  - azure object store persistence       
+  - azure object store persistence
   - rate limiting

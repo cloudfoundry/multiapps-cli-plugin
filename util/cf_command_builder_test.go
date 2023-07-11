@@ -1,7 +1,7 @@
 package util_test
 
 import (
-	. "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	. "github.com/cloudfoundry/multiapps-cli-plugin/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

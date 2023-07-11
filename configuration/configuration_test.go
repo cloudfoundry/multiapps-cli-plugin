@@ -1,9 +1,9 @@
 package configuration_test
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration/properties"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry/multiapps-cli-plugin/configuration/properties"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"os"

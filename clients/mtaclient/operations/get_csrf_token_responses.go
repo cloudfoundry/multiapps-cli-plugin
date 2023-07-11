@@ -12,7 +12,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	baseclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	baseclient "github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
 )
 
 // GetCsrfTokenReader is a Reader for the GetCsrfToken structure.

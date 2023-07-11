@@ -1,9 +1,9 @@
 package restclient_test
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/restclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"

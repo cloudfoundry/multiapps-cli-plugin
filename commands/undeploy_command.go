@@ -9,13 +9,13 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry/multiapps-cli-plugin/util"
 )
 
-//UndeployCommand is a command for undeploying MTAs
+// UndeployCommand is a command for undeploying MTAs
 type UndeployCommand struct {
 	*BaseCommand
 	processTypeProvider ProcessTypeProvider
