@@ -31,7 +31,7 @@ var _ = Describe("UndeployCommand", func() {
 
 		var name string
 		var cliConnection *pluginFakes.FakeCliConnection
-		var mtaClient mtaFake.FakeMtaClientOperations
+		var mtaClient *mtaFake.FakeMtaClientOperations
 		var testClientFactory *commands.TestClientFactory
 		var command *commands.UndeployCommand
 		var oc = testutil.NewUIOutputCapturer()
@@ -63,7 +63,7 @@ var _ = Describe("UndeployCommand", func() {
 				"Undeploying multi-target app "+mtaID+" in org "+org+" / space "+space+" as "+user+"...")
 			if abortedProcessId != "" {
 				lines = append(lines,
-					"Executing action 'abort' on operation "+abortedProcessId+"...",
+					"Executing action \"abort\" on operation "+abortedProcessId+"...",
 					"OK")
 			}
 			lines = append(lines,
@@ -123,7 +123,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument 'MTA_ID'")
+				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument \"MTA_ID\"")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
@@ -134,7 +134,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-f"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument 'MTA_ID'")
+				ex.ExpectFailure(status, output, "Incorrect usage. Missing positional argument \"MTA_ID\"")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
@@ -180,7 +180,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaID, "-f"}).ToInt()
 				})
-				ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation 999: test-error", 3)
+				ex.ExpectFailureOnLine(status, output, "Could not execute action \"abort\" on operation 999: test-error", 3)
 			})
 
 			It("should try to abort the conflicting process and success", func() {

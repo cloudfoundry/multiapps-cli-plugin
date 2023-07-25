@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"strconv"
+	"time"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -19,7 +20,7 @@ type BlueGreenDeployCommand struct {
 // NewBlueGreenDeployCommand creates a new BlueGreenDeployCommand.
 func NewBlueGreenDeployCommand() *BlueGreenDeployCommand {
 	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
-	deployCmd := &DeployCommand{baseCmd, blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}, os.Stdin}
+	deployCmd := &DeployCommand{baseCmd, blueGreenDeployProcessParametersSetter(), &blueGreenDeployCommandProcessTypeProvider{}, os.Stdin, 30 * time.Second}
 	bgDeployCmd := &BlueGreenDeployCommand{deployCmd}
 	baseCmd.Command = bgDeployCmd
 	return bgDeployCmd

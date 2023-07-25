@@ -2,10 +2,9 @@ package csrf
 
 import (
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
-	"github.com/jinzhu/copier"
 )
 
 type Csrf struct {
@@ -26,18 +25,17 @@ type Transport struct {
 }
 
 func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req2 := http.Request{}
-	copier.Copy(&req2, req)
+	reqCopy := req.Clone(req.Context())
 
-	csrfTokenManager := NewDefaultCsrfTokenManager(&t, &req2)
+	csrfTokenManager := NewDefaultCsrfTokenManager(&t, reqCopy)
 	err := csrfTokenManager.updateToken()
 	if err != nil {
 		return nil, err
 	}
 
-	log.Tracef("Sending a request with CSRF '" + req2.Header.Get("X-Csrf-Header") + " : " + req2.Header.Get("X-Csrf-Token") + "'\n")
-	log.Tracef("Cookies used are: " + prettyPrintCookies(req2.Cookies()) + "\n")
-	res, err := t.OriginalTransport.RoundTrip(&req2)
+	log.Tracef("Sending a request with CSRF '%s : %s'\n", reqCopy.Header.Get("X-Csrf-Header"), reqCopy.Header.Get("X-Csrf-Token"))
+	log.Tracef("Cookies used are: %s\n", prettyPrintCookies(reqCopy.Cookies()))
+	res, err := t.OriginalTransport.RoundTrip(reqCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -47,17 +45,17 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	if tokenWasRefreshed {
-		log.Tracef("Response code '" + strconv.Itoa(res.StatusCode) + "' from bad token. Must Retry.\n")
+		log.Tracef("Response code '%d' from bad token. Must Retry.\n", res.StatusCode)
 		return nil, &ForbiddenError{}
 	}
-
 	return res, err
 }
 
 func prettyPrintCookies(cookies []*http.Cookie) string {
-	result := ""
+	var result strings.Builder
 	for _, cookie := range cookies {
-		result = result + cookie.String() + " "
+		result.WriteString(cookie.String())
+		result.WriteRune(' ')
 	}
-	return result
+	return result.String()
 }

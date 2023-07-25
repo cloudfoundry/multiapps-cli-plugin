@@ -325,66 +325,6 @@ func (a *Client) StartMtaOperation(params *StartMtaOperationParams, authInfo run
 }
 
 /*
-UploadMtaFile Uploads an Multi Target Application file
-
-*/
-func (a *Client) UploadMtaFile(params *UploadMtaFileParams, authInfo runtime.ClientAuthInfoWriter) (*UploadMtaFileCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewUploadMtaFileParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "UploadMtaFile",
-		Method:             "POST",
-		PathPattern:        "/files",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"multipart/form-data"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UploadMtaFileReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*UploadMtaFileCreated), nil
-
-}
-
-/*
-UploadMtaArchiveFromUrl Uploads an Multi Target Application archive referenced by a URL
-
-*/
-func (a *Client) UploadMtaArchiveFromUrl(params *UploadMtaArchiveFromUrlParams, authInfo runtime.ClientAuthInfoWriter) (*UploadMtaArchiveFromUrlCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewUploadMtaArchiveFromUrlParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "UploadMtaArchiveFromUrl",
-		Method:             "POST",
-		PathPattern:        "/files",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"multipart/form-data"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UploadMtaArchiveFromUrlReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*UploadMtaArchiveFromUrlCreated), nil
-
-}
-
-/*
 GetCsrfToken Retrieves a csrf-token header
 
 */

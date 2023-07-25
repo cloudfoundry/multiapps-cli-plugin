@@ -29,7 +29,7 @@ var _ = Describe("DownloadMtaOperationLogsCommand", func() {
 
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
-		var mtaClient mtafake.FakeMtaClientOperations
+		var mtaClient *mtafake.FakeMtaClientOperations
 		// var restClient *restfake.FakeRestClientOperations
 		var clientFactory *commands.TestClientFactory
 		var command *commands.DownloadMtaOperationLogsCommand

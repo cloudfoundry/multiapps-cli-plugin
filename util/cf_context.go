@@ -22,7 +22,7 @@ func (c *CloudFoundryContext) GetOrg() (plugin_models.Organization, error) {
 		return plugin_models.Organization{}, fmt.Errorf("Could not get current org: %s", err)
 	}
 	if org.Name == "" {
-		return plugin_models.Organization{}, fmt.Errorf("No org and space targeted, use '%s' to target an org and a space", terminal.CommandColor("cf target -o ORG -s SPACE"))
+		return plugin_models.Organization{}, fmt.Errorf("No org and space targeted, use %q to target an org and a space", terminal.CommandColor("cf target -o ORG -s SPACE"))
 	}
 	return org, nil
 }
@@ -35,7 +35,7 @@ func (c *CloudFoundryContext) GetSpace() (plugin_models.Space, error) {
 	}
 
 	if space.Name == "" || space.Guid == "" {
-		return plugin_models.Space{}, fmt.Errorf("No space targeted, use '%s' to target a space", terminal.CommandColor("cf target -s SPACE"))
+		return plugin_models.Space{}, fmt.Errorf("No space targeted, use %q to target a space", terminal.CommandColor("cf target -s SPACE"))
 	}
 	return space, nil
 }
@@ -47,7 +47,7 @@ func (c *CloudFoundryContext) GetUsername() (string, error) {
 		return "", fmt.Errorf("Could not get username: %s", err)
 	}
 	if username == "" {
-		return "", fmt.Errorf("Not logged in. Use '%s' to log in.", terminal.CommandColor("cf login"))
+		return "", fmt.Errorf("Not logged in. Use %q to log in.", terminal.CommandColor("cf login"))
 	}
 	return username, nil
 }

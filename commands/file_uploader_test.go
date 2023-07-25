@@ -67,10 +67,10 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with non-existing service files and one file to upload", func() {
 			It("should return the uploaded file", func() {
-				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest, namespace)}
+				files := []*models.FileMetadata{testutil.GetFile(testFile, testFileDigest, namespace)}
 				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
-					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, namespace), nil).Build()
+					UploadMtaFile(testFile, testutil.GetFile(testFile, testFileDigest, namespace), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
@@ -89,10 +89,10 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with existing service files and one file to upload", func() {
 			It("should display a message that the file upload will be skipped", func() {
-				files := []*models.FileMetadata{testutil.GetFile(*testFile, testFileDigest, "namespace")}
+				files := []*models.FileMetadata{testutil.GetFile(testFile, testFileDigest, "namespace")}
 				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
-					UploadMtaFile(*testFile, testutil.GetFile(*testFile, testFileDigest, "namespace"), nil).Build()
+					UploadMtaFile(testFile, testutil.GetFile(testFile, testFileDigest, "namespace"), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
@@ -107,10 +107,10 @@ var _ = Describe("FileUploader", func() {
 
 		Context("with non-existing service files and one file to upload and service versions returned from the backend", func() {
 			It("should return the uploaded file", func() {
-				fileMetadata := testutil.GetFile(*testFile, testFileDigest, namespace)
+				fileMetadata := testutil.GetFile(testFile, testFileDigest, namespace)
 				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
-					UploadMtaFile(*testFile, fileMetadata, nil).Build()
+					UploadMtaFile(testFile, fileMetadata, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
@@ -132,7 +132,7 @@ var _ = Describe("FileUploader", func() {
 				// files := []*models.File{testutil.GetFile("xs2-deploy", *testFile, testFileDigest)}
 				client := fakeMtaClientBuilder.
 					GetMtaFiles([]*models.FileMetadata{}, nil).
-					UploadMtaFile(*testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
+					UploadMtaFile(testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
 				// var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
 					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)

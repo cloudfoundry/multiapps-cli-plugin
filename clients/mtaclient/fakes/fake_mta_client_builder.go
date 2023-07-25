@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
@@ -8,11 +9,11 @@ import (
 )
 
 type FakeMtaClientBuilder struct {
-	FakeMtaClient FakeMtaClientOperations
+	FakeMtaClient *FakeMtaClientOperations
 }
 
 func NewFakeMtaClientBuilder() *FakeMtaClientBuilder {
-	return &FakeMtaClientBuilder{}
+	return &FakeMtaClientBuilder{&FakeMtaClientOperations{}}
 }
 
 func (fb *FakeMtaClientBuilder) ExecuteAction(operationID, actionID string, resultHeader mtaclient.ResponseHeader, resultError error) *FakeMtaClientBuilder {
@@ -51,12 +52,16 @@ func (fb *FakeMtaClientBuilder) StartMtaOperation(operation models.Operation, re
 	fb.FakeMtaClient.StartMtaOperationReturns(result, resultError)
 	return fb
 }
-func (fb *FakeMtaClientBuilder) UploadMtaFile(file os.File, result *models.FileMetadata, resultError error) *FakeMtaClientBuilder {
+func (fb *FakeMtaClientBuilder) UploadMtaFile(file *os.File, result *models.FileMetadata, resultError error) *FakeMtaClientBuilder {
 	fb.FakeMtaClient.UploadMtaFileReturns(result, resultError)
 	return fb
 }
-func (fb *FakeMtaClientBuilder) UploadMtaArchiveFromUrl(fileUrl string, result *models.FileMetadata, resultError error) *FakeMtaClientBuilder {
-	fb.FakeMtaClient.UploadMtaArchiveFromUrlReturnsOnCall(fileUrl, result, resultError)
+func (fb *FakeMtaClientBuilder) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string, result http.Header, resultError error) *FakeMtaClientBuilder {
+	fb.FakeMtaClient.StartUploadMtaArchiveFromUrlReturnsOnCall(fileUrl, namespace, result, resultError)
+	return fb
+}
+func (fb *FakeMtaClientBuilder) GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string, result mtaclient.AsyncUploadJobResult, resultErr error) *FakeMtaClientBuilder {
+	fb.FakeMtaClient.GetAsyncUploadJobReturnsOnCall(jobId, namespace, appInstanceId, result, resultErr)
 	return fb
 }
 func (fb *FakeMtaClientBuilder) GetMtaOperationLogContent(operationID, logID string, result string, resultError error) *FakeMtaClientBuilder {
@@ -64,6 +69,6 @@ func (fb *FakeMtaClientBuilder) GetMtaOperationLogContent(operationID, logID str
 	return fb
 }
 
-func (fb *FakeMtaClientBuilder) Build() FakeMtaClientOperations {
+func (fb *FakeMtaClientBuilder) Build() *FakeMtaClientOperations {
 	return fb.FakeMtaClient
 }

@@ -77,11 +77,11 @@ func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string
 	// Check for missing positional arguments
 	positionalArgsCount := len(p.positionalArgNames)
 	if len(args) < positionalArgsCount {
-		return fmt.Errorf(fmt.Sprintf("Missing positional argument '%s'", p.positionalArgNames[len(args)]))
+		return fmt.Errorf("Missing positional argument %q", p.positionalArgNames[len(args)])
 	}
 	for i := 0; i < positionalArgsCount; i++ {
 		if flags.Lookup(strings.Replace(args[i], "-", "", 1)) != nil {
-			return fmt.Errorf("Missing positional argument '%s'", p.positionalArgNames[i])
+			return fmt.Errorf("Missing positional argument %q", p.positionalArgNames[i])
 		}
 	}
 

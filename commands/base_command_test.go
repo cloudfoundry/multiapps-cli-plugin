@@ -79,7 +79,7 @@ var _ = Describe("BaseCommand", func() {
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
-				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...", "OK"}))
+				Expect(output).To(Equal([]string{"Executing action \"abort\" on operation test...", "OK"}))
 			})
 		})
 		Context("with one ongoing operation which does not have an MTA ID", func() {
@@ -118,7 +118,7 @@ var _ = Describe("BaseCommand", func() {
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(wasAborted).To(BeTrue())
-				Expect(output).To(Equal([]string{"Executing action 'abort' on operation test...", "OK"}))
+				Expect(output).To(Equal([]string{"Executing action \"abort\" on operation test...", "OK"}))
 			})
 		})
 		Context("with valid ongoing operations and no force option specified", func() {
@@ -156,7 +156,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "abort", 0, "test-host", cfTarget).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...", "OK"})
+				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action \"abort\" on operation test-process-id...", "OK"})
 			})
 		})
 		Context("with non-valid process id and valid action id", func() {
@@ -182,7 +182,7 @@ var _ = Describe("BaseCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.ExecuteAction("test-process-id", "retry", 0, "test-host", cfTarget).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...", "OK",
+				ex.ExpectSuccessWithOutput(status, output, []string{"Executing action \"retry\" on operation test-process-id...", "OK",
 					"Process finished.", "Use \"cf dmol -i test-process-id\" to download the logs of the process."})
 			})
 		})

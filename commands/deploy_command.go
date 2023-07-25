@@ -1,26 +1,29 @@
 package commands
 
 import (
-	"bytes"
+	"bufio"
+	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/plugin"
 	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"gopkg.in/cheggaaa/pb.v1"
+	"io/fs"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cli/plugin"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 )
 
 const (
@@ -70,13 +73,14 @@ type DeployCommand struct {
 	setProcessParameters ProcessParametersSetter
 	processTypeProvider  ProcessTypeProvider
 
-	FileUrlReader io.Reader
+	FileUrlReader      fs.File
+	FileUrlReadTimeout time.Duration
 }
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
 	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
-	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}, os.Stdin}
+	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}, os.Stdin, 30 * time.Second}
 	baseCmd.Command = deployCmd
 	return deployCmd
 }
@@ -211,23 +215,35 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	mtaClient := c.NewMtaClient(dsHost, cfTarget)
 
 	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
+	force := GetBoolOpt(forceOpt, flags)
 	uploadChunkSizeInMB := configuration.NewSnapshot().GetUploadChunkSizeInMB()
 	fileUploader := NewFileUploader(mtaClient, namespace, uploadChunkSizeInMB)
 
 	if isUrl {
-		encodedFileUrl := base64.URLEncoding.EncodeToString([]byte(mtaArchive))
-		uploadedArchive, err := mtaClient.UploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
-		if err != nil {
-			ui.Failed("Could not upload from url: %s", baseclient.NewClientError(err))
+		var fileId string
+		var isFailure bool
+		fileId, mtaId, isFailure = c.uploadFromUrl(mtaArchive, mtaClient, namespace)
+		if isFailure {
 			return Failure
 		}
-		uploadedArchivePartIds = append(uploadedArchivePartIds, uploadedArchive.ID)
+
+		// Check for an ongoing operation for this MTA ID and abort it
+		wasAborted, err := c.CheckOngoingOperation(mtaId, namespace, dsHost, force, cfTarget)
+		if err != nil {
+			ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
+			return Failure
+		}
+		if !wasAborted {
+			return Failure
+		}
+
+		uploadedArchivePartIds = append(uploadedArchivePartIds, fileId)
 		ui.Ok()
 	} else {
 		// Get the full path of the MTA archive
 		mtaArchivePath, err := filepath.Abs(mtaArchive)
 		if err != nil {
-			ui.Failed("Could not get absolute path of file '%s'", mtaArchive)
+			ui.Failed("Could not get absolute path of file %q", mtaArchive)
 			return Failure
 		}
 
@@ -242,9 +258,8 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		}
 		mtaId = descriptor.ID
 
-		force := GetBoolOpt(forceOpt, flags)
 		// Check for an ongoing operation for this MTA ID and abort it
-		wasAborted, err := c.CheckOngoingOperation(descriptor.ID, namespace, dsHost, force, cfTarget)
+		wasAborted, err := c.CheckOngoingOperation(mtaId, namespace, dsHost, force, cfTarget)
 		if err != nil {
 			ui.Failed("Could not get MTA operations: %s", baseclient.NewClientError(err))
 			return Failure
@@ -268,7 +283,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		for _, extDescriptorFile := range extDescriptorFiles {
 			extDescriptorPath, err := filepath.Abs(extDescriptorFile)
 			if err != nil {
-				ui.Failed("Could not get absolute path of file '%s'", extDescriptorFile)
+				ui.Failed("Could not get absolute path of file %q", extDescriptorFile)
 				return Failure
 			}
 			extDescriptorPaths = append(extDescriptorPaths, extDescriptorPath)
@@ -285,9 +300,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	processBuilder.Namespace(namespace)
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
-	if !isUrl {
-		processBuilder.Parameter("mtaId", mtaId)
-	}
+	processBuilder.Parameter("mtaId", mtaId)
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.setProcessParameters(flags, processBuilder)
 
@@ -313,8 +326,65 @@ func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
 	return false, ""
 }
 
+func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientOperations, namespace string) (fileId, mtaId string, failure bool) {
+	progressBar := c.tryFetchMtarSize(url)
+
+	encodedFileUrl := base64.URLEncoding.EncodeToString([]byte(url))
+	responseHeaders, err := mtaClient.StartUploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
+	if err != nil {
+		ui.Failed("Could not upload from url: %s", err)
+		return "", "", true
+	}
+
+	var totalBytesProcessed int64 = 0
+	if progressBar != nil {
+		progressBar.Start()
+		defer progressBar.Finish()
+	}
+
+	uploadJobUrl := responseHeaders.Get("Location")
+	jobUrlParts := strings.Split(uploadJobUrl, "/")
+	jobId := jobUrlParts[len(jobUrlParts)-1]
+
+	var file *models.FileMetadata
+	for file == nil {
+		jobResult, err := mtaClient.GetAsyncUploadJob(jobId, &namespace, responseHeaders.Get("x-cf-app-instance"))
+		if err != nil {
+			ui.Failed("Could not upload from url: %s", err)
+			return "", "", true
+		}
+		file, mtaId = jobResult.File, jobResult.MtaId
+
+		if len(jobResult.Error) != 0 {
+			ui.Failed("Async upload job failed: %s", jobResult.Error)
+			return "", "", true
+		}
+
+		if progressBar != nil && jobResult.BytesProcessed != -1 {
+			if jobResult.BytesProcessed < totalBytesProcessed {
+				//retry happened in backend, rewind the progress bar
+				progressBar.Add64(-totalBytesProcessed + jobResult.BytesProcessed)
+			} else {
+				progressBar.Add64(jobResult.BytesProcessed - totalBytesProcessed)
+			}
+			totalBytesProcessed = jobResult.BytesProcessed
+		}
+
+		if len(mtaId) == 0 {
+			time.Sleep(2 * time.Second)
+		}
+	}
+	if progressBar != nil && totalBytesProcessed < progressBar.Total {
+		progressBar.Add64(progressBar.Total - totalBytesProcessed)
+	}
+	return file.ID, mtaId, false
+}
+
 func (c *DeployCommand) uploadFiles(files []string, fileUploader *FileUploader) ([]string, ExecutionStatus) {
 	var resultIds []string
+	if len(files) == 0 {
+		return resultIds, Success
+	}
 
 	uploadedFiles, status := fileUploader.UploadFiles(files)
 	if status == Failure {
@@ -364,18 +434,34 @@ func (c *DeployCommand) getMtaArchive(parsedArguments []string, mtaElementsCalcu
 }
 
 func (c *DeployCommand) tryReadingFileUrl() string {
-	fileUrlChan := make(chan []byte)
-	go func() {
-		fileUrl, _ := io.ReadAll(c.FileUrlReader)
-		fileUrlChan <- bytes.TrimSpace(fileUrl)
-	}()
-
-	select {
-	case fileUrl := <-fileUrlChan:
-		return string(fileUrl)
-	case <-time.After(time.Millisecond * 100):
+	stat, err := c.FileUrlReader.Stat()
+	if err != nil {
 		return ""
 	}
+
+	if stat.Mode()&fs.ModeCharDevice == 0 {
+		in := bufio.NewReader(c.FileUrlReader)
+		input, _ := in.ReadString('\n')
+		return strings.TrimSpace(input)
+	}
+	return ""
+}
+
+func (c *DeployCommand) tryFetchMtarSize(url string) *pb.ProgressBar {
+	client := http.Client{Timeout: c.FileUrlReadTimeout}
+	resp, err := client.Head(url)
+	if err != nil {
+		log.Tracef("could not call remote MTAR endpoint: %v\n", err)
+		return nil
+	}
+	if resp.StatusCode/100 != 2 {
+		log.Tracef("could not fetch remote MTAR size: %s\n", resp.Status)
+		return nil
+	}
+	bar := pb.New64(resp.ContentLength).SetUnits(pb.U_BYTES)
+	bar.ShowElapsedTime = true
+	bar.ShowTimeLeft = false
+	return bar
 }
 
 func buildMtaArchiveFromDirectory(mtaDirectoryLocation string, mtaElementsCalculator mtaElementsToAddCalculator) (string, error) {

@@ -3,6 +3,7 @@ package baseclient
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -53,17 +54,25 @@ type ErrorResponse struct {
 	Payload string
 }
 
-func (ce *ErrorResponse) Error() string {
-	return fmt.Sprintf("%s (status %d): %v ", ce.Status, ce.Code, ce.Payload)
+func (e *ErrorResponse) Error() string {
+	return fmt.Sprintf("%s (status %d): %v ", e.Status, e.Code, e.Payload)
 }
 
-func (o *ErrorResponse) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (e *ErrorResponse) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 	buf := new(bytes.Buffer)
 	_, err := buf.ReadFrom(response.Body())
 	if err != nil {
 		return runtime.NewAPIError("unknown error", response, response.Code())
 	}
-	o.Payload = buf.String()
+	e.Payload = buf.String()
 
 	return nil
+}
+
+type RetryAfterError struct {
+	Duration time.Duration
+}
+
+func (e *RetryAfterError) Error() string {
+	return "Retryable error: Retry-After " + e.Duration.String()
 }

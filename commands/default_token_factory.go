@@ -27,12 +27,17 @@ func NewDefaultTokenFactory(cliConnection plugin.CliConnection) *DefaultTokenFac
 
 // NewToken retrives outh token
 func (t *DefaultTokenFactory) NewToken() (runtime.ClientAuthInfoWriter, error) {
+	rawToken, err := t.NewRawToken()
+	return client.BearerToken(rawToken), err
+}
+
+func (t *DefaultTokenFactory) NewRawToken() (string, error) {
 	var expirationTime int64
 	if t.cachedToken != "" {
 		var err error
 		expirationTime, err = getTokenExpirationTime(t.cachedToken)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 	currentTimeInSeconds := time.Now().Unix()
@@ -40,12 +45,12 @@ func (t *DefaultTokenFactory) NewToken() (runtime.ClientAuthInfoWriter, error) {
 	if currentTimeInSeconds-t.cachedTokenTime >= expirationTime {
 		tokenString, err := t.cliConnection.AccessToken()
 		if err != nil {
-			return nil, fmt.Errorf("Could not get access token: %s", err)
+			return "", fmt.Errorf("Could not get access token: %s", err)
 		}
 		t.cachedTokenTime = currentTimeInSeconds
 		t.cachedToken = getTokenValue(tokenString)
 	}
-	return client.BearerToken(t.cachedToken), nil
+	return t.cachedToken, nil
 }
 
 func getTokenExpirationTime(tokenString string) (int64, error) {
