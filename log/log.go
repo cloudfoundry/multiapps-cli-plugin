@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var Debug = (os.Getenv("DEBUG") == "1")
+var Debug = os.Getenv("DEBUG") == "1"
 
 type Exiter interface {
 	Exit(status int)

@@ -2,9 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"gopkg.in/cheggaaa/pb.v1"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 
@@ -17,14 +20,48 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
-//FileUploader uploads files in chunks for the specified namespace
+// FileUploader uploads files in chunks for the specified namespace
 type FileUploader struct {
 	mtaClient           mtaclient.MtaClientOperations
 	namespace           string
 	uploadChunkSizeInMB uint64
 }
 
-//NewFileUploader creates a new file uploader for the specified namespace
+type progressBarReader struct {
+	pb       *pb.ProgressBar
+	written  atomic.Int64
+	file     io.ReadSeeker
+	fileName string
+}
+
+func (r *progressBarReader) Name() string {
+	return r.fileName
+}
+
+func (r *progressBarReader) Read(p []byte) (int, error) {
+	n, err := r.file.Read(p)
+	if n > 0 {
+		r.written.Add(int64(n))
+		r.pb.Add(n)
+	}
+	return n, err
+}
+
+func (r *progressBarReader) Seek(offset int64, whence int) (int64, error) {
+	newOffset, err := r.file.Seek(offset, whence)
+	if whence == io.SeekStart && r.written.Load() != 0 {
+		r.pb.Add64(-r.written.Load() - offset)
+		r.written.Store(offset)
+	}
+	return newOffset, err
+}
+
+func (r *progressBarReader) Close() error {
+	//no-op as we close the file part manually
+	return nil
+}
+
+// NewFileUploader creates a new file uploader for the specified namespace
 func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64) *FileUploader {
 	return &FileUploader{
 		mtaClient:           mtaClient,
@@ -33,7 +70,7 @@ func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, 
 	}
 }
 
-//UploadFiles uploads the files
+// UploadFiles uploads the files
 func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, ExecutionStatus) {
 	log.Tracef("Uploading files '%v'\n", files)
 
@@ -45,7 +82,7 @@ func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, Exec
 	}
 
 	// Determine which files to upload
-	var filesToUpload []os.File
+	var filesToUpload []*os.File
 	var alreadyUploadedFiles []*models.FileMetadata
 	for _, file := range files {
 		// Check if the file exists
@@ -66,8 +103,7 @@ func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, Exec
 				ui.Failed("Could not open file %s", terminal.EntityNameColor(file))
 				return nil, Failure
 			}
-			defer fileToUpload.Close()
-			filesToUpload = append(filesToUpload, *fileToUpload)
+			filesToUpload = append(filesToUpload, fileToUpload)
 		}
 	}
 
@@ -80,15 +116,11 @@ func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, Exec
 		// Iterate over all files to be uploaded
 		for _, fileToUpload := range filesToUpload {
 			// Print the full path of the file
-			fullPath, err := filepath.Abs(fileToUpload.Name())
-			if err != nil {
-				ui.Failed("Could not get absolute path of file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
-				return nil, Failure
-			}
-			ui.Say("  " + fullPath)
-
+			// as per the Go docs, the file name is the one passed to os.Open
+			// and we pass the absolute path
+			ui.Say("  " + fileToUpload.Name())
 			// Upload the file
-			uploaded, err := f.uploadInChunks(fullPath, fileToUpload)
+			uploaded, err := f.uploadInChunks(fileToUpload)
 			if err != nil {
 				ui.Failed("Could not upload file %s: %s", terminal.EntityNameColor(fileToUpload.Name()), err.Error())
 				return nil, Failure
@@ -100,33 +132,35 @@ func (f *FileUploader) UploadFiles(files []string) ([]*models.FileMetadata, Exec
 	return uploadedFiles, Success
 }
 
-func (f *FileUploader) uploadInChunks(fullPath string, fileToUpload os.File) ([]*models.FileMetadata, error) {
-	// Upload the file
-	err := util.ValidateChunkSize(fullPath, f.uploadChunkSizeInMB)
+func (f *FileUploader) uploadInChunks(fileToUpload *os.File) ([]*models.FileMetadata, error) {
+	err := util.ValidateChunkSize(fileToUpload.Name(), f.uploadChunkSizeInMB)
 	if err != nil {
-		return nil, fmt.Errorf("Could not valide file %q: %v", fullPath, baseclient.NewClientError(err))
+		return nil, fmt.Errorf("Could not valide file %q: %v", fileToUpload.Name(), err)
 	}
-	fileToUploadParts, err := util.SplitFile(fullPath, f.uploadChunkSizeInMB)
+	fileToUploadParts, err := util.SplitFile(fileToUpload.Name(), f.uploadChunkSizeInMB)
 	if err != nil {
-		return nil, fmt.Errorf("Could not process file %q: %v", fullPath, baseclient.NewClientError(err))
+		return nil, fmt.Errorf("Could not process file %q: %v", fileToUpload.Name(), err)
 	}
 	defer attemptToRemoveFileParts(fileToUploadParts)
 
 	uploadedFilesChannel := make(chan *models.FileMetadata)
 	errorChannel := make(chan error)
 
+	fileInfo, err := fileToUpload.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("could not get information on file %q: %v", fileToUpload.Name(), err)
+	}
+
+	progressBar := pb.New64(fileInfo.Size()).SetUnits(pb.U_BYTES)
+	progressBar.ShowTimeLeft = false
+	progressBar.ShowElapsedTime = true
+	progressBar.Start()
+	defer progressBar.Finish()
+
 	for _, fileToUploadPart := range fileToUploadParts {
-		filePart, err := os.Open(fileToUploadPart)
-		if err != nil {
-			return nil, fmt.Errorf("Could not open file part %s of file %s", fileToUploadPart, fullPath)
-		}
+		filePartCopy := fileToUploadPart
 		go func() {
-			fileInfo, err := filePart.Stat()
-			if err != nil {
-				errorChannel <- err
-				return
-			}
-			file, err := f.uploadFilePart(filePart, fileToUpload.Name(), fileInfo.Size())
+			file, err := f.uploadFilePart(filePartCopy, fileToUpload.Name(), progressBar)
 			if err != nil {
 				errorChannel <- err
 				return
@@ -147,16 +181,16 @@ func (f *FileUploader) uploadInChunks(fullPath string, fileToUpload os.File) ([]
 	return uploadedFileParts, nil
 }
 
-func attemptToRemoveFileParts(fileParts []string) {
+func attemptToRemoveFileParts(fileParts []*os.File) {
 	// If more than one file parts exists, then remove them.
 	// If there is only one, then this is the archive itself
 	if len(fileParts) <= 1 {
 		return
 	}
 	for _, filePart := range fileParts {
-		filePartAbsPath, err := filepath.Abs(filePart)
+		filePartAbsPath, err := filepath.Abs(filePart.Name())
 		if err != nil {
-			ui.Warn("Error retrieving absolute file path of %q", filePart)
+			ui.Warn("Error retrieving absolute file path of %q", filePart.Name())
 		}
 		err = os.Remove(filePartAbsPath)
 		if err != nil {
@@ -165,11 +199,17 @@ func attemptToRemoveFileParts(fileParts []string) {
 	}
 }
 
-func (f *FileUploader) uploadFilePart(filePart *os.File, baseFileName string, fileSize int64) (*models.FileMetadata, error) {
-	uploadedFile, err := f.mtaClient.UploadMtaFile(*filePart, fileSize, &f.namespace)
+func (f *FileUploader) uploadFilePart(filePart *os.File, fileName string, pb *pb.ProgressBar) (*models.FileMetadata, error) {
 	defer filePart.Close()
+	fileInfo, err := filePart.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("Could not create file %s: %s", terminal.EntityNameColor(baseFileName), baseclient.NewClientError(err))
+		return nil, fmt.Errorf("could not stat file part %q of file %q", filePart.Name(), fileName)
+	}
+
+	file := &progressBarReader{file: filePart, fileName: fileInfo.Name(), pb: pb}
+	uploadedFile, err := f.mtaClient.UploadMtaFile(file, fileInfo.Size(), &f.namespace)
+	if err != nil {
+		return nil, fmt.Errorf("could not upload file %s: %s", terminal.EntityNameColor(fileName), err)
 	}
 	return uploadedFile, nil
 }

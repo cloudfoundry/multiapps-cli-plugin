@@ -15,7 +15,7 @@ import (
 	mtaclient "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 )
 
-//ExecutionMonitor monitors execution of a process
+// ExecutionMonitor monitors execution of a process
 type ExecutionMonitor struct {
 	mtaClient          mtaclient.MtaClientOperations
 	reportedMessages   map[int64]bool
@@ -45,7 +45,7 @@ func getMonitoringInformation(monitoringLocation string) (string, string) {
 	return strings.Split(path, "operations/")[1], parsedQuery["embed"][0]
 }
 
-//NewExecutionMonitor creates a new execution monitor
+// NewExecutionMonitor creates a new execution monitor
 func NewExecutionMonitor(commandName, operationID, embed string, retries uint, reportedOperationMessages []*models.Message, mtaClient mtaclient.MtaClientOperations) *ExecutionMonitor {
 	return &ExecutionMonitor{
 		mtaClient:        mtaClient,
@@ -104,7 +104,7 @@ func (m *ExecutionMonitor) Monitor() ExecutionStatus {
 			intermediatePhase, flag := getIntermediatePhaseAndFlag(m.commandName)
 			ui.Say("Process has entered %s phase. After testing your new deployment you can resume or abort the process.", intermediatePhase)
 			m.reportAvaiableActions(m.operationID)
-			ui.Say("Hint: Use the '%s' option of the %s command to skip this phase.", flag, m.commandName)
+			ui.Say("Hint: Use the %q option of the %s command to skip this phase.", flag, m.commandName)
 			return Success
 		default:
 			ui.Failed("Process is in illegal state %s.", terminal.EntityNameColor(string(operation.State)))

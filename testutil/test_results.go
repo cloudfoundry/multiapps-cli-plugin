@@ -44,7 +44,6 @@ const ProcessID = "1000"
 const LogID = "OPERATION.log"
 const LogContent = "test-test-test"
 
-//
 type RuntimeResponse struct {
 	code    int
 	message string
@@ -80,21 +79,18 @@ func NewCustomError(customCode int, opName, customMessage string) *runtime.APIEr
 	return runtime.NewAPIError(opName, customResponse, customCode)
 }
 
-//
 var notFoundResponse = RuntimeResponse{
 	code:    404,
 	message: "Process with id 404 not found",
 }
 
-//
 var ClientError = &runtime.APIError{
 	OperationName: "Getting process",
 	Response:      notFoundResponse,
 	Code:          404,
 }
 
-//
-//D41D8CD98F00B204E9800998ECF8427E -> MD5 hash for empty file
+// D41D8CD98F00B204E9800998ECF8427E -> MD5 hash for empty file
 var SimpleFile = models.FileMetadata{
 	ID:              "test.mtar",
 	Digest:          "D41D8CD98F00B204E9800998ECF8427E",
@@ -104,9 +100,8 @@ var SimpleFile = models.FileMetadata{
 	Namespace:       "namespace",
 }
 
-//
-func GetFile(file os.File, digest string, namespace string) *models.FileMetadata {
-	stat, _ := os.Stat(file.Name())
+func GetFile(file *os.File, digest string, namespace string) *models.FileMetadata {
+	stat, _ := file.Stat()
 	return &models.FileMetadata{
 		ID:              stat.Name(),
 		Space:           "test-space",
@@ -116,7 +111,6 @@ func GetFile(file os.File, digest string, namespace string) *models.FileMetadata
 		DigestAlgorithm: "MD5",
 	}
 }
-
 
 func GetOperation(processID, spaceID string, mtaID string, namespace string, processType string, state string, acquiredLock bool) *models.Operation {
 	return &models.Operation{
@@ -132,7 +126,6 @@ func GetOperation(processID, spaceID string, mtaID string, namespace string, pro
 	}
 }
 
-//
 func GetMta(id, version string, namespace string, modules []*models.Module, services []string) *models.Mta {
 	return &models.Mta{
 		Metadata: &models.Metadata{
@@ -145,7 +138,6 @@ func GetMta(id, version string, namespace string, modules []*models.Module, serv
 	}
 }
 
-//
 func GetMtaModule(name string, services []string, providedDependencies []string) *models.Module {
 	return &models.Module{
 		ModuleName:            name,
@@ -154,4 +146,3 @@ func GetMtaModule(name string, services []string, providedDependencies []string)
 		ProvidedDendencyNames: providedDependencies,
 	}
 }
-

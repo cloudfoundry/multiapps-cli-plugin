@@ -3,9 +3,13 @@ package commands_test
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
+	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
@@ -22,6 +26,48 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type mockFile struct {
+	reader io.Reader
+}
+
+type mockFileInfo struct{}
+
+func (mockFileInfo) Name() string {
+	return ""
+}
+
+func (mockFileInfo) Size() int64 {
+	return 0
+}
+
+func (mockFileInfo) Mode() fs.FileMode {
+	return ^fs.ModeCharDevice
+}
+
+func (mockFileInfo) ModTime() time.Time {
+	return time.Time{}
+}
+
+func (mockFileInfo) IsDir() bool {
+	return false
+}
+
+func (mockFileInfo) Sys() any {
+	return nil
+}
+
+func (f *mockFile) Stat() (fs.FileInfo, error) {
+	return mockFileInfo{}, nil
+}
+
+func (f *mockFile) Read(p []byte) (int, error) {
+	return f.reader.Read(p)
+}
+
+func (f *mockFile) Close() error {
+	return nil
+}
+
 var _ = Describe("DeployCommand", func() {
 	Describe("Execute", func() {
 		const org = "test-org"
@@ -36,7 +82,7 @@ var _ = Describe("DeployCommand", func() {
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
 		// var fakeSession csrffake.FakeSessionProvider
-		var mtaClient mtafake.FakeMtaClientOperations
+		var mtaClient *mtafake.FakeMtaClientOperations
 		// var restClient *restfake.FakeRestClientOperations
 		var testClientFactory *commands.TestClientFactory
 		var command *commands.DeployCommand
@@ -45,12 +91,16 @@ var _ = Describe("DeployCommand", func() {
 
 		var fullMtaArchivePath, _ = filepath.Abs(mtaArchivePath)
 		var fullExtDescriptorPath, _ = filepath.Abs(extDescriptorPath)
-		var correctMtaUrl = "https://host/path/anatz.mtar?query=true"
-		var incorrectMtaUrl = "https://alabala.com"
+		var correctMtaUrl = "https://localhost/path/anatz.mtar?query=true"
+		var incorrectMtaUrl = "https://localhost"
+
+		var newMockFileReader = func(url string) fs.File {
+			return &mockFile{strings.NewReader(url)}
+		}
 
 		var getLinesForAbortingProcess = func() []string {
 			return []string{
-				"Executing action 'abort' on operation test-process-id...",
+				"Executing action \"abort\" on operation test-process-id...",
 				"OK",
 			}
 		}
@@ -66,7 +116,7 @@ var _ = Describe("DeployCommand", func() {
 			lines = append(lines, "")
 			if processAborted {
 				lines = append(lines,
-					"Executing action 'abort' on operation test-process-id...",
+					"Executing action \"abort\" on operation test-process-id...",
 					"OK",
 				)
 			}
@@ -107,7 +157,7 @@ var _ = Describe("DeployCommand", func() {
 		var getFile = func(path string) (*os.File, *models.FileMetadata) {
 			file, _ := os.Open(path)
 			digest, _ := util.ComputeFileChecksum(path, "MD5")
-			f := testutil.GetFile(*file, strings.ToUpper(digest), namespace)
+			f := testutil.GetFile(file, strings.ToUpper(digest), namespace)
 			return file, f
 		}
 
@@ -131,12 +181,20 @@ var _ = Describe("DeployCommand", func() {
 			defer mtaArchiveFile.Close()
 			extDescriptorFile, extDescriptor := getFile(extDescriptorPath)
 			defer extDescriptorFile.Close()
+			fileUploadJobId := make(http.Header)
+			jobId := "one"
+			fileUploadJobId.Add("Location", jobId)
+			jobResult := mtaclient.AsyncUploadJobResult{
+				File:  mtaArchive,
+				MtaId: "anatz",
+			}
 			mtaClient = mtafake.NewFakeMtaClientBuilder().
 				GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
-				UploadMtaFile(*mtaArchiveFile, mtaArchive, nil).
-				UploadMtaFile(*extDescriptorFile, extDescriptor, nil).
-				UploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(correctMtaUrl)), mtaArchive, nil).
-				UploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(incorrectMtaUrl)), nil, fmt.Errorf("connection refused")).
+				UploadMtaFile(mtaArchiveFile, mtaArchive, nil).
+				UploadMtaFile(extDescriptorFile, extDescriptor, nil).
+				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(correctMtaUrl)), nil, fileUploadJobId, nil).
+				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(incorrectMtaUrl)), nil, nil, fmt.Errorf("connection refused")).
+				GetAsyncUploadJob(jobId, nil, "", jobResult, nil).
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
@@ -146,6 +204,7 @@ var _ = Describe("DeployCommand", func() {
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), testClientFactory, testTokenFactory, deployServiceURLCalculator)
+			command.FileUrlReadTimeout = time.Second
 		})
 
 		// unknown flag - error
@@ -171,8 +230,7 @@ var _ = Describe("DeployCommand", func() {
 
 		Context("with a correct URL argument", func() {
 			It("should upload the MTAR from the correct URL and initiate a deploy", func() {
-				reader := strings.NewReader(correctMtaUrl)
-				command.FileUrlReader = reader
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -182,8 +240,7 @@ var _ = Describe("DeployCommand", func() {
 
 		Context("with an incorrect URL argument", func() {
 			It("should fail with the error returned from the server", func() {
-				reader := strings.NewReader(incorrectMtaUrl)
-				command.FileUrlReader = reader
+				command.FileUrlReader = newMockFileReader(incorrectMtaUrl)
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
@@ -306,7 +363,7 @@ var _ = Describe("DeployCommand", func() {
 
 		// existing ongoing operations and force option not supplied - success
 		Context("with correct mta id from archive, with ongoing operations provided and no force option", func() {
-			It("should not try to abort confliction operations", func() {
+			It("should not try to abort conflicting operations", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
@@ -330,7 +387,7 @@ var _ = Describe("DeployCommand", func() {
 		// 	})
 		// })
 		Context("with an error returned from getting ongoing operations", func() {
-			It("should display error and exit witn non-zero status", func() {
+			It("should display error and exit with non-zero status", func() {
 				testClientFactory.MtaClient = mtafake.NewFakeMtaClientBuilder().
 					GetMtaOperations(nil, nil, nil, []*models.Operation{}, fmt.Errorf("test-error-from backend")).Build()
 				output, status := oc.CaptureOutputAndStatus(func() int {

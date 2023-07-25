@@ -71,11 +71,11 @@ func (a *action) Execute(operationID string, mtaClient mtaclient.MtaClientOperat
 
 func (a *action) executeInSession(operationID string, mtaClient mtaclient.MtaClientOperations) ExecutionStatus {
 	if a.verbosityLevel == VerbosityLevelVERBOSE {
-		ui.Say("Executing action '%s' on operation %s...", a.actionID, terminal.EntityNameColor(operationID))
+		ui.Say("Executing action %q on operation %s...", a.actionID, terminal.EntityNameColor(operationID))
 	}
 	_, err := mtaClient.ExecuteAction(operationID, a.actionID)
 	if err != nil {
-		ui.Failed("Could not execute action '%s' on operation %s: %s", a.actionID, terminal.EntityNameColor(operationID), err)
+		ui.Failed("Could not execute action %q on operation %s: %s", a.actionID, terminal.EntityNameColor(operationID), err)
 		return Failure
 	}
 	if a.verbosityLevel == VerbosityLevelVERBOSE {

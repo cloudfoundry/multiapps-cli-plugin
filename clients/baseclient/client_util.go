@@ -13,6 +13,12 @@ func CallWithRetry(callback func() (interface{}, error), maxRetriesCount int, re
 		if !shouldRetry(err) {
 			return resp, err
 		}
+		retryErr, ok := err.(*RetryAfterError)
+		if ok {
+			ui.Warn("Retryable error occurred. Retrying after %s", retryErr.Duration)
+			time.Sleep(retryErr.Duration)
+			continue
+		}
 		ui.Warn("Error occurred: %s. Retrying after: %s.", err.Error(), retryInterval)
 		time.Sleep(retryInterval)
 	}

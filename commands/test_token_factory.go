@@ -17,6 +17,10 @@ func NewTestTokenFactory(fakeCliConnection *fakes.FakeCliConnection) *TestTokenF
 }
 
 func (f *TestTokenFactory) NewToken() (runtime.ClientAuthInfoWriter, error) {
-	tokenString, _ := f.FakeCliConnection.AccessToken()
+	tokenString, _ := f.NewRawToken()
 	return testutil.NewCustomBearerToken(tokenString), nil
+}
+
+func (f *TestTokenFactory) NewRawToken() (string, error) {
+	return f.FakeCliConnection.AccessToken()
 }

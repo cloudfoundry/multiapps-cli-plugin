@@ -17,3 +17,7 @@ type customTokenfactory struct {
 func (c *customTokenfactory) NewToken() (runtime.ClientAuthInfoWriter, error) {
 	return testutil.NewCustomBearerToken(c.tokenString), nil
 }
+
+func (c *customTokenfactory) NewRawToken() (string, error) {
+	return c.tokenString, nil
+}

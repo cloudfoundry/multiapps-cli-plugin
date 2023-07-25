@@ -1,12 +1,13 @@
 package mtaclient
 
 import (
+	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 )
 
 type RetryableMtaRestClient struct {
@@ -119,14 +120,14 @@ func (c RetryableMtaRestClient) StartMtaOperation(operation models.Operation) (R
 	return resp.(ResponseHeader), nil
 }
 
-func (c RetryableMtaRestClient) UploadMtaFile(file os.File, fileSize int64, namespace *string) (*models.FileMetadata, error) {
+func (c RetryableMtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSize int64, namespace *string) (*models.FileMetadata, error) {
 	uploadMtaFileCb := func() (interface{}, error) {
-		reopenedFile, err := os.Open(file.Name())
+		//rewind the file part to the beginning in case of a network error
+		_, err := file.Seek(0, io.SeekStart)
 		if err != nil {
 			return nil, err
 		}
-
-		return c.mtaClient.UploadMtaFile(*reopenedFile, fileSize, namespace)
+		return c.mtaClient.UploadMtaFile(file, fileSize, namespace)
 	}
 	resp, err := baseclient.CallWithRetry(uploadMtaFileCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {
@@ -135,15 +136,26 @@ func (c RetryableMtaRestClient) UploadMtaFile(file os.File, fileSize int64, name
 	return resp.(*models.FileMetadata), nil
 }
 
-func (c RetryableMtaRestClient) UploadMtaArchiveFromUrl(fileUrl string, namespace *string) (*models.FileMetadata, error) {
+func (c RetryableMtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string) (http.Header, error) {
 	uploadMtaArchiveFromUrlCb := func() (interface{}, error) {
-		return c.mtaClient.UploadMtaArchiveFromUrl(fileUrl, namespace)
+		return c.mtaClient.StartUploadMtaArchiveFromUrl(fileUrl, namespace)
 	}
 	resp, err := baseclient.CallWithRetry(uploadMtaArchiveFromUrlCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {
 		return nil, err
 	}
-	return resp.(*models.FileMetadata), nil
+	return resp.(http.Header), nil
+}
+
+func (c RetryableMtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string) (AsyncUploadJobResult, error) {
+	getAsyncUploadJobCb := func() (interface{}, error) {
+		return c.mtaClient.GetAsyncUploadJob(jobId, namespace, appInstanceId)
+	}
+	resp, err := baseclient.CallWithRetry(getAsyncUploadJobCb, c.MaxRetriesCount, c.RetryInterval)
+	if err != nil {
+		return AsyncUploadJobResult{}, err
+	}
+	return resp.(AsyncUploadJobResult), nil
 }
 
 func (c RetryableMtaRestClient) GetMtaOperationLogContent(operationID, logID string) (string, error) {

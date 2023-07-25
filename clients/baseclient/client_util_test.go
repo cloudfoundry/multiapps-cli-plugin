@@ -75,7 +75,7 @@ var _ = Describe("ClientUtil", func() {
 					toReturn := testStruct{}
 					return toReturn, nil
 				}
-				result, err := CallWithRetry(getInterface, 4, (time.Duration(0) * time.Second))
+				result, err := CallWithRetry(getInterface, 4, time.Duration(0))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(result))
 			})
@@ -87,7 +87,7 @@ var _ = Describe("ClientUtil", func() {
 					err := ClientError{404, "Not Found", "The server cannot find requesred resource"}
 					return toReturn, &err
 				}
-				result, err := CallWithRetry(mockCallback, 4, (time.Duration(0) * time.Second))
+				result, err := CallWithRetry(mockCallback, 4, time.Duration(0))
 				Expect(err).To(HaveOccurred())
 				Expect(result).To(Equal(result))
 			})

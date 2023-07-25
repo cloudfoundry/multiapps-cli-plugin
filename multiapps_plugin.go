@@ -77,7 +77,7 @@ func findCommand(name string) (commands.Command, error) {
 			return command, nil
 		}
 	}
-	return nil, fmt.Errorf("Could not find command with name '%s'", name)
+	return nil, fmt.Errorf("Could not find command with name %q", name)
 }
 
 func parseSemver(version string) plugin.VersionType {

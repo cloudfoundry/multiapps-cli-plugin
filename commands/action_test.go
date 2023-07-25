@@ -17,7 +17,7 @@ import (
 var _ = Describe("Actions", func() {
 	const operationID = "test-process-id"
 	const commandName = "deploy"
-	var mtaClient fakes.FakeMtaClientOperations
+	var mtaClient *fakes.FakeMtaClientOperations
 
 	var action commands.Action
 	var oc = testutil.NewUIOutputCapturer()
@@ -42,7 +42,7 @@ var _ = Describe("Actions", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
 						return action.Execute(operationID, mtaClient).ToInt()
 					})
-					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'abort' on operation test-process-id...", "OK"})
+					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action \"abort\" on operation test-process-id...", "OK"})
 				})
 			})
 			Context("with an error returned from the backend", func() {
@@ -54,7 +54,7 @@ var _ = Describe("Actions", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
 						return action.Execute(operationID, mtaClient).ToInt()
 					})
-					ex.ExpectFailureOnLine(status, output, "Could not execute action 'abort' on operation test-process-id: test-error", 2)
+					ex.ExpectFailureOnLine(status, output, "Could not execute action \"abort\" on operation test-process-id: test-error", 2)
 				})
 			})
 		})
@@ -76,7 +76,7 @@ var _ = Describe("Actions", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
 						return action.Execute(operationID, mtaClient).ToInt()
 					})
-					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action 'retry' on operation test-process-id...", "OK",
+					ex.ExpectSuccessWithOutput(status, output, []string{"Executing action \"retry\" on operation test-process-id...", "OK",
 						"Process finished.", "Use \"cf dmol -i " + operationID + "\" to download the logs of the process."})
 				})
 			})
@@ -90,7 +90,7 @@ var _ = Describe("Actions", func() {
 					output, status := oc.CaptureOutputAndStatus(func() int {
 						return action.Execute(operationID, mtaClient).ToInt()
 					})
-					ex.ExpectFailureOnLine(status, output, "Could not execute action 'retry' on operation test-process-id: test-error", 2)
+					ex.ExpectFailureOnLine(status, output, "Could not execute action \"retry\" on operation test-process-id: test-error", 2)
 				})
 			})
 		})
