@@ -53,27 +53,35 @@ PLUGIN_NAME_WIN_32=multiapps-plugin.win32.exe
 PLUGIN_NAME_WIN_64=multiapps-plugin.win64.exe
 PLUGIN_NAME_LINUX_32=multiapps-plugin.linux32
 PLUGIN_NAME_LINUX_64=multiapps-plugin.linux64
+PLUGIN_NAME_LINUX_ARM64=multiapps-plugin.linuxarm64
 PLUGIN_NAME_OSX=multiapps-plugin.osx
+PLUGIN_NAME_APPLE_ARM64=multiapps-plugin.osxarm64
 
 PLUGIN_NAME_STATIC_WIN_32=multiapps-plugin-static.win32.exe
 PLUGIN_NAME_STATIC_WIN_64=multiapps-plugin-static.win64.exe
 PLUGIN_NAME_STATIC_LINUX_32=multiapps-plugin-static.linux32
 PLUGIN_NAME_STATIC_LINUX_64=multiapps-plugin-static.linux64
+PLUGIN_NAME_STATIC_LINUX_ARM64=multiapps-plugin-static.linuxarm64
 PLUGIN_NAME_STATIC_OSX=multiapps-plugin-static.osx
+PLUGIN_NAME_STATIC_APPLE_ARM64=multiapps-plugin-static.osxarm64
 
 version=$(<cfg/VERSION)
 build $version linux 386 $PLUGIN_NAME_LINUX_32
 build $version linux amd64 $PLUGIN_NAME_LINUX_64
+build $version linux arm64 $PLUGIN_NAME_LINUX_ARM64
 build $version windows 386 $PLUGIN_NAME_WIN_32
 build $version windows amd64 $PLUGIN_NAME_WIN_64
 build $version darwin amd64 $PLUGIN_NAME_OSX
+build $version darwin arm64 $PLUGIN_NAME_APPLE_ARM64
 
 buildstatic $version linux 386 $PLUGIN_NAME_STATIC_LINUX_32
 buildstatic $version linux amd64 $PLUGIN_NAME_STATIC_LINUX_64
+buildstatic $version linux arm64 $PLUGIN_NAME_STATIC_LINUX_ARM64
 buildstatic $version windows 386 $PLUGIN_NAME_STATIC_WIN_32
 buildstatic $version windows amd64 $PLUGIN_NAME_STATIC_WIN_64
 buildstatic $version darwin amd64 $PLUGIN_NAME_STATIC_OSX
+buildstatic $version darwin arm64 $PLUGIN_NAME_STATIC_APPLE_ARM64
 
-mkdir $BUILD_FOLDER -p
+mkdir -p $BUILD_FOLDER
 createBuildMetadataFiles $version $BUILD_FOLDER
 movePluginsToBuildFolder $BUILD_FOLDER

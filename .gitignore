@@ -12,6 +12,13 @@ multiapps-plugin.win64.exe
 multiapps-plugin.linux32
 multiapps-plugin.linux64
 multiapps-plugin.osx
+multiapps-plugin.linuxarm64
+multiapps-plugin.osxarm64
+multiapps-plugin-static.linux32
+multiapps-plugin-static.linux64
+multiapps-plugin-static.linuxarm64
+multiapps-plugin-static.osx
+multiapps-plugin-static.osxarm64
 go.sum
 *.exe
 
