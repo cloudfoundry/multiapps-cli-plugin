@@ -30,12 +30,16 @@ function movePluginsToBuildFolder() {
     mv $PLUGIN_NAME_WIN_64 $folder
     mv $PLUGIN_NAME_LINUX_32 $folder
     mv $PLUGIN_NAME_LINUX_64 $folder
+    mv $PLUGIN_NAME_LINUX_ARM64 $folder
     mv $PLUGIN_NAME_OSX $folder
+    mv $PLUGIN_NAME_APPLE_ARM64 $folder
     mv $PLUGIN_NAME_STATIC_WIN_32 $folder
     mv $PLUGIN_NAME_STATIC_WIN_64 $folder
     mv $PLUGIN_NAME_STATIC_LINUX_32 $folder
     mv $PLUGIN_NAME_STATIC_LINUX_64 $folder
+    mv $PLUGIN_NAME_STATIC_LINUX_ARM64 $folder
     mv $PLUGIN_NAME_STATIC_OSX $folder
+    mv $PLUGIN_NAME_STATIC_APPLE_ARM64 $folder
 }
 
 function createBuildMetadataFiles() {
