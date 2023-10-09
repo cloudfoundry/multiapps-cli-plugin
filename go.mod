@@ -5,12 +5,12 @@ go 1.20
 require (
 	code.cloudfoundry.org/cli v7.1.0+incompatible
 	code.cloudfoundry.org/jsonry v1.1.3
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-openapi/errors v0.20.1
 	github.com/go-openapi/runtime v0.19.31
 	github.com/go-openapi/strfmt v0.20.2
 	github.com/go-openapi/swag v0.19.15
 	github.com/go-openapi/validate v0.20.2
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/pborman/uuid v1.2.0

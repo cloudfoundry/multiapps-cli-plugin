@@ -3,12 +3,13 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/client"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // DefaultTokenFactory factory for retrieving tokens
@@ -55,14 +56,12 @@ func (t *DefaultTokenFactory) NewRawToken() (string, error) {
 
 func getTokenExpirationTime(tokenString string) (int64, error) {
 	// Parse jwt token string
-	parser := jwt.Parser{
-		SkipClaimsValidation: true,
-	}
+	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
 	token, err := parser.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return token, nil
 	})
 
-	if err != nil && err.Error() != "key is of invalid type" {
+	if err != nil && !strings.Contains(err.Error(), "key is of invalid type") {
 		return 0, err
 	}
 
