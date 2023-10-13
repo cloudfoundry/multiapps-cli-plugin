@@ -1,6 +1,6 @@
 <p align="center"><img width="335" height="281" src="logo.png" alt="MultiApps logo"></p>
 
-# MultiApps CF CLI Plugin [![Build Status](https://travis-ci.org/cloudfoundry-incubator/multiapps-cli-plugin.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/multiapps-cli-plugin)
+# MultiApps CF CLI Plugin [![Multiapps CLI Plugin build](https://github.com/cloudfoundry/multiapps-cli-plugin/actions/workflows/pull-request-build.yml/badge.svg)](https://github.com/cloudfoundry/multiapps-cli-plugin/actions/workflows/pull-request-build.yml)
 This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing operations on [multi-target applications (MTAs)](https://www.sap.com/documents/2016/06/e2f618e4-757c-0010-82c7-eda71af511fa.html) in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) (formerly known as CF MTA deploy-service), which is an MTA deployer implementation for Cloud Foundry.
 
 # Requirements
