@@ -1,3 +1,11 @@
+## v3.1.0
+* Improve performance and usability of deployment with MTA archive URL
+* Add progress bar during file upload
+* Remove archive signature verification flag
+* Update Go to 1.20
+* Add builds for Linux arm64 and MacOS arm64
+* Sanity bump of vulnerable OSS dependencies
+
 ## v3.0.3
 * Fix nil panic when downloading MTA Operation logs
 
