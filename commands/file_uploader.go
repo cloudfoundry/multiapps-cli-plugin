@@ -12,12 +12,12 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
 // FileUploader uploads files in chunks for the specified namespace
@@ -25,6 +25,7 @@ type FileUploader struct {
 	mtaClient           mtaclient.MtaClientOperations
 	namespace           string
 	uploadChunkSizeInMB uint64
+	isParallel          bool
 }
 
 type progressBarReader struct {
@@ -67,6 +68,7 @@ func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, 
 		mtaClient:           mtaClient,
 		namespace:           namespace,
 		uploadChunkSizeInMB: uploadChunkSizeInMB,
+		isParallel:          configuration.NewSnapshot().GetUploadChunksInParallel(),
 	}
 }
 
@@ -143,6 +145,7 @@ func (f *FileUploader) uploadInChunks(fileToUpload *os.File) ([]*models.FileMeta
 	}
 	defer attemptToRemoveFileParts(fileToUploadParts)
 
+	var uploadedFileParts []*models.FileMetadata
 	uploadedFilesChannel := make(chan *models.FileMetadata)
 	errorChannel := make(chan error)
 
@@ -167,18 +170,29 @@ func (f *FileUploader) uploadInChunks(fileToUpload *os.File) ([]*models.FileMeta
 			}
 			uploadedFilesChannel <- file
 		}()
+		if !f.isParallel {
+			if err := waitForChannelData(uploadedFilesChannel, errorChannel, &uploadedFileParts); err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	var uploadedFileParts []*models.FileMetadata
 	for len(uploadedFileParts) < len(fileToUploadParts) {
-		select {
-		case uploadedFile := <-uploadedFilesChannel:
-			uploadedFileParts = append(uploadedFileParts, uploadedFile)
-		case err := <-errorChannel:
+		if err := waitForChannelData(uploadedFilesChannel, errorChannel, &uploadedFileParts); err != nil {
 			return nil, err
 		}
 	}
 	return uploadedFileParts, nil
+}
+
+func waitForChannelData(fileChan <-chan *models.FileMetadata, errChan <-chan error, result *[]*models.FileMetadata) error {
+	select {
+	case uploadedFile := <-fileChan:
+		*result = append(*result, uploadedFile)
+	case err := <-errChan:
+		return err
+	}
+	return nil
 }
 
 func attemptToRemoveFileParts(fileParts []*os.File) {
