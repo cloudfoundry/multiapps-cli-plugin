@@ -9,14 +9,16 @@ import (
 const unknownError = "An unknown error occurred during the parsing of the environment variable \"%s\". Please report this! Value type: %T"
 
 type Snapshot struct {
-	backendURL          properties.ConfigurableProperty
-	uploadChunkSizeInMB properties.ConfigurableProperty
+	backendURL             properties.ConfigurableProperty
+	uploadChunkSizeInMB    properties.ConfigurableProperty
+	uploadChunksInParallel properties.ConfigurableProperty
 }
 
 func NewSnapshot() Snapshot {
 	return Snapshot{
-		backendURL:          properties.BackendURL,
-		uploadChunkSizeInMB: properties.UploadChunkSizeInMB,
+		backendURL:             properties.BackendURL,
+		uploadChunkSizeInMB:    properties.UploadChunkSizeInMB,
+		uploadChunksInParallel: properties.UploadChunksInParallel,
 	}
 }
 
@@ -26,6 +28,10 @@ func (c Snapshot) GetBackendURL() string {
 
 func (c Snapshot) GetUploadChunkSizeInMB() uint64 {
 	return getUint64Property(c.uploadChunkSizeInMB)
+}
+
+func (c Snapshot) GetUploadChunksInParallel() bool {
+	return getBoolProperty(c.uploadChunksInParallel)
 }
 
 func getStringProperty(property properties.ConfigurableProperty) string {
@@ -40,6 +46,15 @@ func getStringProperty(property properties.ConfigurableProperty) string {
 func getUint64Property(property properties.ConfigurableProperty) uint64 {
 	uncastedValue := getPropertyOrDefault(property)
 	value, ok := uncastedValue.(uint64)
+	if !ok {
+		panic(fmt.Sprintf(unknownError, property.Name, uncastedValue))
+	}
+	return value
+}
+
+func getBoolProperty(property properties.ConfigurableProperty) bool {
+	uncastedValue := getPropertyOrDefault(property)
+	value, ok := uncastedValue.(bool)
 	if !ok {
 		panic(fmt.Sprintf(unknownError, property.Name, uncastedValue))
 	}
