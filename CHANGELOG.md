@@ -1,3 +1,6 @@
+## v3.1.1
+* Improve upload with slower network connection
+
 ## v3.1.0
 * Improve performance and usability of deployment with MTA archive URL
 * Add progress bar during file upload
