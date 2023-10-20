@@ -22,10 +22,11 @@ import (
 
 // FileUploader uploads files in chunks for the specified namespace
 type FileUploader struct {
-	mtaClient           mtaclient.MtaClientOperations
-	namespace           string
-	uploadChunkSizeInMB uint64
-	sequentialUpload    bool
+	mtaClient                mtaclient.MtaClientOperations
+	namespace                string
+	uploadChunkSizeInMB      uint64
+	sequentialUpload         bool
+	shouldDisableProgressBar bool
 }
 
 type progressBarReader struct {
@@ -64,11 +65,13 @@ func (r *progressBarReader) Close() error {
 
 // NewFileUploader creates a new file uploader for the specified namespace
 func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64) *FileUploader {
+	conf := configuration.NewSnapshot()
 	return &FileUploader{
-		mtaClient:           mtaClient,
-		namespace:           namespace,
-		uploadChunkSizeInMB: uploadChunkSizeInMB,
-		sequentialUpload:    configuration.NewSnapshot().GetUploadChunksSequentially(),
+		mtaClient:                mtaClient,
+		namespace:                namespace,
+		uploadChunkSizeInMB:      uploadChunkSizeInMB,
+		sequentialUpload:         conf.GetUploadChunksSequentially(),
+		shouldDisableProgressBar: conf.GetDisableUploadProgressBar(),
 	}
 }
 
@@ -157,6 +160,7 @@ func (f *FileUploader) uploadInChunks(fileToUpload *os.File) ([]*models.FileMeta
 	progressBar := pb.New64(fileInfo.Size()).SetUnits(pb.U_BYTES)
 	progressBar.ShowTimeLeft = false
 	progressBar.ShowElapsedTime = true
+	progressBar.NotPrint = f.shouldDisableProgressBar
 	progressBar.Start()
 	defer progressBar.Finish()
 
