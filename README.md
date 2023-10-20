@@ -69,7 +69,7 @@ The configuration of the MultiApps CF plugin is done via env variables. The foll
 * `MULTIAPPS_UPLOAD_CHUNK_SIZE=<POSITIVE_INTEGER>` - By default, large MTARs are not uploaded as a single unit, but are split up into smaller chunks of 45 MBs that are uploaded separately. The goal is to prevent failed uploads due to [gorouter](https://github.com/cloudfoundry/gorouter)'s request timeout. In case the default chunk size is still too large, you can configure it via this environment variable. **The specified values are in megabytes.**
 :rotating_light: Note: The total number of chunks in which an MTAR is split cannot exceed 50, since the multiapps-controller could interpret bigger values as a denial-of-service attack. For this reason, the minimum value for this environment variable is computed based on the formula: `MIN = MTAR_SIZE / 50`
 For example, with a 100MB MTAR the minimum value for this environment variable would be 2, and for a 400MB MTAR it would be 8. Finally, the minimum value cannot grow over 50, so with a 4GB MTAR, the minimum value would be 50 and not 80.
-* `MULTIAPPS_UPLOAD_CHUNKS_IN_PARALLEL=<BOOLEAN>` - By default, MTAR chunks are uploaded sequentially so as not to produce too much network traffic. In case of a good internet connection, the option to upload them in parallel may improve upload performance.
+* `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=<BOOLEAN>` - By default, MTAR chunks are uploaded in parallel for better performance. In case of a bad internet connection, the option to upload them sequentially will lessen network load.
 
 # How to contribute
 * [Did you find a bug?](CONTRIBUTING.md#did-you-find-a-bug)
