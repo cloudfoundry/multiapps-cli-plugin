@@ -70,6 +70,7 @@ The configuration of the MultiApps CF plugin is done via env variables. The foll
 :rotating_light: Note: The total number of chunks in which an MTAR is split cannot exceed 50, since the multiapps-controller could interpret bigger values as a denial-of-service attack. For this reason, the minimum value for this environment variable is computed based on the formula: `MIN = MTAR_SIZE / 50`
 For example, with a 100MB MTAR the minimum value for this environment variable would be 2, and for a 400MB MTAR it would be 8. Finally, the minimum value cannot grow over 50, so with a 4GB MTAR, the minimum value would be 50 and not 80.
 * `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=<BOOLEAN>` - By default, MTAR chunks are uploaded in parallel for better performance. In case of a bad internet connection, the option to upload them sequentially will lessen network load.
+* `MULTIAPPS_DISABLE_UPLOAD_PROGRESS_BAR=<BOOLEAN>` - By default, the file upload shows a progress bar. In case of CI/CD systems where console text escaping isn't supported, the bar can be disabled to reduce unnecessary logs.
 
 # How to contribute
 * [Did you find a bug?](CONTRIBUTING.md#did-you-find-a-bug)

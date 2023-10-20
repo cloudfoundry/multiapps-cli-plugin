@@ -12,6 +12,7 @@ type Snapshot struct {
 	backendURL               properties.ConfigurableProperty
 	uploadChunkSizeInMB      properties.ConfigurableProperty
 	uploadChunksSequentially properties.ConfigurableProperty
+	disableProgressBar       properties.ConfigurableProperty
 }
 
 func NewSnapshot() Snapshot {
@@ -19,6 +20,7 @@ func NewSnapshot() Snapshot {
 		backendURL:               properties.BackendURL,
 		uploadChunkSizeInMB:      properties.UploadChunkSizeInMB,
 		uploadChunksSequentially: properties.UploadChunksSequentially,
+		disableProgressBar:       properties.DisableProgressBar,
 	}
 }
 
@@ -32,6 +34,10 @@ func (c Snapshot) GetUploadChunkSizeInMB() uint64 {
 
 func (c Snapshot) GetUploadChunksSequentially() bool {
 	return getBoolProperty(c.uploadChunksSequentially)
+}
+
+func (c Snapshot) GetDisableUploadProgressBar() bool {
+	return getBoolProperty(c.disableProgressBar)
 }
 
 func getStringProperty(property properties.ConfigurableProperty) string {
