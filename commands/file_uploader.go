@@ -25,7 +25,7 @@ type FileUploader struct {
 	mtaClient           mtaclient.MtaClientOperations
 	namespace           string
 	uploadChunkSizeInMB uint64
-	isParallel          bool
+	sequentialUpload    bool
 }
 
 type progressBarReader struct {
@@ -68,7 +68,7 @@ func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, 
 		mtaClient:           mtaClient,
 		namespace:           namespace,
 		uploadChunkSizeInMB: uploadChunkSizeInMB,
-		isParallel:          configuration.NewSnapshot().GetUploadChunksInParallel(),
+		sequentialUpload:    configuration.NewSnapshot().GetUploadChunksSequentially(),
 	}
 }
 
@@ -170,7 +170,7 @@ func (f *FileUploader) uploadInChunks(fileToUpload *os.File) ([]*models.FileMeta
 			}
 			uploadedFilesChannel <- file
 		}()
-		if !f.isParallel {
+		if f.sequentialUpload {
 			if err := waitForChannelData(uploadedFilesChannel, errorChannel, &uploadedFileParts); err != nil {
 				return nil, err
 			}
