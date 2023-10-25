@@ -44,7 +44,8 @@ var _ = Describe("FileUploader", func() {
 				client := fakeMtaClientBuilder.GetMtaFiles([]*models.FileMetadata{}, nil).Build()
 
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB,
+						properties.DefaultUploadChunksSequentially, properties.DefaultDisableProgressBar)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{})
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{""})
@@ -57,7 +58,8 @@ var _ = Describe("FileUploader", func() {
 				client := fakeMtaClientBuilder.GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB,
+						properties.DefaultUploadChunksSequentially, properties.DefaultDisableProgressBar)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{})
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{""})
@@ -73,7 +75,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(testFile, testutil.GetFile(testFile, testFileDigest, namespace), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB,
+						properties.DefaultUploadChunksSequentially, properties.DefaultDisableProgressBar)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -95,7 +98,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(testFile, testutil.GetFile(testFile, testFileDigest, "namespace"), nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB,
+						properties.DefaultUploadChunksSequentially, properties.DefaultDisableProgressBar)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				ex.ExpectSuccessWithOutput(status.ToInt(), output, []string{
@@ -113,7 +117,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(testFile, fileMetadata, nil).Build()
 				var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB,
+						properties.DefaultUploadChunksSequentially, properties.DefaultDisableProgressBar)
 					uploadedFiles, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				Expect(len(uploadedFiles)).To(Equal(1))
@@ -135,7 +140,8 @@ var _ = Describe("FileUploader", func() {
 					UploadMtaFile(testFile, &models.FileMetadata{}, errors.New("Unexpected error from the backend")).Build()
 				// var uploadedFiles []*models.FileMetadata
 				output := oc.CaptureOutput(func() {
-					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB)
+					fileUploader = commands.NewFileUploader(client, namespace, properties.DefaultUploadChunkSizeInMB,
+						properties.DefaultUploadChunksSequentially, properties.DefaultDisableProgressBar)
 					_, status = fileUploader.UploadFiles([]string{testFileAbsolutePath})
 				})
 				// Expect(len(uploadedFiles)).To(Equal(1))

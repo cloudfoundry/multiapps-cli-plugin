@@ -14,7 +14,6 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -64,14 +63,14 @@ func (r *progressBarReader) Close() error {
 }
 
 // NewFileUploader creates a new file uploader for the specified namespace
-func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64) *FileUploader {
-	conf := configuration.NewSnapshot()
+func NewFileUploader(mtaClient mtaclient.MtaClientOperations, namespace string, uploadChunkSizeInMB uint64,
+	sequentialUpload, shouldDisableProgressBar bool) *FileUploader {
 	return &FileUploader{
 		mtaClient:                mtaClient,
 		namespace:                namespace,
 		uploadChunkSizeInMB:      uploadChunkSizeInMB,
-		sequentialUpload:         conf.GetUploadChunksSequentially(),
-		shouldDisableProgressBar: conf.GetDisableUploadProgressBar(),
+		sequentialUpload:         sequentialUpload,
+		shouldDisableProgressBar: shouldDisableProgressBar,
 	}
 }
 
