@@ -216,13 +216,16 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 
 	namespace := strings.TrimSpace(GetStringOpt(namespaceOpt, flags))
 	force := GetBoolOpt(forceOpt, flags)
-	uploadChunkSizeInMB := configuration.NewSnapshot().GetUploadChunkSizeInMB()
-	fileUploader := NewFileUploader(mtaClient, namespace, uploadChunkSizeInMB)
+	conf := configuration.NewSnapshot()
+	uploadChunkSize := conf.GetUploadChunkSizeInMB()
+	sequentialUpload := conf.GetUploadChunksSequentially()
+	disableProgressBar := conf.GetDisableUploadProgressBar()
+	fileUploader := NewFileUploader(mtaClient, namespace, uploadChunkSize, sequentialUpload, disableProgressBar)
 
 	if isUrl {
 		var fileId string
 		var isFailure bool
-		fileId, mtaId, isFailure = c.uploadFromUrl(mtaArchive, mtaClient, namespace)
+		fileId, mtaId, isFailure = c.uploadFromUrl(mtaArchive, mtaClient, namespace, disableProgressBar)
 		if isFailure {
 			return Failure
 		}
@@ -326,8 +329,9 @@ func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
 	return false, ""
 }
 
-func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientOperations, namespace string) (fileId, mtaId string, failure bool) {
-	progressBar := c.tryFetchMtarSize(url)
+func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientOperations, namespace string,
+	disableProgressBar bool) (fileId, mtaId string, failure bool) {
+	progressBar := c.tryFetchMtarSize(url, disableProgressBar)
 
 	encodedFileUrl := base64.URLEncoding.EncodeToString([]byte(url))
 	responseHeaders, err := mtaClient.StartUploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
@@ -457,7 +461,7 @@ func (c *DeployCommand) tryReadingFileUrl() string {
 	return ""
 }
 
-func (c *DeployCommand) tryFetchMtarSize(url string) *pb.ProgressBar {
+func (c *DeployCommand) tryFetchMtarSize(url string, disableProgressBar bool) *pb.ProgressBar {
 	client := http.Client{Timeout: c.FileUrlReadTimeout}
 	resp, err := client.Head(url)
 	if err != nil {
@@ -471,6 +475,7 @@ func (c *DeployCommand) tryFetchMtarSize(url string) *pb.ProgressBar {
 	bar := pb.New64(resp.ContentLength).SetUnits(pb.U_BYTES)
 	bar.ShowElapsedTime = true
 	bar.ShowTimeLeft = false
+	bar.NotPrint = disableProgressBar
 	return bar
 }
 
