@@ -214,7 +214,10 @@ func (c MtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSize int64, 
 		errChan <- c.writeFileToRequest(file, form)
 	}()
 
-	req, _ := http.NewRequest(http.MethodPost, requestUrl, pipeReader)
+	ctx, done := context.WithTimeout(context.Background(), time.Hour)
+	defer done()
+
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, requestUrl, pipeReader)
 	req.Header.Set("Content-Type", form.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.ContentLength = contentLength

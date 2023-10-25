@@ -346,6 +346,11 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 	jobUrlParts := strings.Split(uploadJobUrl, "/")
 	jobId := jobUrlParts[len(jobUrlParts)-1]
 
+	timeout := time.NewTimer(time.Hour)
+	defer timeout.Stop()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
 	var file *models.FileMetadata
 	for file == nil {
 		jobResult, err := mtaClient.GetAsyncUploadJob(jobId, &namespace, responseHeaders.Get("x-cf-app-instance"))
@@ -371,7 +376,12 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 		}
 
 		if len(mtaId) == 0 {
-			time.Sleep(2 * time.Second)
+			select {
+			case <-timeout.C:
+				ui.Failed("Upload from URL timed out after 1 hour")
+				return "", "", true
+			case <-ticker.C:
+			}
 		}
 	}
 	if progressBar != nil && totalBytesProcessed < progressBar.Total {
