@@ -1,4 +1,4 @@
-## 3.2.0
+## v3.2.0
 * Switch behaviour of file chunks upload to be uploaded in parallel by default. The environment variable "MULTIAPPS_UPLOAD_CHUNKS_IN_PARALLEL" is no longer taken into account and it needs to be removed when configured. In case where internet connection is slow and sequential upload of chunks is beneficial, then env parameter "MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=true" can be set.
 * Progress bar for file upload can be disabled by env "MULTIAPPS_DISABLE_UPLOAD_PROGRESS_BAR=true". This could be useful configuration for pipelines where every single activity of progress bar is logged in on a new line.
 * Add 1 hour timeout for file upload and deployment with MTA archive URL
