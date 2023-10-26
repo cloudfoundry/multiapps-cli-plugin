@@ -10,6 +10,9 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
@@ -211,7 +214,7 @@ func (c MtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSize int64, 
 	errChan := make(chan error, 1)
 	go func() {
 		defer pipeWriter.Close()
-		errChan <- c.writeFileToRequest(file, form)
+		errChan <- c.writeFileToRequest(file, fileSize, form)
 	}()
 
 	ctx, done := context.WithTimeout(context.Background(), time.Hour)
@@ -255,7 +258,11 @@ func (c MtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSize int64, 
 func (c MtaRestClient) calculateRequestSize(fileName string, fileSize int64) (int64, error) {
 	var body bytes.Buffer
 	form := multipart.NewWriter(&body)
-	_, err := form.CreateFormFile("file", fileName)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, escapeQuotes(fileName)))
+	h.Set("Content-Type", "application/octet-stream")
+	h.Set("Content-Length", strconv.FormatInt(fileSize, 10))
+	_, err := form.CreatePart(h)
 	if err != nil {
 		return 0, err
 	}
@@ -266,10 +273,14 @@ func (c MtaRestClient) calculateRequestSize(fileName string, fileSize int64) (in
 	return int64(body.Len()) + fileSize, nil
 }
 
-func (c MtaRestClient) writeFileToRequest(file util.NamedReadSeeker, form *multipart.Writer) error {
-	fileWriter, err := form.CreateFormFile("file", file.Name())
+func (c MtaRestClient) writeFileToRequest(file util.NamedReadSeeker, fileSize int64, form *multipart.Writer) error {
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, escapeQuotes(file.Name())))
+	h.Set("Content-Type", "application/octet-stream")
+	h.Set("Content-Length", strconv.FormatInt(fileSize, 10))
+	fileWriter, err := form.CreatePart(h)
 	if err != nil {
-		return fmt.Errorf("could not write to HTTP request: %v", err)
+		return fmt.Errorf("could not create multipart file part: %v", err)
 	}
 
 	_, err = io.Copy(fileWriter, file)
@@ -282,6 +293,10 @@ func (c MtaRestClient) writeFileToRequest(file util.NamedReadSeeker, form *multi
 		return fmt.Errorf("could not write end boundary to HTTP request: %v", err)
 	}
 	return nil
+}
+
+func escapeQuotes(s string) string {
+	return strings.NewReplacer("\\", "\\\\", `"`, "\\\"").Replace(s)
 }
 
 func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string) (http.Header, error) {
