@@ -3,9 +3,10 @@ package baseclient
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"time"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/runtime"
 )
@@ -14,6 +15,7 @@ type ClientError struct {
 	Code        int
 	Status      string
 	Description interface{}
+	Headers     http.Header
 }
 
 func (ce *ClientError) Error() string {
@@ -34,6 +36,15 @@ func NewClientError(err error) error {
 		return &ClientError{Code: response.Code, Status: response.Status, Description: response.Payload}
 	}
 	return err
+}
+
+func NewClientErrorFromHttpResponse(response *http.Response, description string) error {
+	return &ClientError{
+		Code:        response.StatusCode,
+		Status:      response.Status,
+		Description: description,
+		Headers:     response.Header,
+	}
 }
 
 func BuildErrorResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

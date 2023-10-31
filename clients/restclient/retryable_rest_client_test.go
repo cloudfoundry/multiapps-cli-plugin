@@ -54,7 +54,7 @@ var _ = Describe("RetryableRestClient", func() {
 })
 
 func newRetryableRestClient(statusCode int) restclient.RestClientOperations {
-	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
+	tokenFactory := testutil.NewCustomTokenFactory("test-token")
 	roundTripper := testutil.NewCustomTransport(statusCode)
 	return NewMockRetryableRestClient("http://localhost:1000", roundTripper, tokenFactory)
 }

@@ -1,6 +1,9 @@
 package csrf_parameters
 
-type CsrfRequestHeader struct {
+import "net/http"
+
+type CsrfParams struct {
 	CsrfTokenHeader string
 	CsrfTokenValue  string
+	Cookies         []*http.Cookie
 }

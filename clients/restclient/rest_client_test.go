@@ -1,7 +1,6 @@
 package restclient_test
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/restclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	. "github.com/onsi/ginkgo"
@@ -31,7 +30,7 @@ var _ = Describe("RestClient", func() {
 })
 
 func newRestClient(statusCode int) restclient.RestClientOperations {
-	tokenFactory := baseclient.NewCustomTokenFactory("test-token")
+	tokenFactory := testutil.NewCustomTokenFactory("test-token")
 	roundTripper := testutil.NewCustomTransport(statusCode)
 	return restclient.NewRestClient("http://localhost:1000", roundTripper, tokenFactory)
 }

@@ -1,54 +1,40 @@
 package csrf
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
 
-type Csrf struct {
-	Header              string
-	Token               string
-	IsInitialized       bool
-	NonProtectedMethods map[string]bool
-}
-
-type Cookies struct {
-	Cookies []*http.Cookie
-}
-
 type Transport struct {
-	OriginalTransport http.RoundTripper
-	Csrf              *Csrf
-	Cookies           *Cookies
+	Delegate http.RoundTripper
+	Csrf     *CsrfTokenHelper
 }
 
-func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqCopy := req.Clone(req.Context())
 
-	csrfTokenManager := NewDefaultCsrfTokenManager(&t, reqCopy)
-	err := csrfTokenManager.updateToken()
+	csrfTokenManager := NewDefaultCsrfTokenManager(t)
+	err := csrfTokenManager.updateToken(reqCopy)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Tracef("Sending a request with CSRF '%s : %s'\n", reqCopy.Header.Get("X-Csrf-Header"), reqCopy.Header.Get("X-Csrf-Token"))
+	log.Tracef("Sending a request with CSRF %s\n", reqCopy.Header.Get("X-Csrf-Token"))
 	log.Tracef("Cookies used are: %s\n", prettyPrintCookies(reqCopy.Cookies()))
-	res, err := t.OriginalTransport.RoundTrip(reqCopy)
-	if err != nil {
-		return nil, err
-	}
-	tokenWasRefreshed, err := csrfTokenManager.refreshTokenIfNeeded(res)
-	if err != nil {
-		return nil, err
-	}
 
-	if tokenWasRefreshed {
-		log.Tracef("Response code '%d' from bad token. Must Retry.\n", res.StatusCode)
-		return nil, &ForbiddenError{}
+	resp, err := t.Delegate.RoundTrip(reqCopy)
+	if err != nil {
+		var clientErr *baseclient.ClientError
+		if errors.As(err, &clientErr) && isCsrfError(clientErr) {
+			csrfTokenManager.invalidateToken()
+		}
+		return nil, err
 	}
-	return res, err
+	return resp, nil
 }
 
 func prettyPrintCookies(cookies []*http.Cookie) string {
@@ -58,4 +44,8 @@ func prettyPrintCookies(cookies []*http.Cookie) string {
 		result.WriteRune(' ')
 	}
 	return result.String()
+}
+
+func isCsrfError(err *baseclient.ClientError) bool {
+	return err.Code == http.StatusForbidden && err.Headers.Get(XCsrfToken) == CsrfTokenHeaderRequiredValue
 }
