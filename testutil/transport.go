@@ -18,7 +18,6 @@ func (fn roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) 
 
 // NewCustomTransport creates a new custom transport to be used for testing
 func NewCustomTransport(statusCode int) *csrf.Transport {
-	csrfx := csrf.Csrf{Header: "", Token: ""}
 	transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		var resp http.Response
 		resp.StatusCode = statusCode
@@ -27,7 +26,7 @@ func NewCustomTransport(statusCode int) *csrf.Transport {
 		resp.Body = io.NopCloser(buf)
 		return &resp, nil
 	})
-	return &csrf.Transport{OriginalTransport: transport, Csrf: &csrfx, Cookies: &csrf.Cookies{Cookies: []*http.Cookie{}}}
+	return &csrf.Transport{Delegate: transport, Csrf: &csrf.CsrfTokenHelper{}}
 }
 
 // NewCustomBearerToken creates a new bearer token to be used for testing

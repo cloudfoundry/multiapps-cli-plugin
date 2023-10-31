@@ -235,11 +235,11 @@ func (c MtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSize int64, 
 	defer resp.Body.Close()
 
 	pipeErr := <-errChan
+	if resp.StatusCode/100 != 2 {
+		return nil, baseclient.NewClientErrorFromHttpResponse(resp, fmt.Sprintf("could not upload file %q", file.Name()))
+	}
 	if pipeErr != nil {
 		return nil, fmt.Errorf("could not upload file %q: %v", file.Name(), pipeErr)
-	}
-	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("could not upload file %q: %s", file.Name(), resp.Status)
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -341,7 +341,7 @@ func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *s
 		return nil, c.handle429(resp.Header)
 	}
 	if resp.StatusCode/100 != 2 && resp.StatusCode/100 != 3 {
-		return nil, fmt.Errorf("could not start async file upload: %s", resp.Status)
+		return nil, baseclient.NewClientErrorFromHttpResponse(resp, "could not start async file upload")
 	}
 	return resp.Header, nil
 }
@@ -387,7 +387,7 @@ func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appIns
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		return AsyncUploadJobResult{}, fmt.Errorf("could not get async file upload job %s: %s", jobId, resp.Status)
+		return AsyncUploadJobResult{}, baseclient.NewClientErrorFromHttpResponse(resp, fmt.Sprintf("could not get async file upload job %s", jobId))
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)

@@ -19,7 +19,7 @@ var _ = Describe("ClientUtil", func() {
 
 		Context("when the backend returns status code with first digit 1 (1xx)", func() {
 			It("Retry operation call is expected to be made", func() {
-				err := ClientError{102, "Processing", "The request has been accepted but it's not yet complete"}
+				err := ClientError{Code: 102, Status: "Processing", Description: "The request has been accepted but it's not yet complete"}
 				result := shouldRetry(&err)
 				Expect(result).To(Equal(true))
 			})
@@ -27,7 +27,7 @@ var _ = Describe("ClientUtil", func() {
 
 		Context("when the backend returns status code with first digit 2 (2xx)", func() {
 			It("Retry operation call shouldn't be made", func() {
-				err := ClientError{200, "OK", "The request has succeeded"}
+				err := ClientError{Code: 200, Status: "OK", Description: "The request has succeeded"}
 				result := shouldRetry(&err)
 				Expect(result).To(Equal(false))
 			})
@@ -35,7 +35,7 @@ var _ = Describe("ClientUtil", func() {
 
 		Context("when the backend returns status code with first digit 3 (3xx)", func() {
 			It("Retry operation call is expected to be made", func() {
-				err := ClientError{301, "Moved Permanently", "URI of requested resource has been changed"}
+				err := ClientError{Code: 301, Status: "Moved Permanently", Description: "URI of requested resource has been changed"}
 				result := shouldRetry(&err)
 				Expect(result).To(Equal(true))
 			})
@@ -43,7 +43,7 @@ var _ = Describe("ClientUtil", func() {
 
 		Context("when the backend returns status code with first digit 4 (4xx)", func() {
 			It("Retry operation call is expected to be made", func() {
-				err := ClientError{404, "Not Found", "The server cannot find requested resource"}
+				err := ClientError{Code: 404, Status: "Not Found", Description: "The server cannot find requested resource"}
 				result := shouldRetry(&err)
 				Expect(result).To(Equal(true))
 			})
@@ -51,7 +51,7 @@ var _ = Describe("ClientUtil", func() {
 
 		Context("when the backend returns status code with first digit 5 (5xx)", func() {
 			It("Retry operation call is expected to be made", func() {
-				err := ClientError{500, "Internal Server Error", "The server got an invalid response"}
+				err := ClientError{Code: 500, Status: "Internal Server Error", Description: "The server got an invalid response"}
 				result := shouldRetry(&err)
 				Expect(result).To(Equal(true))
 			})
@@ -84,7 +84,7 @@ var _ = Describe("ClientUtil", func() {
 			It("Callback with retry", func() {
 				mockCallback := func() (interface{}, error) {
 					toReturn := testStruct{}
-					err := ClientError{404, "Not Found", "The server cannot find requesred resource"}
+					err := ClientError{Code: 404, Status: "Not Found", Description: "The server cannot find requesred resource"}
 					return toReturn, &err
 				}
 				result, err := CallWithRetry(mockCallback, 4, time.Duration(0))

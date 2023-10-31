@@ -1,20 +1,18 @@
 package csrf
 
 import (
-	"net/http"
-	"os"
-
-	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"net/http"
+	"net/url"
 )
 
 const CsrfTokenHeaderFetchValue = "Fetch"
-const CsrfTokensApi = "/api/v1/csrf-token"
-const ContentTypeHeader = "Content-Type"
+const CsrfTokenHeaderRequiredValue = "Required"
+const CsrfTokensApi = "/api/v1/csrf-token" //also available at /rest/csrf-token
 const AuthorizationHeader = "Authorization"
-const ApplicationJsonContentType = "application/json"
-const CookieHeader = "Cookie"
+const XCsrfHeader = "X-Csrf-Header"
+const XCsrfToken = "X-Csrf-Token"
 
 type DefaultCsrfTokenFetcher struct {
 	transport *Transport
@@ -24,38 +22,33 @@ func NewDefaultCsrfTokenFetcher(transport *Transport) *DefaultCsrfTokenFetcher {
 	return &DefaultCsrfTokenFetcher{transport: transport}
 }
 
-func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url string, currentRequest *http.Request) (*csrf_parameters.CsrfRequestHeader, error) {
-
+func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url, authToken string) (csrf_parameters.CsrfParams, error) {
 	fetchTokenRequest, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return csrf_parameters.CsrfParams{}, err
 	}
 	fetchTokenRequest.Header.Set(XCsrfToken, CsrfTokenHeaderFetchValue)
-	fetchTokenRequest.Header.Set(ContentTypeHeader, ApplicationJsonContentType)
+	fetchTokenRequest.Header.Set(AuthorizationHeader, authToken)
 
-	cliConnection := plugin.NewCliConnection(os.Args[1])
-	token, err := cliConnection.AccessToken()
+	response, err := c.transport.Delegate.RoundTrip(fetchTokenRequest)
 	if err != nil {
-		return nil, err
+		return csrf_parameters.CsrfParams{}, err
 	}
-	fetchTokenRequest.Header.Set(AuthorizationHeader, token)
-	UpdateCookiesIfNeeded(currentRequest.Cookies(), fetchTokenRequest)
 
-	response, err := c.transport.OriginalTransport.RoundTrip(fetchTokenRequest)
-	if err != nil {
-		return nil, err
-	}
 	// if there are set-cookie headers present in response - persist them in Transport
-	if len(response.Cookies()) != 0 {
-		log.Tracef("Set-Cookie headers present in response, updating current with '" + prettyPrintCookies(response.Cookies()) + "'\n")
-
-		c.transport.Cookies.Cookies = response.Cookies()
+	cookies := response.Cookies()
+	if len(cookies) != 0 {
+		log.Tracef("Set-Cookie headers present in response, updating current with '" + prettyPrintCookies(cookies) + "'\n")
 	}
 
 	log.Tracef("New CSRF Token fetched '" + response.Header.Get(XCsrfToken) + "'\n")
-	return &csrf_parameters.CsrfRequestHeader{response.Header.Get(XCsrfHeader), response.Header.Get(XCsrfToken)}, nil
+	return csrf_parameters.CsrfParams{
+		CsrfTokenHeader: response.Header.Get(XCsrfHeader),
+		CsrfTokenValue:  response.Header.Get(XCsrfToken),
+		Cookies:         cookies,
+	}, nil
 }
 
-func getCsrfTokenUrl(req *http.Request) string {
-	return req.URL.Scheme + "://" + req.URL.Host + CsrfTokensApi
+func getCsrfTokenUrl(url *url.URL) string {
+	return url.Scheme + "://" + url.Host + CsrfTokensApi
 }

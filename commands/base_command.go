@@ -265,19 +265,20 @@ func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) 
 }
 
 func newTransport() http.RoundTripper {
-	csrfx := csrf.Csrf{Header: "", Token: "", IsInitialized: false, NonProtectedMethods: getNonProtectedMethods()}
+	csrfx := csrf.CsrfTokenHelper{NonProtectedMethods: getNonProtectedMethods()}
 	httpTransport := http.DefaultTransport.(*http.Transport)
 	// Increase tls handshake timeout to cope with slow internet connections. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
-	return csrf.Transport{OriginalTransport: httpTransport, Csrf: &csrfx, Cookies: &csrf.Cookies{[]*http.Cookie{}}}
+	return &csrf.Transport{Delegate: httpTransport, Csrf: &csrfx}
 }
 
-func getNonProtectedMethods() map[string]bool {
-	nonProtectedMethods := make(map[string]bool)
+func getNonProtectedMethods() map[string]struct{} {
+	nonProtectedMethods := make(map[string]struct{}, 4)
 
-	nonProtectedMethods[http.MethodGet] = true
-	nonProtectedMethods[http.MethodHead] = true
-	nonProtectedMethods[http.MethodOptions] = true
+	nonProtectedMethods[http.MethodGet] = struct{}{}
+	nonProtectedMethods[http.MethodHead] = struct{}{}
+	nonProtectedMethods[http.MethodTrace] = struct{}{}
+	nonProtectedMethods[http.MethodOptions] = struct{}{}
 
 	return nonProtectedMethods
 }
