@@ -1,3 +1,9 @@
+## v3.2.1
+* Fixed random failures during MTA archive file upload or starting operation caused by wrong CSRF token handling. Example of the error:
+```
+Error occurred: could not upload file "my.mtar.part.1": Post "https://<host>/api/v1/spaces/<space-guid>/files": retry is needed. Retrying after: 3s:
+```
+
 ## v3.2.0
 * Switch behaviour of file chunks upload to be uploaded in parallel by default. The environment variable "MULTIAPPS_UPLOAD_CHUNKS_IN_PARALLEL" is no longer taken into account and it needs to be removed when configured. In case where internet connection is slow and sequential upload of chunks is beneficial, then env parameter "MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=true" can be set.
 * Progress bar for file upload can be disabled by env "MULTIAPPS_DISABLE_UPLOAD_PROGRESS_BAR=true". This could be useful configuration for pipelines where every single activity of progress bar is logged in on a new line.
