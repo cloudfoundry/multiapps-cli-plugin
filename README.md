@@ -1,7 +1,7 @@
 <p align="center"><img width="335" height="281" src="logo.png" alt="MultiApps logo"></p>
 
 # MultiApps CF CLI Plugin [![Multiapps CLI Plugin build](https://github.com/cloudfoundry/multiapps-cli-plugin/actions/workflows/pull-request-build.yml/badge.svg)](https://github.com/cloudfoundry/multiapps-cli-plugin/actions/workflows/pull-request-build.yml)
-This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing operations on [Multitarget Applications (MTAs)]([https://www.sap.com/documents/2016/06/e2f618e4-757c-0010-82c7-eda71af511fa.html](https://www.sap.com/documents/2021/09/66d96898-fa7d-0010-bca6-c68f7e60039b.html)) in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) (known also as CF MTA Deploy Service), which is an MTA deployer implementation for Cloud Foundry. The business logic and actual processing of MTAs happens into CF MultiApps Controller backend.
+This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing operations on [Multitarget Applications (MTAs)](https://www.sap.com/documents/2021/09/66d96898-fa7d-0010-bca6-c68f7e60039b.html) in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) (known also as CF MTA Deploy Service), which is an MTA deployer implementation for Cloud Foundry. The business logic and actual processing of MTAs happens into CF MultiApps Controller backend.
 
 # Requirements
 - Installed CloudFoundry CLI - ensure that CloudFoundry CLI is installed and working. For more information about installation of CloudFoundry CLI, please visit the official CloudFoundry [documentation](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html). You need to have CF CLI v7 or v8 (recommended one)
@@ -29,7 +29,7 @@ Alternatively you can install any version of the plugin by manually downloading 
 The latest version of the plugin can also be downloaded from the project's [releases](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/). Download the plugin for your platform (Darwin, Linux, Windows). 
 
 
-Mac OS X 64 bit | Mac OS X Arm | Windows 32 bit | Windows 64 bit | Linux 32 bit | Linux 64 bit | Linux Arm
+Mac OS X 64 bit | Mac OS X Arm64 | Windows 32 bit | Windows 64 bit | Linux 32 bit | Linux 64 bit | Linux Arm64
 --- | --- | --- | --- | --- | --- | ---
 [multiapps-plugin.osx](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.osx) | [multiapps-plugin.osxarm64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.osxarm64) | [multiapps-plugin.win32.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.win32.exe) | [multiapps-plugin.win64.exe](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.win64.exe) | [multiapps-plugin.linux32](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linux32) | [multiapps-plugin.linux64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linux64) | [multiapps-plugin.linuxarm64](https://github.com/cloudfoundry-incubator/multiapps-cli-plugin/releases/latest/download/multiapps-plugin.linuxarm64)
 
