@@ -233,9 +233,6 @@ func (f *FileUploader) uploadFilePart(filePart *os.File, fileName string, pb *pb
 
 func (f *FileUploader) isFileAlreadyUploaded(newFilePath string, fileInfo os.FileInfo, oldFiles []*models.FileMetadata, alreadyUploadedFiles *[]*models.FileMetadata) bool {
 	for _, oldFile := range oldFiles {
-		if oldFile.Name != fileInfo.Name() || oldFile.Namespace != f.namespace {
-			continue
-		}
 		digest, err := util.ComputeFileChecksum(newFilePath, oldFile.DigestAlgorithm)
 		if err != nil {
 			ui.Failed("Could not compute digest of file %s: %s", terminal.EntityNameColor(newFilePath), baseclient.NewClientError(err))
