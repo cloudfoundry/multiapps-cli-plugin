@@ -1,10 +1,11 @@
 package csrf
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"net/http"
 	"net/url"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
 
 const CsrfTokenHeaderFetchValue = "Fetch"

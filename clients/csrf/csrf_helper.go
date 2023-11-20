@@ -1,10 +1,11 @@
 package csrf
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/csrf_parameters"
 )
 
 const CookieHeader = "Cookie"

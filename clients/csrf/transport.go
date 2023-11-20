@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
 
@@ -28,12 +27,13 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := t.Delegate.RoundTrip(reqCopy)
 	if err != nil {
-		var clientErr *baseclient.ClientError
-		if errors.As(err, &clientErr) && isCsrfError(clientErr) {
-			csrfTokenManager.invalidateToken()
-		}
 		return nil, err
 	}
+	if isCsrfError(resp) {
+		csrfTokenManager.invalidateToken()
+		return nil, errors.New("invalid CSRF token")
+	}
+
 	return resp, nil
 }
 
@@ -46,6 +46,7 @@ func prettyPrintCookies(cookies []*http.Cookie) string {
 	return result.String()
 }
 
-func isCsrfError(err *baseclient.ClientError) bool {
-	return err.Code == http.StatusForbidden && err.Headers.Get(XCsrfToken) == CsrfTokenHeaderRequiredValue
+func isCsrfError(resp *http.Response) bool {
+	return resp.StatusCode == http.StatusForbidden && resp.Header.Get(XCsrfToken) == CsrfTokenHeaderRequiredValue
+
 }

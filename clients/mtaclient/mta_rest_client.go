@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"github.com/go-openapi/runtime/client"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -14,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"github.com/go-openapi/runtime/client"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
@@ -236,7 +237,7 @@ func (c MtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSize int64, 
 
 	pipeErr := <-errChan
 	if resp.StatusCode/100 != 2 {
-		return nil, baseclient.NewClientErrorFromHttpResponse(resp, fmt.Sprintf("could not upload file %q", file.Name()))
+		return nil, fmt.Errorf("could not upload file %q: %s", file.Name(), resp.Status)
 	}
 	if pipeErr != nil {
 		return nil, fmt.Errorf("could not upload file %q: %v", file.Name(), pipeErr)
@@ -341,7 +342,7 @@ func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *s
 		return nil, c.handle429(resp.Header)
 	}
 	if resp.StatusCode/100 != 2 && resp.StatusCode/100 != 3 {
-		return nil, baseclient.NewClientErrorFromHttpResponse(resp, "could not start async file upload")
+		return nil, fmt.Errorf("could not start async file upload: %s", resp.Status)
 	}
 	return resp.Header, nil
 }
@@ -387,7 +388,7 @@ func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appIns
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		return AsyncUploadJobResult{}, baseclient.NewClientErrorFromHttpResponse(resp, fmt.Sprintf("could not get async file upload job %s", jobId))
+		return AsyncUploadJobResult{}, fmt.Errorf("could not get async file upload job %s: %s", jobId, resp.Status)
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
