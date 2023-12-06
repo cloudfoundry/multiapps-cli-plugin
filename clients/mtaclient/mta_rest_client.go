@@ -26,6 +26,8 @@ import (
 const spacesURL string = "spaces/"
 const restBaseURL string = "api/v1/"
 
+const couldNotGetAsyncJobError = "could not get async file upload job"
+
 type MtaRestClient struct {
 	baseclient.BaseClient
 	client *MtaClient
@@ -40,6 +42,7 @@ type AsyncUploadJobResult struct {
 	File           *models.FileMetadata `json:"file,omitempty"`
 	MtaId          string               `json:"mta_id,omitempty"`
 	BytesProcessed int64                `json:"bytes_processed,omitempty"`
+	ClientActions  []string             `json:"client_actions,omitempty"`
 }
 
 func NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) MtaClientOperations {
@@ -383,12 +386,19 @@ func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appIns
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return AsyncUploadJobResult{}, fmt.Errorf("could not get async file upload job %s: %v", jobId, err)
+		return AsyncUploadJobResult{}, fmt.Errorf("%s %s: %v", couldNotGetAsyncJobError, jobId, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		return AsyncUploadJobResult{}, fmt.Errorf("could not get async file upload job %s: %s", jobId, resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == 400 {
+			return AsyncUploadJobResult{
+				ClientActions: []string{"RETRY_UPLOAD"},
+			}, fmt.Errorf("%s %s: %s, body: %s", couldNotGetAsyncJobError, jobId, resp.Status, string(bodyBytes))
+		}
+		return AsyncUploadJobResult{}, fmt.Errorf("%s %s: %s, body: %s", couldNotGetAsyncJobError, jobId, resp.Status, string(bodyBytes))
+
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)

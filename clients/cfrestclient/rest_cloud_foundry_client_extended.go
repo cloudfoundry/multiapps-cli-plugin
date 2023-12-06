@@ -1,15 +1,16 @@
 package cfrestclient
 
 import (
-	"code.cloudfoundry.org/cli/plugin"
-	"code.cloudfoundry.org/jsonry"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"io"
 	"net/http"
+
+	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/jsonry"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 )
 
 const cfBaseUrl = "v3/"
@@ -147,7 +148,6 @@ func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, 
 func executeRequest(url, token string) ([]byte, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Add("Authorization", token)
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err

@@ -266,7 +266,7 @@ func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) 
 
 func newTransport() http.RoundTripper {
 	csrfx := csrf.CsrfTokenHelper{NonProtectedMethods: getNonProtectedMethods()}
-	httpTransport := http.DefaultTransport.(*http.Transport)
+	httpTransport := http.DefaultTransport.(*http.Transport).Clone()
 	// Increase tls handshake timeout to cope with slow internet connections. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
 	return &csrf.Transport{Delegate: httpTransport, Csrf: &csrfx}

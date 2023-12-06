@@ -1,11 +1,12 @@
 package csrf
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"net/http"
-	"time"
 )
 
 const csrfTokenNotSet = ""

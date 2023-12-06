@@ -153,7 +153,7 @@ func (c RetryableMtaRestClient) GetAsyncUploadJob(jobId string, namespace *strin
 	}
 	resp, err := baseclient.CallWithRetry(getAsyncUploadJobCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {
-		return AsyncUploadJobResult{}, err
+		return resp.(AsyncUploadJobResult), err
 	}
 	return resp.(AsyncUploadJobResult), nil
 }
