@@ -2,20 +2,10 @@ package commands
 
 import (
 	"bufio"
-	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cli/plugin"
 	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"gopkg.in/cheggaaa/pb.v1"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -24,6 +14,18 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/plugin"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands/retrier"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 const (
@@ -224,12 +226,12 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 
 	if isUrl {
 		var fileId string
-		var isFailure bool
-		fileId, mtaId, isFailure = c.uploadFromUrl(mtaArchive, mtaClient, namespace, disableProgressBar)
-		if isFailure {
+
+		asyncUploadJobResult := c.uploadFromUrl(mtaArchive, mtaClient, namespace, disableProgressBar)
+		if asyncUploadJobResult.ExecutionStatus == Failure {
 			return Failure
 		}
-
+		mtaId, fileId = asyncUploadJobResult.MtaId, asyncUploadJobResult.FileId
 		// Check for an ongoing operation for this MTA ID and abort it
 		wasAborted, err := c.CheckOngoingOperation(mtaId, namespace, dsHost, force, cfTarget)
 		if err != nil {
@@ -330,14 +332,28 @@ func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
 }
 
 func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientOperations, namespace string,
-	disableProgressBar bool) (fileId, mtaId string, failure bool) {
-	progressBar := c.tryFetchMtarSize(url, disableProgressBar)
-
+	disableProgressBar bool) UploadFromUrlStatus {
 	encodedFileUrl := base64.URLEncoding.EncodeToString([]byte(url))
+	uploadStatus, _ := retrier.Execute[UploadFromUrlStatus](3, func() (UploadFromUrlStatus, error) {
+		progressBar := c.tryFetchMtarSize(url, disableProgressBar)
+		uploadFromUrlStatus := c.doUploadFromUrl(encodedFileUrl, mtaClient, namespace, progressBar)
+		return uploadFromUrlStatus, nil
+	}, func(result UploadFromUrlStatus, err error) bool {
+		return shouldRetryUpload(result)
+	})
+	return uploadStatus
+}
+
+func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclient.MtaClientOperations, namespace string, progressBar *pb.ProgressBar) UploadFromUrlStatus {
 	responseHeaders, err := mtaClient.StartUploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
 	if err != nil {
 		ui.Failed("Could not upload from url: %s", err)
-		return "", "", true
+		return UploadFromUrlStatus{
+			FileId:          "",
+			MtaId:           "",
+			ClientActions:   make([]string, 0),
+			ExecutionStatus: Failure,
+		}
 	}
 
 	var totalBytesProcessed int64 = 0
@@ -356,17 +372,27 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 	defer ticker.Stop()
 
 	var file *models.FileMetadata
+	var jobResult mtaclient.AsyncUploadJobResult
 	for file == nil {
 		jobResult, err := mtaClient.GetAsyncUploadJob(jobId, &namespace, responseHeaders.Get("x-cf-app-instance"))
 		if err != nil {
 			ui.Failed("Could not upload from url: %s", err)
-			return "", "", true
+			return UploadFromUrlStatus{
+				FileId:          "",
+				MtaId:           "",
+				ClientActions:   jobResult.ClientActions,
+				ExecutionStatus: Failure,
+			}
 		}
-		file, mtaId = jobResult.File, jobResult.MtaId
-
+		file = jobResult.File
 		if len(jobResult.Error) != 0 {
 			ui.Failed("Async upload job failed: %s", jobResult.Error)
-			return "", "", true
+			return UploadFromUrlStatus{
+				FileId:          "",
+				MtaId:           "",
+				ClientActions:   jobResult.ClientActions,
+				ExecutionStatus: Failure,
+			}
 		}
 
 		if progressBar != nil && jobResult.BytesProcessed != -1 {
@@ -379,11 +405,16 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 			totalBytesProcessed = jobResult.BytesProcessed
 		}
 
-		if len(mtaId) == 0 {
+		if len(jobResult.MtaId) == 0 {
 			select {
 			case <-timeout.C:
 				ui.Failed("Upload from URL timed out after 1 hour")
-				return "", "", true
+				return UploadFromUrlStatus{
+					FileId:          "",
+					MtaId:           "",
+					ClientActions:   make([]string, 0),
+					ExecutionStatus: Failure,
+				}
 			case <-ticker.C:
 			}
 		}
@@ -391,7 +422,25 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 	if progressBar != nil && totalBytesProcessed < progressBar.Total {
 		progressBar.Add64(progressBar.Total - totalBytesProcessed)
 	}
-	return file.ID, mtaId, false
+	return UploadFromUrlStatus{
+		FileId:          file.ID,
+		MtaId:           jobResult.MtaId,
+		ClientActions:   jobResult.ClientActions,
+		ExecutionStatus: Success,
+	}
+}
+
+func shouldRetryUpload(uploadFromUrlStatus UploadFromUrlStatus) bool {
+	if uploadFromUrlStatus.ExecutionStatus == Success {
+		return false
+	}
+	for _, clientAction := range uploadFromUrlStatus.ClientActions {
+		if clientAction == "RETRY_UPLOAD" {
+			ui.Warn("Upload request must be retried")
+			return true
+		}
+	}
+	return false
 }
 
 func (c *DeployCommand) uploadFiles(files []string, fileUploader *FileUploader) ([]string, ExecutionStatus) {
