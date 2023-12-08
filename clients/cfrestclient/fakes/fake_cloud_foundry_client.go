@@ -15,7 +15,7 @@ type FakeCloudFoundryClient struct {
 	ServiceBindingsErr error
 }
 
-func (f FakeCloudFoundryClient) GetApplications(mtaId, namespace, spaceGuid string) ([]models.CloudFoundryApplication, error) {
+func (f FakeCloudFoundryClient) GetApplications(mtaId, mtaNamespace, spaceGuid string) ([]models.CloudFoundryApplication, error) {
 	return f.Apps, f.AppsErr
 }
 
@@ -27,7 +27,7 @@ func (f FakeCloudFoundryClient) GetApplicationRoutes(appGuid string) ([]models.A
 	return f.AppRoutes, f.AppRoutesErr
 }
 
-func (f FakeCloudFoundryClient) GetServiceInstances(mtaId string, namespace string, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
+func (f FakeCloudFoundryClient) GetServiceInstances(mtaId, mtaNamespace, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
 	return f.Services, f.ServicesErr
 }
 
