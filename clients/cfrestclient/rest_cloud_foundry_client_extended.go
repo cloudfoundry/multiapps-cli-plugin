@@ -22,7 +22,7 @@ func NewCloudFoundryRestClient(cliConn plugin.CliConnection) CloudFoundryOperati
 	return &CloudFoundryRestClient{cliConn}
 }
 
-func (c CloudFoundryRestClient) GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error) {
+func (c CloudFoundryRestClient) GetApplications(mtaId, namespace, spaceGuid string) ([]models.CloudFoundryApplication, error) {
 	token, err := c.cliConn.AccessToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve access token: %s", err)
@@ -32,6 +32,11 @@ func (c CloudFoundryRestClient) GetApplications(mtaId, spaceGuid string) ([]mode
 	mtaIdHashStr := hex.EncodeToString(mtaIdHash[:])
 
 	getAppsUrl := fmt.Sprintf("%s/%sapps?label_selector=mta_id=%s&space_guids=%s", apiEndpoint, cfBaseUrl, mtaIdHashStr, spaceGuid)
+	if namespace != "" {
+		namespaceHash := md5.Sum([]byte(namespace))
+		namespaceHashStr := hex.EncodeToString(namespaceHash[:])
+		getAppsUrl = fmt.Sprintf("%s&label_selector=mta_namespace=%s", getAppsUrl, namespaceHashStr)
+	}
 	return getPaginatedResources[models.CloudFoundryApplication](getAppsUrl, token)
 }
 
@@ -65,7 +70,7 @@ func (c CloudFoundryRestClient) GetApplicationRoutes(appGuid string) ([]models.A
 	return getPaginatedResources[models.ApplicationRoute](getAppRoutesUrl, token)
 }
 
-func (c CloudFoundryRestClient) GetServiceInstances(mtaId, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
+func (c CloudFoundryRestClient) GetServiceInstances(mtaId string, namespace string, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
 	token, err := c.cliConn.AccessToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve access token: %s", err)
@@ -76,6 +81,11 @@ func (c CloudFoundryRestClient) GetServiceInstances(mtaId, spaceGuid string) ([]
 
 	getServicesUrl := fmt.Sprintf("%s/%sservice_instances?fields[service_plan]=guid,name,relationships.service_offering&fields[service_plan.service_offering]=guid,name&space_guids=%s&label_selector=mta_id=%s",
 		apiEndpoint, cfBaseUrl, spaceGuid, mtaIdHashStr)
+	if namespace != "" {
+		namespaceHash := md5.Sum([]byte(namespace))
+		namespaceHashStr := hex.EncodeToString(namespaceHash[:])
+		getServicesUrl = fmt.Sprintf("%s&label_selector=mta_namespace=%s", getServicesUrl, namespaceHashStr)
+	}
 	return getPaginatedResourcesWithIncluded(getServicesUrl, token, buildServiceInstance)
 }
 

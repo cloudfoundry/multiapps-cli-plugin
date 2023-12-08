@@ -5,9 +5,9 @@ import (
 )
 
 type CloudFoundryOperationsExtended interface {
-	GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error)
+	GetApplications(mtaId, namespace, spaceGuid string) ([]models.CloudFoundryApplication, error)
 	GetAppProcessStatistics(appGuid string) ([]models.ApplicationProcessStatistics, error)
 	GetApplicationRoutes(appGuid string) ([]models.ApplicationRoute, error)
-	GetServiceInstances(mtaId, spaceGuid string) ([]models.CloudFoundryServiceInstance, error)
+	GetServiceInstances(mtaId string, namespace string, spaceGuid string) ([]models.CloudFoundryServiceInstance, error)
 	GetServiceBindings(serviceName string) ([]models.ServiceBinding, error)
 }
