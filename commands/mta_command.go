@@ -90,7 +90,7 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 	ui.Say("Namespace: %s", mta.Metadata.Namespace)
 	ui.Say("\nApps:")
 
-	apps, err := c.CfClient.GetApplications(mta.Metadata.ID, cfTarget.Space.Guid)
+	apps, err := c.CfClient.GetApplications(mta.Metadata.ID, mta.Metadata.Namespace, cfTarget.Space.Guid)
 	if err != nil {
 		ui.Failed("Could not get apps: %s", err)
 		return Failure
@@ -126,7 +126,7 @@ func (c *MtaCommand) executeInternal(positionalArgs []string, dsHost string, fla
 		return Success
 	}
 
-	services, err := c.CfClient.GetServiceInstances(mta.Metadata.ID, cfTarget.Space.Guid)
+	services, err := c.CfClient.GetServiceInstances(mta.Metadata.ID, mta.Metadata.Namespace, cfTarget.Space.Guid)
 	if err != nil {
 		ui.Failed("Could not get services: %s", err)
 		return Failure

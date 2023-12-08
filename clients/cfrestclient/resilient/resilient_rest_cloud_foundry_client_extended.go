@@ -16,9 +16,9 @@ func NewResilientCloudFoundryClient(cloudFoundryRestClient cfrestclient.CloudFou
 	return &ResilientCloudFoundryRestClient{cloudFoundryRestClient, maxRetriesCount, time.Second * time.Duration(retryIntervalInSeconds)}
 }
 
-func (c ResilientCloudFoundryRestClient) GetApplications(mtaId, spaceGuid string) ([]models.CloudFoundryApplication, error) {
+func (c ResilientCloudFoundryRestClient) GetApplications(mtaId, namespace, spaceGuid string) ([]models.CloudFoundryApplication, error) {
 	return retryOnError(func() ([]models.CloudFoundryApplication, error) {
-		return c.CloudFoundryRestClient.GetApplications(mtaId, spaceGuid)
+		return c.CloudFoundryRestClient.GetApplications(mtaId, namespace, spaceGuid)
 	}, c.MaxRetriesCount, c.RetryInterval)
 }
 
@@ -34,9 +34,9 @@ func (c ResilientCloudFoundryRestClient) GetApplicationRoutes(appGuid string) ([
 	}, c.MaxRetriesCount, c.RetryInterval)
 }
 
-func (c ResilientCloudFoundryRestClient) GetServiceInstances(mtaId, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
+func (c ResilientCloudFoundryRestClient) GetServiceInstances(mtaId string, namespace string, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
 	return retryOnError(func() ([]models.CloudFoundryServiceInstance, error) {
-		return c.CloudFoundryRestClient.GetServiceInstances(mtaId, spaceGuid)
+		return c.CloudFoundryRestClient.GetServiceInstances(mtaId, namespace, spaceGuid)
 	}, c.MaxRetriesCount, c.RetryInterval)
 }
 
