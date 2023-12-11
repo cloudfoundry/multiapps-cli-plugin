@@ -12,8 +12,6 @@ type CloudFoundryServiceInstance struct {
 
 	Plan     ServicePlan     `json:"-"`
 	Offering ServiceOffering `json:"-"`
-
-	MtaNamespace string `jsonry:"metadata.annotations.mta_namespace"`
 }
 
 type LastOperation struct {

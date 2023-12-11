@@ -5,8 +5,6 @@ type CloudFoundryApplication struct {
 	Guid      string `json:"guid"`
 	State     string `json:"state"`
 	SpaceGuid string `jsonry:"relationships.space.data.guid"`
-
-	MtaNamespace string `jsonry:"metadata.annotations.mta_namespace"`
 }
 
 type AppProcessStatisticsResponse struct {
