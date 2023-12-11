@@ -37,23 +37,7 @@ func (c CloudFoundryRestClient) GetApplications(mtaId, mtaNamespace, spaceGuid s
 		namespaceHashStr := hex.EncodeToString(namespaceHash[:])
 		getAppsUrl = fmt.Sprintf("%s&label_selector=mta_namespace=%s", getAppsUrl, namespaceHashStr)
 	}
-	apps, err := getPaginatedResources[models.CloudFoundryApplication](getAppsUrl, token)
-	if err != nil {
-		return nil, err
-	}
-
-	if mtaNamespace == "" {
-		var filtered []models.CloudFoundryApplication
-		for _, app := range apps {
-			if app.MtaNamespace == "" {
-				filtered = append(filtered, app)
-			}
-		}
-		return filtered, err
-	} else {
-		// apps already filtered by cf api
-		return apps, err
-	}
+	return getPaginatedResources[models.CloudFoundryApplication](getAppsUrl, token)
 }
 
 func (c CloudFoundryRestClient) GetAppProcessStatistics(appGuid string) ([]models.ApplicationProcessStatistics, error) {
@@ -102,23 +86,7 @@ func (c CloudFoundryRestClient) GetServiceInstances(mtaId, mtaNamespace, spaceGu
 		namespaceHashStr := hex.EncodeToString(namespaceHash[:])
 		getServicesUrl = fmt.Sprintf("%s&label_selector=mta_namespace=%s", getServicesUrl, namespaceHashStr)
 	}
-	services, err := getPaginatedResourcesWithIncluded(getServicesUrl, token, buildServiceInstance)
-	if err != nil {
-		return nil, err
-	}
-
-	if mtaNamespace == "" {
-		var filtered []models.CloudFoundryServiceInstance
-		for _, service := range services {
-			if service.MtaNamespace == "" {
-				filtered = append(filtered, service)
-			}
-		}
-		return filtered, err
-	} else {
-		// services already filtered by cf api
-		return services, err
-	}
+	return getPaginatedResourcesWithIncluded(getServicesUrl, token, buildServiceInstance)
 }
 
 func (c CloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models.ServiceBinding, error) {
