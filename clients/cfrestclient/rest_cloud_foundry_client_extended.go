@@ -31,11 +31,13 @@ func (c CloudFoundryRestClient) GetApplications(mtaId, mtaNamespace, spaceGuid s
 	mtaIdHash := md5.Sum([]byte(mtaId))
 	mtaIdHashStr := hex.EncodeToString(mtaIdHash[:])
 
-	getAppsUrl := fmt.Sprintf("%s/%sapps?label_selector=mta_id=%s&space_guids=%s", apiEndpoint, cfBaseUrl, mtaIdHashStr, spaceGuid)
+	getAppsUrl := fmt.Sprintf("%s/%sapps?space_guids=%s&label_selector=mta_id=%s", apiEndpoint, cfBaseUrl, spaceGuid, mtaIdHashStr)
 	if mtaNamespace != "" {
 		namespaceHash := md5.Sum([]byte(mtaNamespace))
 		namespaceHashStr := hex.EncodeToString(namespaceHash[:])
-		getAppsUrl = fmt.Sprintf("%s&label_selector=mta_namespace=%s", getAppsUrl, namespaceHashStr)
+		getAppsUrl = fmt.Sprintf("%s,mta_namespace=%s", getAppsUrl, namespaceHashStr)
+	} else {
+		getAppsUrl = fmt.Sprintf("%s,!mta_namespace", getAppsUrl)
 	}
 	return getPaginatedResources[models.CloudFoundryApplication](getAppsUrl, token)
 }
@@ -84,7 +86,9 @@ func (c CloudFoundryRestClient) GetServiceInstances(mtaId, mtaNamespace, spaceGu
 	if mtaNamespace != "" {
 		namespaceHash := md5.Sum([]byte(mtaNamespace))
 		namespaceHashStr := hex.EncodeToString(namespaceHash[:])
-		getServicesUrl = fmt.Sprintf("%s&label_selector=mta_namespace=%s", getServicesUrl, namespaceHashStr)
+		getServicesUrl = fmt.Sprintf("%s,mta_namespace=%s", getServicesUrl, namespaceHashStr)
+	} else {
+		getServicesUrl = fmt.Sprintf("%s,!mta_namespace", getServicesUrl)
 	}
 	return getPaginatedResourcesWithIncluded(getServicesUrl, token, buildServiceInstance)
 }
