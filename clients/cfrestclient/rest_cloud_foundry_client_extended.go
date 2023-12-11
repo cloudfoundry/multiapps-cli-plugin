@@ -2,6 +2,7 @@ package cfrestclient
 
 import (
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,16 +12,23 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/jsonry"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
 
 const cfBaseUrl = "v3/"
 
 type CloudFoundryRestClient struct {
-	cliConn plugin.CliConnection
+	cliConn       plugin.CliConnection
+	isSslDisabled bool
 }
 
 func NewCloudFoundryRestClient(cliConn plugin.CliConnection) CloudFoundryOperationsExtended {
-	return &CloudFoundryRestClient{cliConn}
+	isSslDisabled, err := cliConn.IsSSLDisabled()
+	if err != nil {
+		log.Tracef("Error while determining skip-ssl-validation: %v", err)
+		isSslDisabled = false
+	}
+	return &CloudFoundryRestClient{cliConn, isSslDisabled}
 }
 
 func (c CloudFoundryRestClient) GetApplications(mtaId, mtaNamespace, spaceGuid string) ([]models.CloudFoundryApplication, error) {
@@ -40,7 +48,7 @@ func (c CloudFoundryRestClient) GetApplications(mtaId, mtaNamespace, spaceGuid s
 	} else {
 		getAppsUrl = fmt.Sprintf("%s,!mta_namespace", getAppsUrl)
 	}
-	return getPaginatedResources[models.CloudFoundryApplication](getAppsUrl, token)
+	return getPaginatedResources[models.CloudFoundryApplication](getAppsUrl, token, c.isSslDisabled)
 }
 
 func (c CloudFoundryRestClient) GetAppProcessStatistics(appGuid string) ([]models.ApplicationProcessStatistics, error) {
@@ -51,7 +59,7 @@ func (c CloudFoundryRestClient) GetAppProcessStatistics(appGuid string) ([]model
 	apiEndpoint, _ := c.cliConn.ApiEndpoint()
 
 	getAppProcessStatsUrl := fmt.Sprintf("%s/%sapps/%s/processes/web/stats", apiEndpoint, cfBaseUrl, appGuid)
-	body, err := executeRequest(getAppProcessStatsUrl, token)
+	body, err := executeRequest(getAppProcessStatsUrl, token, c.isSslDisabled)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +78,7 @@ func (c CloudFoundryRestClient) GetApplicationRoutes(appGuid string) ([]models.A
 	apiEndpoint, _ := c.cliConn.ApiEndpoint()
 
 	getAppRoutesUrl := fmt.Sprintf("%s/%sapps/%s/routes", apiEndpoint, cfBaseUrl, appGuid)
-	return getPaginatedResources[models.ApplicationRoute](getAppRoutesUrl, token)
+	return getPaginatedResources[models.ApplicationRoute](getAppRoutesUrl, token, c.isSslDisabled)
 }
 
 func (c CloudFoundryRestClient) GetServiceInstances(mtaId, mtaNamespace, spaceGuid string) ([]models.CloudFoundryServiceInstance, error) {
@@ -91,7 +99,7 @@ func (c CloudFoundryRestClient) GetServiceInstances(mtaId, mtaNamespace, spaceGu
 	} else {
 		getServicesUrl = fmt.Sprintf("%s,!mta_namespace", getServicesUrl)
 	}
-	return getPaginatedResourcesWithIncluded(getServicesUrl, token, buildServiceInstance)
+	return getPaginatedResourcesWithIncluded(getServicesUrl, token, c.isSslDisabled, buildServiceInstance)
 }
 
 func (c CloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models.ServiceBinding, error) {
@@ -102,13 +110,13 @@ func (c CloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models
 	apiEndpoint, _ := c.cliConn.ApiEndpoint()
 
 	getServiceBindingsUrl := fmt.Sprintf("%s/%sservice_credential_bindings?type=app&include=app&service_instance_names=%s", apiEndpoint, cfBaseUrl, serviceName)
-	return getPaginatedResourcesWithIncluded(getServiceBindingsUrl, token, buildServiceBinding)
+	return getPaginatedResourcesWithIncluded(getServiceBindingsUrl, token, c.isSslDisabled, buildServiceBinding)
 }
 
-func getPaginatedResources[T any](url, token string) ([]T, error) {
+func getPaginatedResources[T any](url, token string, isSslDisabled bool) ([]T, error) {
 	var result []T
 	for url != "" {
-		body, err := executeRequest(url, token)
+		body, err := executeRequest(url, token, isSslDisabled)
 		if err != nil {
 			return nil, err
 		}
@@ -125,10 +133,10 @@ func getPaginatedResources[T any](url, token string) ([]T, error) {
 	return result, nil
 }
 
-func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, auxiliaryContentHandler func(T, Auxiliary) T) ([]T, error) {
+func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, isSslDisabled bool, auxiliaryContentHandler func(T, Auxiliary) T) ([]T, error) {
 	var result []T
 	for url != "" {
-		body, err := executeRequest(url, token)
+		body, err := executeRequest(url, token, isSslDisabled)
 		if err != nil {
 			return nil, err
 		}
@@ -145,10 +153,14 @@ func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, 
 	return result, nil
 }
 
-func executeRequest(url, token string) ([]byte, error) {
+func executeRequest(url, token string, isSslDisabled bool) ([]byte, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Add("Authorization", token)
-	resp, err := http.DefaultClient.Do(req)
+	httpTransport := http.DefaultTransport.(*http.Transport).Clone()
+	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: isSslDisabled}
+	client := http.DefaultClient
+	client.Transport = httpTransport
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
