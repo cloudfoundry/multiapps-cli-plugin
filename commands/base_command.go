@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io"
@@ -59,7 +60,12 @@ type BaseCommand struct {
 // Initialize initializes the command with the specified name and CLI connection
 func (c *BaseCommand) Initialize(name string, cliConnection plugin.CliConnection) {
 	log.Tracef("Initializing command %q\n", name)
-	transport := newTransport()
+	isSslDisabled, err := cliConnection.IsSSLDisabled()
+	if err != nil {
+		log.Tracef("Error while determining skip-ssl-validation: %v", err)
+		isSslDisabled = false
+	}
+	transport := newTransport(isSslDisabled)
 	tokenFactory := NewDefaultTokenFactory(cliConnection)
 	c.InitializeAll(name, cliConnection, transport, clients.NewDefaultClientFactory(), tokenFactory, util.NewDeployServiceURLCalculator(cliConnection))
 }
@@ -264,11 +270,12 @@ func (c *BaseCommand) shouldAbortConflictingOperation(mtaID string, force bool) 
 		terminal.EntityNameColor(mtaID))
 }
 
-func newTransport() http.RoundTripper {
+func newTransport(isSslDisabled bool) http.RoundTripper {
 	csrfx := csrf.CsrfTokenHelper{NonProtectedMethods: getNonProtectedMethods()}
 	httpTransport := http.DefaultTransport.(*http.Transport).Clone()
 	// Increase tls handshake timeout to cope with slow internet connections. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
+	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: isSslDisabled}
 	return &csrf.Transport{Delegate: httpTransport, Csrf: &csrfx}
 }
 
