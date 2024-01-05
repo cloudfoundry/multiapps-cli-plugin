@@ -1,3 +1,11 @@
+## v3.2.2
+* Fixed random failures during starting operation caused by wrong CSRF token handling
+* Files with same digest but different names will not be reuploaded
+* Fixed filtration by namespace in cf mta command
+* Improved resilience during deploy from URL
+* Fixed enablement of skip-ssl-validation
+* Binaries are now statically linked. Fixes: [cf deploy issue](https://github.com/cloudfoundry/multiapps-cli-plugin/issues/186). On some older system libc libraries might be older than the required by the dynamically linked plugin binary.
+
 ## v3.2.1
 * Fixed random failures during MTA archive file upload or starting operation caused by wrong CSRF token handling. Example of the error:
 ```
@@ -32,7 +40,7 @@ Error occurred: could not upload file "my.mtar.part.1": Post "https://<host>/api
 ## v3.0.0
 * Use V3 Cloud Foundry API in `mtas` and `mta` commands
 * Update Go to 1.18
-* Change Deploy Service discovery mechanism - the Deploy Service URL is now calculated based on the CF API 
+* Change Deploy Service discovery mechanism - the Deploy Service URL is now calculated based on the CF API
 instead of querying the shared domains and trying each one
 * Delete deprecated configuration parameters
 * Print org and space names in undeploy
