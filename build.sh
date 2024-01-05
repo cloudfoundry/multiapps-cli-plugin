@@ -19,8 +19,8 @@ function buildstatic() {
     local plugin_name=$4
 
     echo "building static for $platform $arch"
-    CGO_ENABLED=0 GOOS=$platform GOARCH=$arch go build -a -tags netgo \
-        -ldflags "-w -extldflags \"-static\" -X main.Version=${version}" \
+    CGO_ENABLED=0 GOOS=$platform GOARCH=$arch go build -a \
+        -ldflags "-w -X main.Version=${version}" \
         -o "${plugin_name}"
 }
 
