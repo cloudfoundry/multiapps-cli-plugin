@@ -19,6 +19,5 @@ multiapps-plugin-static.linux64
 multiapps-plugin-static.linuxarm64
 multiapps-plugin-static.osx
 multiapps-plugin-static.osxarm64
-go.sum
 *.exe
 
