@@ -43,6 +43,7 @@ const (
 	strategyOpt                = "strategy"
 	skipTestingPhase           = "skip-testing-phase"
 	skipIdleStart              = "skip-idle-start"
+	readStringTimeout          = 30 * time.Second
 )
 
 type listFlag struct {
@@ -496,6 +497,16 @@ func (c *DeployCommand) getMtaArchive(parsedArguments []string, mtaElementsCalcu
 	return buildMtaArchiveFromDirectory(mtaArgument, mtaElementsCalculator)
 }
 
+func getInput(input chan string, fileReader fs.File) {
+	in := bufio.NewReader(fileReader)
+	result, err := in.ReadString('\n')
+	if err != nil {
+		log.Tracef("could not read from stdin: %v\n", err)
+	}
+
+	input <- result
+}
+
 func (c *DeployCommand) tryReadingFileUrl() string {
 	stat, err := c.FileUrlReader.Stat()
 	if err != nil {
@@ -503,9 +514,15 @@ func (c *DeployCommand) tryReadingFileUrl() string {
 	}
 
 	if stat.Mode()&fs.ModeCharDevice == 0 {
-		in := bufio.NewReader(c.FileUrlReader)
-		input, _ := in.ReadString('\n')
-		return strings.TrimSpace(input)
+		input := make(chan string, 1)
+		go getInput(input)
+		select {
+		case i := <-input:
+			return strings.TrimSpace(i)
+		case <- time.After(readStringTimeout):
+			log.Tracef("the timeout period elapsed prios to receiving input from stdin")
+			return ""
+		}
 	}
 	return ""
 }
