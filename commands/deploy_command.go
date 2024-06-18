@@ -515,7 +515,7 @@ func (c *DeployCommand) tryReadingFileUrl() string {
 
 	if stat.Mode()&fs.ModeCharDevice == 0 {
 		input := make(chan string, 1)
-		go getInput(input)
+		go getInput(input, c.FileUrlReader)
 		select {
 		case i := <-input:
 			return strings.TrimSpace(i)
