@@ -520,7 +520,7 @@ func (c *DeployCommand) tryReadingFileUrl() string {
 		case i := <-input:
 			return strings.TrimSpace(i)
 		case <- time.After(readStringTimeout):
-			log.Tracef("the timeout period elapsed prios to receiving input from stdin")
+			log.Tracef("the timeout period elapsed prior to receiving input from stdin")
 			return ""
 		}
 	}
