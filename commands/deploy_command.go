@@ -514,13 +514,15 @@ func (c *DeployCommand) tryReadingFileUrl() string {
 	}
 
 	if stat.Mode()&fs.ModeCharDevice == 0 {
+		// Print flow clarifying message
+		ui.Say("Trying to get MTA archive URL from STDIN")
 		input := make(chan string, 1)
 		go getInput(input, c.FileUrlReader)
 		select {
 		case i := <-input:
 			return strings.TrimSpace(i)
-		case <- time.After(readStringTimeout):
-			log.Tracef("the timeout period elapsed prior to receiving input from stdin")
+		case <-time.After(readStringTimeout):
+			ui.Say(terminal.FailureColor("The timeout period elapsed prior to receiving input from stdin"))
 			return ""
 		}
 	}
