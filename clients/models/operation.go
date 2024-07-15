@@ -30,6 +30,18 @@ type Operation struct {
 	// Read Only: true
 	Namespace string `json:"namespace,omitempty"`
 
+	// applyNamespaceAppNames
+	// Read Only: true
+	ApplyNamespaceAppNames bool `json:"applyNamespaceAppNames,omitempty"`
+
+	// applyNamespaceServiceNames
+	// Read Only: true
+	ApplyNamespaceServiceNames bool `json:"applyNamespaceServiceNames,omitempty"`
+
+	// applyNamespaceAppRoutes
+	// Read Only: true
+	ApplyNamespaceAppRoutes bool `json:"applyNamespaceAppRoutes,omitempty"`
+
 	// parameters
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
 

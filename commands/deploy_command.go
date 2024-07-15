@@ -43,6 +43,9 @@ const (
 	strategyOpt                = "strategy"
 	skipTestingPhase           = "skip-testing-phase"
 	skipIdleStart              = "skip-idle-start"
+	applyNamespaceAppNamesOpt        = "apply-namespace-app-names"
+	applyNamespaceServiceNamesOpt    = "apply-namespace-service-names"
+	applyNamespaceAppRoutesOpt       = "apply-namespace-app-routes"
 )
 
 type listFlag struct {
@@ -94,13 +97,13 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]`,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                      "Extension descriptors",
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
@@ -112,7 +115,10 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				moduleOpt:                              "Deploy list of modules which are contained in the deployment descriptor, in the current location",
 				resourceOpt:                            "Deploy list of resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(noStartOpt):        "Do not start apps",
-				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well",
+				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the mta, applied to app and service names as well", 
+				util.GetShortOption(applyNamespaceAppNamesOpt):      "Apply namespace to application names",
+				util.GetShortOption(applyNamespaceServiceNamesOpt):      "Apply namespace to service names", 
+				util.GetShortOption(applyNamespaceAppRoutesOpt):      "Apply namespace to application routes", 
 				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
@@ -161,7 +167,10 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(versionRuleOpt, "", "")
 	flags.Bool(deleteServicesOpt, false, "")
 	flags.Bool(noStartOpt, false, "")
-	flags.String(namespaceOpt, "", "")
+	flags.String(namespaceOpt, "", "") 
+	flags.String(applyNamespaceAppNamesOpt, "", "")
+	flags.String(applyNamespaceServiceNamesOpt, "", "")
+	flags.String(applyNamespaceAppRoutesOpt, "", "")
 	flags.Bool(deleteServiceKeysOpt, false, "")
 	flags.Bool(deleteServiceBrokersOpt, false, "")
 	flags.Bool(keepFilesOpt, false, "")
@@ -303,6 +312,15 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	// Build the process instance
 	processBuilder := NewDeploymentStrategy(flags, c.processTypeProvider).CreateProcessBuilder()
 	processBuilder.Namespace(namespace)
+	if(namespace == "") {
+		processBuilder.Parameter("applyNamespaceAppNames", "false")
+		processBuilder.Parameter("applyNamespaceServiceNames", "false")
+		processBuilder.Parameter("applyNamespaceAppRoutes", "false")
+	} else {
+		processBuilder.Parameter("applyNamespaceAppNames", GetStringOpt(applyNamespaceAppNamesOpt, flags))
+		processBuilder.Parameter("applyNamespaceServiceNames", GetStringOpt(applyNamespaceServiceNamesOpt, flags))
+		processBuilder.Parameter("applyNamespaceAppRoutes", GetStringOpt(applyNamespaceAppRoutesOpt, flags))
+	}
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
 	processBuilder.Parameter("mtaId", mtaId)
@@ -609,11 +627,30 @@ type deployCommandFlagsValidator struct{}
 func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
 	var err error
 	flags.Visit(func(f *flag.Flag) {
-		if f.Name == strategyOpt {
+		switch f.Name {
+		case strategyOpt:
 			if f.Value.String() == "" {
 				err = errors.New("strategy flag defined but no argument specified")
 			} else if !util.Contains(AvailableStrategies(), f.Value.String()) {
 				err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
+			}
+		case applyNamespaceAppNamesOpt:
+			if f.Value.String() == "" {
+				err = errors.New("ApplyNamespaceAppNames flag defined but no argument specified")
+			} else if f.Value.String() != "true" && f.Value.String() != "false" {
+				err = fmt.Errorf("invalid value for --%s, expected true or false", applyNamespaceAppNamesOpt)
+			}
+		case applyNamespaceServiceNamesOpt:
+			if f.Value.String() == "" {
+				err = errors.New("ApplyNamespaceServiceNames flag defined but no argument specified")
+			} else if f.Value.String() != "true" && f.Value.String() != "false" {
+				err = fmt.Errorf("invalid value for --%s, expected true or false", applyNamespaceServiceNamesOpt)
+			}
+		case applyNamespaceAppRoutesOpt:
+			if f.Value.String() == "" {
+				err = errors.New("ApplyNamespaceAppRoutes flag defined but no argument specified")
+			} else if f.Value.String() != "true" && f.Value.String() != "false" {
+				err = fmt.Errorf("invalid value for --%s, expected true or false", applyNamespaceAppRoutesOpt)
 			}
 		}
 	})
