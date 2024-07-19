@@ -33,14 +33,13 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a multi-target app using blue-green deployment",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app using blue-green deployment
-   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error]
+   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                                  "Extension descriptors",
 				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                                         "Start timeout in seconds",
 				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                                     "Active deploy operation ID",
 				actionOpt:                                          "Action to perform on active deploy operation (abort, retry, resume, monitor)",
@@ -57,6 +56,10 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
 				util.GetShortOption(skipIdleStart):                 "Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
+				util.GetShortOption(startTimeoutOpt):               "Start app timeout in seconds",
+				util.GetShortOption(stageTimeoutOpt):               "Stage app timeout in seconds",
+				util.GetShortOption(uploadTimeoutOpt):              "Upload app timeout in seconds",
+				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",			
 			},
 		},
 	}

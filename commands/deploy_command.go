@@ -30,7 +30,6 @@ import (
 
 const (
 	extDescriptorsOpt          = "e"
-	timeoutOpt                 = "t"
 	versionRuleOpt             = "version-rule"
 	noStartOpt                 = "no-start"
 	deleteServiceKeysOpt       = "delete-service-keys"
@@ -43,6 +42,10 @@ const (
 	strategyOpt                = "strategy"
 	skipTestingPhase           = "skip-testing-phase"
 	skipIdleStart              = "skip-idle-start"
+	startTimeoutOpt            = "apps-start-timeout"
+	stageTimeoutOpt            = "apps-stage-timeout"
+	uploadTimeoutOpt           = "apps-upload-timeout"
+	taskExecutionTimeoutOpt    = "task-execution-timeout"
 )
 
 type listFlag struct {
@@ -94,17 +97,17 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start]`,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--task-execution-timeout TIMEOUT]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                      "Extension descriptors",
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				timeoutOpt:                             "Start timeout in seconds",
+
 				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                         "Active deploy operation ID",
 				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
@@ -126,6 +129,13 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green, (EXPERIMENTAL) incremental-blue-green)",
 				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
 				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
+				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
+				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
+				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
+				util.GetShortOption(startTimeoutOpt):               "Start app timeout in seconds",
+				util.GetShortOption(stageTimeoutOpt):               "Stage app timeout in seconds",
+				util.GetShortOption(uploadTimeoutOpt):              "Upload app timeout in seconds",
+				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",			
 			},
 		},
 	}
@@ -142,13 +152,17 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("deleteServices", strconv.FormatBool(GetBoolOpt(deleteServicesOpt, flags)))
 		processBuilder.Parameter("noStart", strconv.FormatBool(GetBoolOpt(noStartOpt, flags)))
 		processBuilder.Parameter("deleteServiceBrokers", strconv.FormatBool(GetBoolOpt(deleteServiceBrokersOpt, flags)))
-		processBuilder.Parameter("startTimeout", GetStringOpt(timeoutOpt, flags))
 		processBuilder.Parameter("versionRule", GetStringOpt(versionRuleOpt, flags))
 		processBuilder.Parameter("keepFiles", strconv.FormatBool(GetBoolOpt(keepFilesOpt, flags)))
 		processBuilder.Parameter("noRestartSubscribedApps", strconv.FormatBool(GetBoolOpt(noRestartSubscribedAppsOpt, flags)))
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, flags)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, flags)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, flags)))
+		processBuilder.Parameter("appsStartTimeout", GetStringOpt(startTimeoutOpt, flags))
+		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
+		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
+		processBuilder.Parameter("taskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
+
 	}
 }
 
@@ -157,7 +171,6 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(operationIDOpt, "", "")
 	flags.String(actionOpt, "", "")
 	flags.Bool(forceOpt, false, "")
-	flags.String(timeoutOpt, "", "")
 	flags.String(versionRuleOpt, "", "")
 	flags.Bool(deleteServicesOpt, false, "")
 	flags.Bool(noStartOpt, false, "")
@@ -177,6 +190,10 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Bool(skipIdleStart, false, "")
 	flags.Var(&modulesList, moduleOpt, "")
 	flags.Var(&resourcesList, resourceOpt, "")
+	flags.String(startTimeoutOpt, "", "")
+	flags.String(stageTimeoutOpt, "", "")
+	flags.String(uploadTimeoutOpt, "", "")
+	flags.String(taskExecutionTimeoutOpt, "", "")
 }
 
 func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
