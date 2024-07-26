@@ -20,8 +20,9 @@ func (d *DeployCommandDeploymentStrategy) CreateProcessBuilder() *util.ProcessBu
 }
 
 type BlueGreenDeployCommandDeploymentStrategy struct {
-	noConfirm     bool
-	skipIdleStart bool
+	noConfirm         bool
+	skipIdleStart     bool
+	incrementalDeploy bool
 }
 
 func (b *BlueGreenDeployCommandDeploymentStrategy) CreateProcessBuilder() *util.ProcessBuilder {
@@ -30,23 +31,29 @@ func (b *BlueGreenDeployCommandDeploymentStrategy) CreateProcessBuilder() *util.
 	processBuilder.Parameter("noConfirm", strconv.FormatBool(b.noConfirm))
 	processBuilder.Parameter("skipIdleStart", strconv.FormatBool(b.skipIdleStart))
 	processBuilder.Parameter("keepOriginalAppNamesAfterDeploy", strconv.FormatBool(true))
+	processBuilder.Parameter("shouldApplyIncrementalInstancesUpdate", strconv.FormatBool(b.incrementalDeploy))
 	return processBuilder
 }
 
 func NewDeploymentStrategy(flags *flag.FlagSet, typeProvider ProcessTypeProvider) DeploymentStrategy {
 	if typeProvider.GetProcessType() == (blueGreenDeployCommandProcessTypeProvider{}).GetProcessType() {
-		return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(noConfirmOpt, flags), GetBoolOpt(skipIdleStart, flags)}
+		return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(noConfirmOpt, flags), GetBoolOpt(skipIdleStart, flags), isIncrementalBlueGreen(flags)}
 	}
 	strategy := GetStringOpt(strategyOpt, flags)
 	if strategy == "default" {
 		return &DeployCommandDeploymentStrategy{}
 	}
 	if GetBoolOpt(skipIdleStart, flags) {
-		return &BlueGreenDeployCommandDeploymentStrategy{true, true}
+		return &BlueGreenDeployCommandDeploymentStrategy{true, true, isIncrementalBlueGreen(flags)}
 	}
-	return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(skipTestingPhase, flags), false}
+	return &BlueGreenDeployCommandDeploymentStrategy{GetBoolOpt(skipTestingPhase, flags), false, isIncrementalBlueGreen(flags)}
+}
+
+func isIncrementalBlueGreen(flags *flag.FlagSet) bool {
+	strategy := GetStringOpt(strategyOpt, flags)
+	return strategy == "incremental-blue-green"
 }
 
 func AvailableStrategies() []string {
-	return []string{"blue-green", "default"}
+	return []string{"blue-green", "incremental-blue-green", "default"}
 }
