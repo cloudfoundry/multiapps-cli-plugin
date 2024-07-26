@@ -123,9 +123,9 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(allModulesOpt):                 "Deploy all modules which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
-				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
-				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
-				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
+				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green, (EXPERIMENTAL) incremental-blue-green)",
+				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
+				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
 			},
 		},
 	}
