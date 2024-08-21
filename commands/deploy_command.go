@@ -30,6 +30,7 @@ import (
 
 const (
 	extDescriptorsOpt          = "e"
+    timeoutOpt                 = "t"
 	versionRuleOpt             = "version-rule"
 	noStartOpt                 = "no-start"
 	deleteServiceKeysOpt       = "delete-service-keys"
@@ -45,7 +46,7 @@ const (
 	startTimeoutOpt            = "apps-start-timeout"
 	stageTimeoutOpt            = "apps-stage-timeout"
 	uploadTimeoutOpt           = "apps-upload-timeout"
-	taskExecutionTimeoutOpt    = "task-execution-timeout"
+	taskExecutionTimeoutOpt    = "apps-task-execution-timeout"
 )
 
 type listFlag struct {
@@ -97,17 +98,17 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a new multi-target app or sync changes to an existing one",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--task-execution-timeout TIMEOUT]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--task-execution-timeout TIMEOUT]`,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                      "Extension descriptors",
+				timeoutOpt:                             "Start apps timeout in seconds",
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
-
 				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                         "Active deploy operation ID",
 				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
@@ -158,11 +159,26 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("noFailOnMissingPermissions", strconv.FormatBool(GetBoolOpt(noFailOnMissingPermissionsOpt, flags)))
 		processBuilder.Parameter("abortOnError", strconv.FormatBool(GetBoolOpt(abortOnErrorOpt, flags)))
 		processBuilder.Parameter("skipOwnershipValidation", strconv.FormatBool(GetBoolOpt(skipOwnershipValidationOpt, flags)))
-		processBuilder.Parameter("appsStartTimeout", GetStringOpt(startTimeoutOpt, flags))
 		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
-		processBuilder.Parameter("taskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
+		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
 
+		var lastSetValue string = ""
+		for i := 0; i < len(os.Args); i++ {
+			arg := os.Args[i]
+				if arg == "-t" {
+				if i+1 < len(os.Args) {
+					lastSetValue = os.Args[i+1]
+					i++ 
+				}
+			} else if arg == "--apps-start-timeout" {
+				if i+1 < len(os.Args) {
+					lastSetValue = os.Args[i+1] 
+					i++
+				}
+			}
+		}
+		processBuilder.Parameter("appsStartTimeout", lastSetValue)
 	}
 }
 
@@ -190,6 +206,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Bool(skipIdleStart, false, "")
 	flags.Var(&modulesList, moduleOpt, "")
 	flags.Var(&resourcesList, resourceOpt, "")
+	flags.String(timeoutOpt, "", "")
 	flags.String(startTimeoutOpt, "", "")
 	flags.String(stageTimeoutOpt, "", "")
 	flags.String(uploadTimeoutOpt, "", "")
@@ -624,18 +641,57 @@ func (deployCommandLineArgumentsParser) determinePositionalArgumentsToValidate(p
 type deployCommandFlagsValidator struct{}
 
 func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
-	var err error
-	flags.Visit(func(f *flag.Flag) {
-		if f.Name == strategyOpt {
-			if f.Value.String() == "" {
-				err = errors.New("strategy flag defined but no argument specified")
-			} else if !util.Contains(AvailableStrategies(), f.Value.String()) {
-				err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
-			}
-		}
-	})
-	if err != nil {
-		return err
-	}
-	return NewDefaultCommandFlagsValidator(nil).ValidateParsedFlags(flags)
+    var err error
+
+    flags.Visit(func(f *flag.Flag) {
+        switch f.Name {
+        case strategyOpt:
+            if f.Value.String() == "" {
+                err = errors.New("strategy flag defined but no argument specified")
+                return
+            } else if !util.Contains(AvailableStrategies(), f.Value.String()) {
+                err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
+                return
+            }
+        case timeoutOpt:
+            if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
+                err = e
+                return
+            }
+        case startTimeoutOpt:
+            if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
+                err = e
+                return
+            }
+        case stageTimeoutOpt:
+            if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
+                err = e
+                return
+            }
+        case uploadTimeoutOpt:
+            if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
+                err = e
+                return
+            }
+        case taskExecutionTimeoutOpt:
+            if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
+                err = e
+                return
+            }
+        }
+    })
+    if err != nil {
+        return err
+    }
+    return NewDefaultCommandFlagsValidator(nil).ValidateParsedFlags(flags)
+}
+
+func ValidateTimeoutOption(optionName string, flags *flag.FlagSet, maxAllowedValue int) error {
+    optionValueStr := flags.Lookup(optionName).Value.String()
+
+    optionValue, err := strconv.Atoi(optionValueStr)
+    if err != nil || optionValue < 0 || optionValue > maxAllowedValue {
+        return fmt.Errorf("Invalid value for %s: %s. Value must be in the range 0 to %d.", optionName, optionValueStr, maxAllowedValue)
+    }
+    return nil
 }
