@@ -178,7 +178,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 				}
 			}
 		}
-		processBuilder.Parameter("appsStartTimeout", lastSetValue)
+		processBuilder.Parameter("startTimeout", lastSetValue)
 	}
 }
 
