@@ -107,7 +107,6 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                      "Extension descriptors",
-				timeoutOpt:                             "Start apps timeout in seconds",
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                         "Active deploy operation ID",
@@ -133,10 +132,10 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
 				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
 				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
-				util.GetShortOption(startTimeoutOpt):               "Start app timeout in seconds",
 				util.GetShortOption(stageTimeoutOpt):               "Stage app timeout in seconds",
 				util.GetShortOption(uploadTimeoutOpt):              "Upload app timeout in seconds",
-				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",			
+				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",
+				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt):               "Start app timeout in seconds",
 			},
 		},
 	}
@@ -224,7 +223,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 
 	mtaElementsCalculator := createMtaElementsCalculator(flags)
 
-	rawMtaArchive, err := c.getMtaArchive(positionalArgs, mtaElementsCalculator)
+    rawMtaArchive, err := c.getMtaArchive(positionalArgs, mtaElementsCalculator)
 	if err != nil {
 		ui.Failed("Error retrieving MTA: %s", err.Error())
 		return Failure

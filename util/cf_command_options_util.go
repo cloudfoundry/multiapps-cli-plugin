@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+func CombineFullAndShortParameters(fullParameter string, shortParameter string) string {
+    return GetShortOption(fullParameter) + ", -" + shortParameter
+}
+
 //GetShortOption ...
 func GetShortOption(option string) string {
 	var opt bytes.Buffer

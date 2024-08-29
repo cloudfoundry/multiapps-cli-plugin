@@ -39,7 +39,6 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
 				extDescriptorsOpt:                                  "Extension descriptors",
-				timeoutOpt:                                         "Start apps timeout in seconds",
 				deployServiceURLOpt:                                "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				versionRuleOpt:                                     "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                                     "Active deploy operation ID",
@@ -57,10 +56,10 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
 				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
 				util.GetShortOption(skipIdleStart):                 "Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
-				util.GetShortOption(startTimeoutOpt):               "Start app timeout in seconds",
 				util.GetShortOption(stageTimeoutOpt):               "Stage app timeout in seconds",
 				util.GetShortOption(uploadTimeoutOpt):              "Upload app timeout in seconds",
-				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",			
+				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",
+				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt):  "Start app timeout in seconds",
 			},
 		},
 	}
