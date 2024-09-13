@@ -50,6 +50,8 @@ const (
 	applyNamespaceAppNamesOpt        = "apply-namespace-app-names"
 	applyNamespaceServiceNamesOpt    = "apply-namespace-service-names"
 	applyNamespaceAppRoutesOpt       = "apply-namespace-app-routes"
+	applyNamespaceAsSuffix           = "apply-namespace-as-suffix"
+	maxNamespaceSize                 = 36
 )
 
 type listFlag struct {
@@ -102,14 +104,14 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
 
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]`,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]`,
 
 			Options: map[string]string{
 				extDescriptorsOpt:                      "Extension descriptors",
@@ -125,6 +127,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(applyNamespaceAppNamesOpt):      "(EXPERIMENTAL) Apply namespace to application names: (true, false)",
 				util.GetShortOption(applyNamespaceServiceNamesOpt):      "(EXPERIMENTAL) Apply namespace to service names: (true, false)",
 				util.GetShortOption(applyNamespaceAppRoutesOpt):      "(EXPERIMENTAL) Apply namespace to application routes: (true, false)",
+				util.GetShortOption(applyNamespaceAsSuffix):        "(EXPERIMENTAL) Apply namespace as a suffix rather than a prefix: (true, false)",
 				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
@@ -202,6 +205,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(applyNamespaceAppNamesOpt, "", "")
 	flags.String(applyNamespaceServiceNamesOpt, "", "")
 	flags.String(applyNamespaceAppRoutesOpt, "", "")
+	flags.String(applyNamespaceAsSuffix, "", "")
 	flags.Bool(deleteServiceKeysOpt, false, "")
 	flags.Bool(deleteServiceBrokersOpt, false, "")
 	flags.Bool(keepFilesOpt, false, "")
@@ -351,6 +355,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	processBuilder.Parameter("applyNamespaceAppNames", GetStringOpt(applyNamespaceAppNamesOpt, flags))
 	processBuilder.Parameter("applyNamespaceServiceNames", GetStringOpt(applyNamespaceServiceNamesOpt, flags))
 	processBuilder.Parameter("applyNamespaceAppRoutes", GetStringOpt(applyNamespaceAppRoutesOpt, flags))
+	processBuilder.Parameter("applyNamespaceAsSuffix", GetStringOpt(applyNamespaceAsSuffix, flags))
 	
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
@@ -668,12 +673,17 @@ func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) erro
                 err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
                 return
             }
+        case namespaceOpt:
+            if len(f.Value.String()) > maxNamespaceSize {
+                err = fmt.Errorf("Invalid value for namespace. The namespace cannot be more than %d symbols.", maxNamespaceSize)
+                return
+            }
         case timeoutOpt, startTimeoutOpt, stageTimeoutOpt, uploadTimeoutOpt, taskExecutionTimeoutOpt:
             if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
                 err = e
                 return
             }
-        case applyNamespaceAppNamesOpt, applyNamespaceServiceNamesOpt, applyNamespaceAppRoutesOpt:
+        case applyNamespaceAppNamesOpt, applyNamespaceServiceNamesOpt, applyNamespaceAppRoutesOpt, applyNamespaceAsSuffix:
 			if e := ValidateBooleanFlag(f.Name, flags); e != nil {
                 err = e
                 return
