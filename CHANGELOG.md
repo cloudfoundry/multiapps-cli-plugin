@@ -1,3 +1,10 @@
+
+## v3.3.0
+* Introduce rolling blue green deployment
+* Add fine-grained options to define where to apply namespace
+* Add fine-grained options to define app processing timeouts, including upload, stage, start and task execution
+* Bump dependencies
+
 ## v3.2.2
 * Fixed random failures during starting operation caused by wrong CSRF token handling
 * Files with same digest but different names will not be reuploaded
