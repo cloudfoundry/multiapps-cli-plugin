@@ -33,7 +33,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a multi-target app using blue-green deployment",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app using blue-green deployment
-   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
@@ -49,6 +49,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(applyNamespaceAppNamesOpt):     "(EXPERIMENTAL) Apply namespace to application names: (true, false)",
 				util.GetShortOption(applyNamespaceServiceNamesOpt): "(EXPERIMENTAL) Apply namespace to service names: (true, false)",
 				util.GetShortOption(applyNamespaceAppRoutesOpt):    "(EXPERIMENTAL) Apply namespace to application routes: (true, false)",
+				util.GetShortOption(applyNamespaceAsSuffix):        "(EXPERIMENTAL) Apply namespace as a suffix rather than a prefix: (true, false)",
 				util.GetShortOption(deleteServicesOpt):             "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
