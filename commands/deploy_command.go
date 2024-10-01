@@ -141,9 +141,6 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green, (EXPERIMENTAL) incremental-blue-green)",
 				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
 				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
-				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green)",
-				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
-				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
 				util.GetShortOption(stageTimeoutOpt):               "Stage app timeout in seconds",
 				util.GetShortOption(uploadTimeoutOpt):              "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",
@@ -180,11 +177,11 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 				if arg == "-t" {
 				if i+1 < len(os.Args) {
 					lastSetValue = os.Args[i+1]
-					i++ 
+					i++
 				}
 			} else if arg == "--apps-start-timeout" {
 				if i+1 < len(os.Args) {
-					lastSetValue = os.Args[i+1] 
+					lastSetValue = os.Args[i+1]
 					i++
 				}
 			}
@@ -201,7 +198,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(versionRuleOpt, "", "")
 	flags.Bool(deleteServicesOpt, false, "")
 	flags.Bool(noStartOpt, false, "")
-	flags.String(namespaceOpt, "", "") 
+	flags.String(namespaceOpt, "", "")
 	flags.String(applyNamespaceAppNamesOpt, "", "")
 	flags.String(applyNamespaceServiceNamesOpt, "", "")
 	flags.String(applyNamespaceAppRoutesOpt, "", "")
@@ -356,7 +353,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	processBuilder.Parameter("applyNamespaceServiceNames", GetStringOpt(applyNamespaceServiceNamesOpt, flags))
 	processBuilder.Parameter("applyNamespaceAppRoutes", GetStringOpt(applyNamespaceAppRoutesOpt, flags))
 	processBuilder.Parameter("applyNamespaceAsSuffix", GetStringOpt(applyNamespaceAsSuffix, flags))
-	
+
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
 	processBuilder.Parameter("mtaId", mtaId)
