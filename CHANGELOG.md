@@ -1,3 +1,6 @@
+## v3.4.1
+* Fixed cf deploy --help command
+
 ## v3.4.0
 * Fixed a regression where the status of ongoing operations was not being properly checked
 * Add option to define where to apply namespace either as prefix or suffix
