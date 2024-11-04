@@ -436,27 +436,8 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 			}
 		}
 		file = jobResult.File
-		if len(jobResult.Error) != 0 {
-			var fileUrlWithoutCredentials string
-		
-			decodedBytes, err := base64.URLEncoding.DecodeString(encodedFileUrl)
-			if err != nil {
-				fmt.Println("Error decoding:", err)
-				fileUrlWithoutCredentials = "an unknown url" 
-			} else {
-				decodedURL := string(decodedBytes)
-		
-				parsedURL, err := url.Parse(decodedURL)
-				if err != nil {
-					fmt.Println("Error parsing URL:", err)
-					fileUrlWithoutCredentials = "an unknown url" 
-				} else {
-					parsedURL.User = nil
-					fileUrlWithoutCredentials = parsedURL.String() 
-				}
-			}
-		
-			ui.Failed("Async upload job failed: Credentials to %s are wrong. Make sure that they are correct.", fileUrlWithoutCredentials)
+		if len(jobResult.Error) != 0 {	
+			ui.Failed("Async upload job failed: %s", jobResult.Error)
 		
 			return UploadFromUrlStatus{
 				FileId:          "",
