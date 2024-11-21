@@ -29,29 +29,30 @@ import (
 )
 
 const (
-	extDescriptorsOpt          = "e"
-    timeoutOpt                 = "t"
-	versionRuleOpt             = "version-rule"
-	noStartOpt                 = "no-start"
-	deleteServiceKeysOpt       = "delete-service-keys"
-	keepFilesOpt               = "keep-files"
-	skipOwnershipValidationOpt = "skip-ownership-validation"
-	moduleOpt                  = "m"
-	resourceOpt                = "r"
-	allModulesOpt              = "all-modules"
-	allResourcesOpt            = "all-resources"
-	strategyOpt                = "strategy"
-	skipTestingPhase           = "skip-testing-phase"
-	skipIdleStart              = "skip-idle-start"
-	startTimeoutOpt            = "apps-start-timeout"
-	stageTimeoutOpt            = "apps-stage-timeout"
-	uploadTimeoutOpt           = "apps-upload-timeout"
-	taskExecutionTimeoutOpt    = "apps-task-execution-timeout"
-	applyNamespaceAppNamesOpt        = "apply-namespace-app-names"
-	applyNamespaceServiceNamesOpt    = "apply-namespace-service-names"
-	applyNamespaceAppRoutesOpt       = "apply-namespace-app-routes"
-	applyNamespaceAsSuffix           = "apply-namespace-as-suffix"
-	maxNamespaceSize                 = 36
+	extDescriptorsOpt             = "e"
+	timeoutOpt                    = "t"
+	versionRuleOpt                = "version-rule"
+	noStartOpt                    = "no-start"
+	deleteServiceKeysOpt          = "delete-service-keys"
+	keepFilesOpt                  = "keep-files"
+	skipOwnershipValidationOpt    = "skip-ownership-validation"
+	moduleOpt                     = "m"
+	resourceOpt                   = "r"
+	allModulesOpt                 = "all-modules"
+	allResourcesOpt               = "all-resources"
+	strategyOpt                   = "strategy"
+	skipTestingPhase              = "skip-testing-phase"
+	skipIdleStart                 = "skip-idle-start"
+	startTimeoutOpt               = "apps-start-timeout"
+	stageTimeoutOpt               = "apps-stage-timeout"
+	uploadTimeoutOpt              = "apps-upload-timeout"
+	taskExecutionTimeoutOpt       = "apps-task-execution-timeout"
+	applyNamespaceAppNamesOpt     = "apply-namespace-app-names"
+	applyNamespaceServiceNamesOpt = "apply-namespace-service-names"
+	applyNamespaceAppRoutesOpt    = "apply-namespace-app-routes"
+	applyNamespaceAsSuffix        = "apply-namespace-as-suffix"
+	maxNamespaceSize              = 36
+	shouldPreserveOldApps         = "preserve-old-apps"
 )
 
 type listFlag struct {
@@ -114,37 +115,38 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]`,
 
 			Options: map[string]string{
-				extDescriptorsOpt:                      "Extension descriptors",
-				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
-				operationIDOpt:                         "Active deploy operation ID",
-				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
-				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
-				moduleOpt:                              "Deploy list of modules which are contained in the deployment descriptor, in the current location",
-				resourceOpt:                            "Deploy list of resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(noStartOpt):        "Do not start apps",
-				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the MTA, applied on app names, app routes and service names",
-				util.GetShortOption(applyNamespaceAppNamesOpt):      "(EXPERIMENTAL) Apply namespace to application names: (true, false)",
-				util.GetShortOption(applyNamespaceServiceNamesOpt):      "(EXPERIMENTAL) Apply namespace to service names: (true, false)",
-				util.GetShortOption(applyNamespaceAppRoutesOpt):      "(EXPERIMENTAL) Apply namespace to application routes: (true, false)",
-				util.GetShortOption(applyNamespaceAsSuffix):        "(EXPERIMENTAL) Apply namespace as a suffix rather than a prefix: (true, false)",
-				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
-				util.GetShortOption(deleteServiceKeysOpt):          "Delete existing service keys and apply the new ones",
-				util.GetShortOption(deleteServiceBrokersOpt):       "Delete discontinued service brokers",
-				util.GetShortOption(keepFilesOpt):                  "Keep files used for deployment",
-				util.GetShortOption(noRestartSubscribedAppsOpt):    "Do not restart subscribed apps, updated during the deployment",
-				util.GetShortOption(noFailOnMissingPermissionsOpt): "Do not fail on missing permissions for admin operations",
-				util.GetShortOption(abortOnErrorOpt):               "Auto-abort the process on any errors",
-				util.GetShortOption(allModulesOpt):                 "Deploy all modules which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(allResourcesOpt):               "Deploy all resources which are contained in the deployment descriptor, in the current location",
-				util.GetShortOption(retriesOpt):                    "Retry the operation N times in case a non-content error occurs (default 3)",
-				util.GetShortOption(strategyOpt):                   "Specify the deployment strategy when updating an mta (default, blue-green, (EXPERIMENTAL) incremental-blue-green)",
-				util.GetShortOption(skipTestingPhase):              "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
-				util.GetShortOption(skipIdleStart):                 "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
-				util.GetShortOption(stageTimeoutOpt):               "Stage app timeout in seconds",
-				util.GetShortOption(uploadTimeoutOpt):              "Upload app timeout in seconds",
-				util.GetShortOption(taskExecutionTimeoutOpt):       "Task execution timeout in seconds",
-				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt):               "Start app timeout in seconds",
+				extDescriptorsOpt:                 "Extension descriptors",
+				deployServiceURLOpt:               "Deploy service URL, by default 'deploy-service.<system-domain>'",
+				versionRuleOpt:                    "Version rule (HIGHER, SAME_HIGHER, ALL)",
+				operationIDOpt:                    "Active deploy operation ID",
+				actionOpt:                         "Action to perform on active deploy operation (abort, retry, resume, monitor)",
+				forceOpt:                          "Force deploy without confirmation for aborting conflicting processes",
+				moduleOpt:                         "Deploy list of modules which are contained in the deployment descriptor, in the current location",
+				resourceOpt:                       "Deploy list of resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(noStartOpt):   "Do not start apps",
+				util.GetShortOption(namespaceOpt): "(EXPERIMENTAL) Namespace for the MTA, applied on app names, app routes and service names",
+				util.GetShortOption(applyNamespaceAppNamesOpt):                  "(EXPERIMENTAL) Apply namespace to application names: (true, false)",
+				util.GetShortOption(applyNamespaceServiceNamesOpt):              "(EXPERIMENTAL) Apply namespace to service names: (true, false)",
+				util.GetShortOption(applyNamespaceAppRoutesOpt):                 "(EXPERIMENTAL) Apply namespace to application routes: (true, false)",
+				util.GetShortOption(applyNamespaceAsSuffix):                     "(EXPERIMENTAL) Apply namespace as a suffix rather than a prefix: (true, false)",
+				util.GetShortOption(deleteServicesOpt):                          "Recreate changed services / delete discontinued services",
+				util.GetShortOption(deleteServiceKeysOpt):                       "Delete existing service keys and apply the new ones",
+				util.GetShortOption(deleteServiceBrokersOpt):                    "Delete discontinued service brokers",
+				util.GetShortOption(keepFilesOpt):                               "Keep files used for deployment",
+				util.GetShortOption(noRestartSubscribedAppsOpt):                 "Do not restart subscribed apps, updated during the deployment",
+				util.GetShortOption(noFailOnMissingPermissionsOpt):              "Do not fail on missing permissions for admin operations",
+				util.GetShortOption(abortOnErrorOpt):                            "Auto-abort the process on any errors",
+				util.GetShortOption(allModulesOpt):                              "Deploy all modules which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(allResourcesOpt):                            "Deploy all resources which are contained in the deployment descriptor, in the current location",
+				util.GetShortOption(retriesOpt):                                 "Retry the operation N times in case a non-content error occurs (default 3)",
+				util.GetShortOption(strategyOpt):                                "Specify the deployment strategy when updating an mta (default, blue-green, (EXPERIMENTAL) incremental-blue-green)",
+				util.GetShortOption(skipTestingPhase):                           "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
+				util.GetShortOption(skipIdleStart):                              "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
+				util.GetShortOption(stageTimeoutOpt):                            "Stage app timeout in seconds",
+				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
+				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
+				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
+				util.GetShortOption(shouldPreserveOldApps):                      "Should preserve old applications (only for blue-green)",
 			},
 		},
 	}
@@ -170,11 +172,12 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
+		processBuilder.Parameter("shouldPreserveOldApps", strconv.FormatBool(GetBoolOpt(shouldPreserveOldApps, flags)))
 
 		var lastSetValue string = ""
 		for i := 0; i < len(os.Args); i++ {
 			arg := os.Args[i]
-				if arg == "-t" {
+			if arg == "-t" {
 				if i+1 < len(os.Args) {
 					lastSetValue = os.Args[i+1]
 					i++
@@ -223,6 +226,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(stageTimeoutOpt, "", "")
 	flags.String(uploadTimeoutOpt, "", "")
 	flags.String(taskExecutionTimeoutOpt, "", "")
+	flags.Bool(shouldPreserveOldApps, false, "")
 }
 
 func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
@@ -236,7 +240,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 
 	mtaElementsCalculator := createMtaElementsCalculator(flags)
 
-    rawMtaArchive, err := c.getMtaArchive(positionalArgs, mtaElementsCalculator)
+	rawMtaArchive, err := c.getMtaArchive(positionalArgs, mtaElementsCalculator)
 	if err != nil {
 		ui.Failed("Error retrieving MTA: %s", err.Error())
 		return Failure
@@ -658,61 +662,61 @@ func (deployCommandLineArgumentsParser) determinePositionalArgumentsToValidate(p
 type deployCommandFlagsValidator struct{}
 
 func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) error {
-    var err error
+	var err error
 
-    flags.Visit(func(f *flag.Flag) {
-        switch f.Name {
-        case strategyOpt:
-            if f.Value.String() == "" {
-                err = errors.New("strategy flag defined but no argument specified")
-                return
-            } else if !util.Contains(AvailableStrategies(), f.Value.String()) {
-                err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
-                return
-            }
-        case namespaceOpt:
-            if len(f.Value.String()) > maxNamespaceSize {
-                err = fmt.Errorf("Invalid value for namespace. The namespace cannot be more than %d symbols.", maxNamespaceSize)
-                return
-            }
-        case timeoutOpt, startTimeoutOpt, stageTimeoutOpt, uploadTimeoutOpt, taskExecutionTimeoutOpt:
-            if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
-                err = e
-                return
-            }
-        case applyNamespaceAppNamesOpt, applyNamespaceServiceNamesOpt, applyNamespaceAppRoutesOpt, applyNamespaceAsSuffix:
+	flags.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case strategyOpt:
+			if f.Value.String() == "" {
+				err = errors.New("strategy flag defined but no argument specified")
+				return
+			} else if !util.Contains(AvailableStrategies(), f.Value.String()) {
+				err = fmt.Errorf("%s is not a valid deployment strategy, available strategies: %v", f.Value.String(), AvailableStrategies())
+				return
+			}
+		case namespaceOpt:
+			if len(f.Value.String()) > maxNamespaceSize {
+				err = fmt.Errorf("Invalid value for namespace. The namespace cannot be more than %d symbols.", maxNamespaceSize)
+				return
+			}
+		case timeoutOpt, startTimeoutOpt, stageTimeoutOpt, uploadTimeoutOpt, taskExecutionTimeoutOpt:
+			if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
+				err = e
+				return
+			}
+		case applyNamespaceAppNamesOpt, applyNamespaceServiceNamesOpt, applyNamespaceAppRoutesOpt, applyNamespaceAsSuffix:
 			if e := ValidateBooleanFlag(f.Name, flags); e != nil {
-                err = e
-                return
-            }
-        }
-    })
-    if err != nil {
-        return err
-    }
-    return NewDefaultCommandFlagsValidator(nil).ValidateParsedFlags(flags)
+				err = e
+				return
+			}
+		}
+	})
+	if err != nil {
+		return err
+	}
+	return NewDefaultCommandFlagsValidator(nil).ValidateParsedFlags(flags)
 }
 
 func ValidateTimeoutOption(optionName string, flags *flag.FlagSet, maxAllowedValue int) error {
-    optionValueStr := flags.Lookup(optionName).Value.String()
+	optionValueStr := flags.Lookup(optionName).Value.String()
 
-    optionValue, err := strconv.Atoi(optionValueStr)
-    if err != nil || optionValue < 0 || optionValue > maxAllowedValue {
-        return fmt.Errorf("Invalid value for %s: %s. Value must be in the range 0 to %d.", optionName, optionValueStr, maxAllowedValue)
-    }
-    return nil
+	optionValue, err := strconv.Atoi(optionValueStr)
+	if err != nil || optionValue < 0 || optionValue > maxAllowedValue {
+		return fmt.Errorf("Invalid value for %s: %s. Value must be in the range 0 to %d.", optionName, optionValueStr, maxAllowedValue)
+	}
+	return nil
 }
 
 func ValidateBooleanFlag(flagName string, flags *flag.FlagSet) error {
-    flagValueStr := flags.Lookup(flagName).Value.String()
+	flagValueStr := flags.Lookup(flagName).Value.String()
 
-    if flagValueStr == "" {
-        return fmt.Errorf("%s flag defined but no argument specified", flagName)
-    }
+	if flagValueStr == "" {
+		return fmt.Errorf("%s flag defined but no argument specified", flagName)
+	}
 
-    if flagValueStr != "true" && flagValueStr != "false" {
-        return fmt.Errorf("Invalid value for %s: %s. Expected true or false.", flagName, flagValueStr)
-    }
+	if flagValueStr != "true" && flagValueStr != "false" {
+		return fmt.Errorf("Invalid value for %s: %s. Expected true or false.", flagName, flagValueStr)
+	}
 
-    return nil
+	return nil
 }
