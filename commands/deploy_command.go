@@ -52,7 +52,7 @@ const (
 	applyNamespaceAppRoutesOpt    = "apply-namespace-app-routes"
 	applyNamespaceAsSuffix        = "apply-namespace-as-suffix"
 	maxNamespaceSize              = 36
-	shouldPreserveOldApps         = "preserve-old-apps"
+	shouldBackupExistingApps      = "backup-existing-apps"
 )
 
 type listFlag struct {
@@ -146,7 +146,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
-				util.GetShortOption(shouldPreserveOldApps):                      "Should preserve old applications (only for blue-green)",
+				util.GetShortOption(shouldBackupExistingApps):                   "Should backup existing applications (only for blue-green)",
 			},
 		},
 	}
@@ -172,7 +172,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
-		processBuilder.Parameter("shouldPreserveOldApps", strconv.FormatBool(GetBoolOpt(shouldPreserveOldApps, flags)))
+		processBuilder.Parameter("shouldBackupExistingApps", strconv.FormatBool(GetBoolOpt(shouldBackupExistingApps, flags)))
 
 		var lastSetValue string = ""
 		for i := 0; i < len(os.Args); i++ {
@@ -226,7 +226,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(stageTimeoutOpt, "", "")
 	flags.String(uploadTimeoutOpt, "", "")
 	flags.String(taskExecutionTimeoutOpt, "", "")
-	flags.Bool(shouldPreserveOldApps, false, "")
+	flags.Bool(shouldBackupExistingApps, false, "")
 }
 
 func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {

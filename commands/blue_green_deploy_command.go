@@ -64,7 +64,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
-				util.GetShortOption(shouldPreserveOldApps):                      "Should preserve old applications (only for blue-green)",
+				util.GetShortOption(shouldBackupExistingApps):                   "Should backup existing applications (only for blue-green)",
 			},
 		},
 	}

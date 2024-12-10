@@ -29,7 +29,7 @@ var Commands = []commands.Command{
 	commands.NewMtaCommand(),
 	commands.NewMtaOperationsCommand(),
 	commands.NewPurgeConfigCommand(),
-	commands.NewRevertDeployCommand(),
+	commands.NewRollbackMtaCommand(),
 }
 
 // Run runs this plugin
