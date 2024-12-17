@@ -97,7 +97,7 @@ var _ = Describe("RollbackMtaCommand", func() {
 		It("returns the correct plugin command", func() {
 			pluginCmd := command.GetPluginCommand()
 			Expect(pluginCmd.Name).To(Equal("rollback-mta"))
-			Expect(pluginCmd.HelpText).To(Equal("Rollback of a multi-target app"))
+			Expect(pluginCmd.HelpText).To(Equal("Rollback of a multi-target app works only if [--backup-previous-version] flag was used during blue-green deployment and backup applications exists in the space"))
 		})
 	})
 

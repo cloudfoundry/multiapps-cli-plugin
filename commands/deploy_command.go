@@ -29,30 +29,30 @@ import (
 )
 
 const (
-	extDescriptorsOpt             = "e"
-	timeoutOpt                    = "t"
-	versionRuleOpt                = "version-rule"
-	noStartOpt                    = "no-start"
-	deleteServiceKeysOpt          = "delete-service-keys"
-	keepFilesOpt                  = "keep-files"
-	skipOwnershipValidationOpt    = "skip-ownership-validation"
-	moduleOpt                     = "m"
-	resourceOpt                   = "r"
-	allModulesOpt                 = "all-modules"
-	allResourcesOpt               = "all-resources"
-	strategyOpt                   = "strategy"
-	skipTestingPhase              = "skip-testing-phase"
-	skipIdleStart                 = "skip-idle-start"
-	startTimeoutOpt               = "apps-start-timeout"
-	stageTimeoutOpt               = "apps-stage-timeout"
-	uploadTimeoutOpt              = "apps-upload-timeout"
-	taskExecutionTimeoutOpt       = "apps-task-execution-timeout"
-	applyNamespaceAppNamesOpt     = "apply-namespace-app-names"
-	applyNamespaceServiceNamesOpt = "apply-namespace-service-names"
-	applyNamespaceAppRoutesOpt    = "apply-namespace-app-routes"
-	applyNamespaceAsSuffix        = "apply-namespace-as-suffix"
-	maxNamespaceSize              = 36
-	shouldBackupExistingApps      = "backup-existing-apps"
+	extDescriptorsOpt              = "e"
+	timeoutOpt                     = "t"
+	versionRuleOpt                 = "version-rule"
+	noStartOpt                     = "no-start"
+	deleteServiceKeysOpt           = "delete-service-keys"
+	keepFilesOpt                   = "keep-files"
+	skipOwnershipValidationOpt     = "skip-ownership-validation"
+	moduleOpt                      = "m"
+	resourceOpt                    = "r"
+	allModulesOpt                  = "all-modules"
+	allResourcesOpt                = "all-resources"
+	strategyOpt                    = "strategy"
+	skipTestingPhase               = "skip-testing-phase"
+	skipIdleStart                  = "skip-idle-start"
+	startTimeoutOpt                = "apps-start-timeout"
+	stageTimeoutOpt                = "apps-stage-timeout"
+	uploadTimeoutOpt               = "apps-upload-timeout"
+	taskExecutionTimeoutOpt        = "apps-task-execution-timeout"
+	applyNamespaceAppNamesOpt      = "apply-namespace-app-names"
+	applyNamespaceServiceNamesOpt  = "apply-namespace-service-names"
+	applyNamespaceAppRoutesOpt     = "apply-namespace-app-routes"
+	applyNamespaceAsSuffix         = "apply-namespace-as-suffix"
+	maxNamespaceSize               = 36
+	shouldBackupPreviousVersionOpt = "backup-previous-version"
 )
 
 type listFlag struct {
@@ -146,7 +146,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
-				util.GetShortOption(shouldBackupExistingApps):                   "Should backup existing applications (only for blue-green)",
+				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 			},
 		},
 	}
@@ -172,7 +172,6 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
-		processBuilder.Parameter("shouldBackupExistingApps", strconv.FormatBool(GetBoolOpt(shouldBackupExistingApps, flags)))
 
 		var lastSetValue string = ""
 		for i := 0; i < len(os.Args); i++ {
@@ -226,7 +225,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(stageTimeoutOpt, "", "")
 	flags.String(uploadTimeoutOpt, "", "")
 	flags.String(taskExecutionTimeoutOpt, "", "")
-	flags.Bool(shouldBackupExistingApps, false, "")
+	flags.Bool(shouldBackupPreviousVersionOpt, false, "")
 }
 
 func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {

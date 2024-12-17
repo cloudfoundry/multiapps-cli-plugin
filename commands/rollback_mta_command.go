@@ -33,16 +33,15 @@ func NewRollbackMtaCommand() *RollbackMtaCommand {
 func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
 	return plugin.Command{
 		Name:     "rollback-mta",
-		HelpText: "Rollback of a multi-target app",
+		HelpText: "Rollback of a multi-target app works only if [--backup-previous-version] flag was used during blue-green deployment and backup applications exists in the space",
 		UsageDetails: plugin.Usage{
 			Usage: `Rollback of a multi-target app
-   cf rollback-mta MTA_ID [-t TIMEOUT] [--version-rule VERSION_RULE] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf rollback-mta MTA_ID [-t TIMEOUT] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf rollback-mta -i OPERATION_ID -a ACTION [-u URL]`,
 			Options: map[string]string{
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
-				versionRuleOpt:                         "Version rule (HIGHER, SAME_HIGHER, ALL)",
 				operationIDOpt:                         "Active deploy operation ID",
 				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
 				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
