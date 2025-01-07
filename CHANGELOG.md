@@ -1,3 +1,6 @@
+## v3.5.0
+* New rollback-mta command that will rollback to previously deployed MTA version. Rollback is application specific and aims to revert the productive traffic to previously deployed CF app. Rollback is possible only for blue-green deployments when backup is activated with the option "--backup-previoвus-version".
+
 ## v3.4.1
 * Fixed cf deploy --help command
 
