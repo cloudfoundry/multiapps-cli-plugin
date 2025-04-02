@@ -1,0 +1,35 @@
+name: Check Commit Message for "LMCROSSITXSADEPLOY"
+
+on:
+  pull_request:
+    types: [synchronize, opened]
+
+jobs:
+  check_commit_message:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Commit Message
+        id: commits
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const commits = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            let containsText = false;
+            for (const commitData of commits.data) {
+              if (commitData.commit.message.includes("LMCROSSITXSADEPLOY")) {
+                containsText = true;
+                break;
+              }
+            }
+
+            if (!containsText) {
+              core.setFailed("❌ Check Commit Message - Failed: At least one commit must contain the word 'LMCROSSITXSADEPLOY'.");
+            }
