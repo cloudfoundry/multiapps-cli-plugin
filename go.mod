@@ -1,6 +1,6 @@
 module github.com/cloudfoundry-incubator/multiapps-cli-plugin
 
-go 1.20
+go 1.24
 
 require (
 	code.cloudfoundry.org/cli v7.1.0+incompatible

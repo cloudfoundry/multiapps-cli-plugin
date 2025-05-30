@@ -39,10 +39,10 @@ func (c *DefaultCsrfTokenFetcher) FetchCsrfToken(url, authToken string) (csrf_pa
 	// if there are set-cookie headers present in response - persist them in Transport
 	cookies := response.Cookies()
 	if len(cookies) != 0 {
-		log.Tracef("Set-Cookie headers present in response, updating current with '" + prettyPrintCookies(cookies) + "'\n")
+		log.Tracef("%s", "Set-Cookie headers present in response, updating current with '"+prettyPrintCookies(cookies)+"'\n")
 	}
 
-	log.Tracef("New CSRF Token fetched '" + response.Header.Get(XCsrfToken) + "'\n")
+	log.Tracef("%s", "New CSRF Token fetched '"+response.Header.Get(XCsrfToken)+"'\n")
 	return csrf_parameters.CsrfParams{
 		CsrfTokenHeader: response.Header.Get(XCsrfHeader),
 		CsrfTokenValue:  response.Header.Get(XCsrfToken),
