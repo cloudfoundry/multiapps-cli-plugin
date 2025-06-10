@@ -4,7 +4,7 @@
 This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing operations on [Multitarget Applications (MTAs)](https://www.sap.com/documents/2021/09/66d96898-fa7d-0010-bca6-c68f7e60039b.html) in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) (known also as CF MTA Deploy Service), which is an MTA deployer implementation for Cloud Foundry. The business logic and actual processing of MTAs happens into CF MultiApps Controller backend.
 
 # Requirements
-- Installed CloudFoundry CLI - ensure that CloudFoundry CLI is installed and working. For more information about installation of CloudFoundry CLI, please visit the official CloudFoundry [documentation](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html). You need to have CF CLI v7 or v8 (recommended one)
+- Installed CloudFoundry CLI - ensure that CloudFoundry CLI is installed and working. For more information about installation of CloudFoundry CLI, please visit the official CloudFoundry [documentation](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html). You need to have CF CLI v8
 - Working [CF MultiApps Controller](https://github.com/cloudfoundry-incubator/multiapps-controller) - this a CF plugin for the MultiApps Controller application. Thus, a working MultiApps Controller must be available on the CF landscape
 
 # Download and Installation
