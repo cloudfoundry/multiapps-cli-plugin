@@ -1,9 +1,10 @@
 package commands
 
 import (
+	"flag"
+
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -27,7 +28,7 @@ func (c *MtasCommand) GetPluginCommand() plugin.Command {
 		Name:     "mtas",
 		HelpText: "List all multi-target apps",
 		UsageDetails: plugin.Usage{
-			Usage: "cf mtas [-u URL]",
+			Usage: "cf mtas [-u URL]" + util.BaseEnvHelpText,
 			Options: map[string]string{
 				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},

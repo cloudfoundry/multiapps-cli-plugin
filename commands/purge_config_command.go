@@ -1,9 +1,10 @@
 package commands
 
 import (
+	"flag"
+
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
@@ -25,7 +26,7 @@ func (c *PurgeConfigCommand) GetPluginCommand() plugin.Command {
 		Name:     "purge-mta-config",
 		HelpText: "Purge no longer valid configuration entries",
 		UsageDetails: plugin.Usage{
-			Usage: "cf purge-mta-config [-u URL]",
+			Usage: "cf purge-mta-config [-u URL]" + util.BaseEnvHelpText,
 			Options: map[string]string{
 				deployServiceURLOpt: "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},

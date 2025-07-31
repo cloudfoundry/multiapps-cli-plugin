@@ -1,19 +1,20 @@
 package commands
 
 import (
+	"flag"
+	"fmt"
+	"strconv"
+	"strings"
+
 	"code.cloudfoundry.org/cli/cf/formatters"
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	"flag"
-	"fmt"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/resilient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
-	"strconv"
-	"strings"
 )
 
 // MtaCommand is a command for listing a deployed MTA
@@ -42,7 +43,7 @@ func (c *MtaCommand) GetPluginCommand() plugin.Command {
 		Name:     "mta",
 		HelpText: "Display health and status for a multi-target app",
 		UsageDetails: plugin.Usage{
-			Usage: "cf mta MTA_ID [--namespace NAMESPACE] [-u URL]",
+			Usage: "cf mta MTA_ID [--namespace NAMESPACE] [-u URL]" + util.BaseEnvHelpText,
 			Options: map[string]string{
 				util.GetShortOption(namespaceOpt): "(EXPERIMENTAL) namespace of the requested mta, empty by default",
 				deployServiceURLOpt:               "Deploy service URL, by default 'deploy-service.<system-domain>'",

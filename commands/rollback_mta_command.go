@@ -39,7 +39,7 @@ func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
    cf rollback-mta MTA_ID [-t TIMEOUT] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
-   cf rollback-mta -i OPERATION_ID -a ACTION [-u URL]`,
+   cf rollback-mta -i OPERATION_ID -a ACTION [-u URL]` + util.BaseEnvHelpText,
 			Options: map[string]string{
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				operationIDOpt:                         "Active deploy operation ID",
