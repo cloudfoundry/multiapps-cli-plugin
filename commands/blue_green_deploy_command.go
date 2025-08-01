@@ -36,7 +36,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
    cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
-   cf deploy -i OPERATION_ID -a ACTION [-u URL]`,
+   cf deploy -i OPERATION_ID -a ACTION [-u URL] ` + util.UploadEnvHelpText,
 			Options: map[string]string{
 				extDescriptorsOpt:                 "Extension descriptors",
 				deployServiceURLOpt:               "Deploy service URL, by default 'deploy-service.<system-domain>'",

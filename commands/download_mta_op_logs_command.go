@@ -3,11 +3,12 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
@@ -43,7 +44,7 @@ func (c *DownloadMtaOperationLogsCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: `cf download-mta-op-logs -i OPERATION_ID [-d DIRECTORY] [-u URL]
 
-   cf download-mta-op-logs --mta MTA [--last NUM] [-d DIRECTORY] [-u URL]`,
+   cf download-mta-op-logs --mta MTA [--last NUM] [-d DIRECTORY] [-u URL]` + util.BaseEnvHelpText,
 			Options: map[string]string{
 				operationIDOpt:               "Operation ID",
 				util.GetShortOption(mtaOpt):  "ID of the deployed MTA",

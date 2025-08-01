@@ -15,7 +15,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 )
 
-//UndeployCommand is a command for undeploying MTAs
+// UndeployCommand is a command for undeploying MTAs
 type UndeployCommand struct {
 	*BaseCommand
 	processTypeProvider ProcessTypeProvider
@@ -38,7 +38,7 @@ func (c *UndeployCommand) GetPluginCommand() plugin.Command {
    cf undeploy MTA_ID [-u URL] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error]
 
    Perform action on an active undeploy operation
-   cf undeploy -i OPERATION_ID -a ACTION [-u URL]`,
+   cf undeploy -i OPERATION_ID -a ACTION [-u URL]` + util.BaseEnvHelpText,
 			Options: map[string]string{
 				deployServiceURLOpt:                    "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				operationIDOpt:                         "Active undeploy operation ID",

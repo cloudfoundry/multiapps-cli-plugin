@@ -1,9 +1,10 @@
 package commands
 
 import (
+	"flag"
+
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/plugin"
-	"flag"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
@@ -31,7 +32,7 @@ func (c *MtaOperationsCommand) GetPluginCommand() plugin.Command {
 		Name:     "mta-ops",
 		HelpText: "List multi-target app operations",
 		UsageDetails: plugin.Usage{
-			Usage: "cf mta-ops [--mta MTA] [-u URL] [--last NUM] [--all]",
+			Usage: "cf mta-ops [--mta MTA] [-u URL] [--last NUM] [--all]" + util.BaseEnvHelpText,
 			Options: map[string]string{
 				deployServiceURLOpt:          "Deploy service URL, by default 'deploy-service.<system-domain>'",
 				util.GetShortOption(mtaOpt):  "ID of the deployed package",
