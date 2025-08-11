@@ -1,3 +1,8 @@
+## v3.6.0
+* Added environment configuration in the help of mta commands
+* Version of GO is increased to 1.24
+* Bump dependencies 
+
 ## v3.5.0
 * New rollback-mta command that will rollback to previously deployed MTA version. Rollback is application specific and aims to revert the productive traffic to previously deployed CF app. Rollback is possible only for blue-green deployments when backup is activated with the option "--backup-previoвus-version".
 
