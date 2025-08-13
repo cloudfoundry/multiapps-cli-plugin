@@ -213,7 +213,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"x", "-l"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -l")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
@@ -223,7 +223,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "-l"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -l")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
@@ -276,7 +276,40 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "--strategy"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				ex.ExpectFailure(status, output, "Incorrect usage. Parsing of arguments has failed")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		// more than one unknown flag and one valid flag, which is a boolean, but its value is missing
+		Context("with argument that is a directory or MTA and with more than one unknown flag and one valid flag, which is a boolean, but its value is missing", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--nonValidFlag", "--apply-namespace-app-names", "-notAValidOne", "-not-a-valid-one"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: --nonValidFlag, -notAValidOne, -not-a-valid-one")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		// more than one unknown flag and one valid flag, which is a boolean and its value is set
+		Context("with argument that is a directory or MTA and with more than one unknown flag and one valid flag, which is a boolean and its value is set", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--nonValidFlag", "--apply-namespace-app-names", "true", "-notAValidOne", "-not-a-valid-one"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: --nonValidFlag, -notAValidOne, -not-a-valid-one")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		// more than one unknown flag and one valid flag that is not boolean and has a value set
+		Context("with argument that is a directory or MTA and with more than one unknown flag and one valid flag that is not boolean and has a value set", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--nonValidFlag", "--apps-stage-timeout", "8000", "-notAValidOne", "-inavalid-flag"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: --nonValidFlag, -notAValidOne, -inavalid-flag")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})

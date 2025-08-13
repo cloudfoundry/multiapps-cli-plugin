@@ -101,7 +101,7 @@ var _ = Describe("UndeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"test-mta-id", "-unknown-flag"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -unknown-flag")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})

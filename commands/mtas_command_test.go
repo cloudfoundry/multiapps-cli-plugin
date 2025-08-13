@@ -60,13 +60,24 @@ var _ = Describe("MtasCommand", func() {
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), clientFactory, testTokenFactory, deployServiceURLCalculator)
 		})
 
-		// unknown flag - error
+		// with an unknown flag - error
 		Context("with an unknown flag", func() {
 			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"-a"}).ToInt()
 				})
-				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flag")
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -a")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		// with an unknown flag and one valid flag
+		Context("with an unknown flag and one valid flag", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"-nonValidFlag", "-u"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -nonValidFlag")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})

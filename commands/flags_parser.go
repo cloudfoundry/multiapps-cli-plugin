@@ -24,6 +24,10 @@ func NewCommandFlagsParser(flag *flag.FlagSet, parser FlagsParser, validator Fla
 
 // Parse parsing the args
 func (p *CommandFlagsParser) Parse(args []string) error {
+	if unknownFlags := collectUnknownFlags(p.flag, args); len(unknownFlags) > 0 {
+		return fmt.Errorf("Unknown or wrong flags: %s", strings.Join(unknownFlags, ", "))
+	}
+
 	err := p.parser.ParseFlags(p.flag, args)
 	if err != nil {
 		return err
@@ -88,7 +92,7 @@ func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string
 	// Parse the arguments
 	err := flags.Parse(args[positionalArgsCount:])
 	if err != nil {
-		return errors.New("Unknown or wrong flag")
+		return errors.New("Parsing of arguments has failed")
 	}
 
 	// Check for wrong arguments
@@ -123,4 +127,63 @@ func (v DefaultCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) e
 	}
 
 	return nil
+}
+
+func collectUnknownFlags(flags *flag.FlagSet, args []string) []string {
+	var unknownFlags []string
+
+	for i := 0; i < len(args); i++ {
+		currentArgument := args[i]
+
+		if !strings.HasPrefix(currentArgument, "-") {
+			continue
+		}
+
+		currentFlag := currentArgument
+		flagName := strings.TrimLeft(currentFlag, "-")
+
+		if flagName == "" {
+			continue
+		}
+
+		isFlagKnown := flags.Lookup(flagName)
+		if isFlagKnown != nil {
+			nextIndex := i + 1
+			if nextIndex < len(args) {
+				isBoolean := isBoolFlag(isFlagKnown)
+				if !isBoolean {
+					nextArgument := args[nextIndex]
+					nextHasPrefixDash := strings.HasPrefix(nextArgument, "-")
+					if !nextHasPrefixDash {
+						i = nextIndex
+					}
+				}
+			}
+			continue
+		}
+
+		unknownFlags = append(unknownFlags, currentFlag)
+
+		nextIndex := i + 1
+		if nextIndex < len(args) {
+			nextArgument := args[nextIndex]
+			nextHasPrefixDash := strings.HasPrefix(nextArgument, "-")
+			if !nextHasPrefixDash {
+				i = nextIndex
+			}
+		}
+	}
+
+	return unknownFlags
+}
+
+func isBoolFlag(flag *flag.Flag) bool {
+	type boolFlagInterface interface{ IsBoolFlag() bool }
+
+	boolFlag, isInterfaceImplemented := flag.Value.(boolFlagInterface)
+	if !isInterfaceImplemented {
+		return false
+	}
+
+	return boolFlag.IsBoolFlag()
 }
