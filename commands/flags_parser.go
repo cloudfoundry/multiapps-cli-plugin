@@ -131,6 +131,7 @@ func (v DefaultCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) e
 
 func collectUnknownFlags(flags *flag.FlagSet, args []string) []string {
 	var unknownFlags []string
+	alreadySeenUnknownFLags := make(map[string]int)
 
 	for i := 0; i < len(args); i++ {
 		currentArgument := args[i]
@@ -148,30 +149,15 @@ func collectUnknownFlags(flags *flag.FlagSet, args []string) []string {
 
 		isFlagKnown := flags.Lookup(flagName)
 		if isFlagKnown != nil {
-			nextIndex := i + 1
-			if nextIndex < len(args) {
-				isBoolean := isBoolFlag(isFlagKnown)
-				if !isBoolean {
-					nextArgument := args[nextIndex]
-					nextHasPrefixDash := strings.HasPrefix(nextArgument, "-")
-					if !nextHasPrefixDash {
-						i = nextIndex
-					}
-				}
+			isBoolean := isBoolFlag(isFlagKnown)
+			if !isBoolean {
+				i = tryToGetNext(args, i)
 			}
 			continue
 		}
 
-		unknownFlags = append(unknownFlags, currentFlag)
-
-		nextIndex := i + 1
-		if nextIndex < len(args) {
-			nextArgument := args[nextIndex]
-			nextHasPrefixDash := strings.HasPrefix(nextArgument, "-")
-			if !nextHasPrefixDash {
-				i = nextIndex
-			}
-		}
+		appendOnlyWhenCountIsOne(alreadySeenUnknownFLags, currentFlag, &unknownFlags)
+		i = tryToGetNext(args, i)
 	}
 
 	return unknownFlags
@@ -186,4 +172,23 @@ func isBoolFlag(flag *flag.Flag) bool {
 	}
 
 	return boolFlag.IsBoolFlag()
+}
+
+func tryToGetNext(args []string, currentIndex int) int {
+	nextIndex := currentIndex + 1
+	if nextIndex < len(args) {
+		nextArgument := args[nextIndex]
+		nextHasPrefixDash := strings.HasPrefix(nextArgument, "-")
+		if !nextHasPrefixDash {
+			return nextIndex
+		}
+	}
+	return currentIndex
+}
+
+func appendOnlyWhenCountIsOne(alreadySeenUnknownFLags map[string]int, currentFlag string, unknownFlags *[]string) {
+	alreadySeenUnknownFLags[currentFlag]++
+	if alreadySeenUnknownFLags[currentFlag] == 1 {
+		*unknownFlags = append(*unknownFlags, currentFlag)
+	}
 }
