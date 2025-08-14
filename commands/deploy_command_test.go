@@ -207,8 +207,8 @@ var _ = Describe("DeployCommand", func() {
 			command.FileUrlReadTimeout = time.Second
 		})
 
-		// unknown flag - error
-		Context("with argument that is not a directory or MTA", func() {
+		// with argument that is not a directory or MTA and a valid and unknown flag (unknown flag - error)
+		Context("with argument that is not a directory or MTA and a valid and unknown flag", func() {
 			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{"x", "-l"}).ToInt()
@@ -218,12 +218,24 @@ var _ = Describe("DeployCommand", func() {
 			})
 		})
 
+		// with argument that is a directory or MTA and with unknown flag (unknown flag - error)
 		Context("with argument that is a directory or MTA and with unknown flag", func() {
 			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "-l"}).ToInt()
 				})
 				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -l")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
+		// with argument that is a directory or MTA and with unknown flags - some even duplicated (unknown flag - error)
+		Context("with argument that is a directory or MTA and with unknown flags - some even duplicated", func() {
+			It("should print incorrect usage (and print the duplicating flags only once), call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "-nonValidFlag", "-u", "-nonValidFlag", "-nonValidFlag", "--flagInvalid"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: -nonValidFlag, --flagInvalid")
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
 			})
 		})
