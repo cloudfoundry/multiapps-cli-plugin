@@ -24,10 +24,6 @@ func NewCommandFlagsParser(flag *flag.FlagSet, parser FlagsParser, validator Fla
 
 // Parse parsing the args
 func (p *CommandFlagsParser) Parse(args []string) error {
-	if unknownFlags := collectUnknownFlags(p.flag, args); len(unknownFlags) > 0 {
-		return fmt.Errorf("Unknown or wrong flags: %s", strings.Join(unknownFlags, ", "))
-	}
-
 	err := p.parser.ParseFlags(p.flag, args)
 	if err != nil {
 		return err
@@ -92,7 +88,11 @@ func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string
 	// Parse the arguments
 	err := flags.Parse(args[positionalArgsCount:])
 	if err != nil {
-		return errors.New("Parsing of arguments has failed")
+		if unknownFlags := collectUnknownFlags(flags, args); len(unknownFlags) > 0 {
+			return fmt.Errorf("Unknown or wrong flags: %s", strings.Join(unknownFlags, ", "))
+		} else {
+			return errors.New("Parsing of arguments has failed")
+		}
 	}
 
 	// Check for wrong arguments
