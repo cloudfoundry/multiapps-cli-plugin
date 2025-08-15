@@ -88,7 +88,11 @@ func (p DefaultCommandFlagsParser) ParseFlags(flags *flag.FlagSet, args []string
 	// Parse the arguments
 	err := flags.Parse(args[positionalArgsCount:])
 	if err != nil {
-		return errors.New("Unknown or wrong flag")
+		if unknownFlags := collectUnknownFlags(flags, args); len(unknownFlags) > 0 {
+			return fmt.Errorf("Unknown or wrong flags: %s", strings.Join(unknownFlags, ", "))
+		} else {
+			return errors.New("Parsing of arguments has failed")
+		}
 	}
 
 	// Check for wrong arguments
@@ -123,4 +127,68 @@ func (v DefaultCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) e
 	}
 
 	return nil
+}
+
+func collectUnknownFlags(flags *flag.FlagSet, args []string) []string {
+	var unknownFlags []string
+	alreadySeenUnknownFLags := make(map[string]int)
+
+	for i := 0; i < len(args); i++ {
+		currentArgument := args[i]
+
+		if !strings.HasPrefix(currentArgument, "-") {
+			continue
+		}
+
+		currentFlag := currentArgument
+		flagName := strings.TrimLeft(currentFlag, "-")
+
+		if flagName == "" {
+			continue
+		}
+
+		isFlagKnown := flags.Lookup(flagName)
+		if isFlagKnown != nil {
+			isBoolean := isBoolFlag(isFlagKnown)
+			if !isBoolean {
+				i = tryToGetNext(args, i)
+			}
+			continue
+		}
+
+		appendOnlyWhenCountIsOne(alreadySeenUnknownFLags, currentFlag, &unknownFlags)
+		i = tryToGetNext(args, i)
+	}
+
+	return unknownFlags
+}
+
+func isBoolFlag(flag *flag.Flag) bool {
+	type boolFlagInterface interface{ IsBoolFlag() bool }
+
+	boolFlag, isInterfaceImplemented := flag.Value.(boolFlagInterface)
+	if !isInterfaceImplemented {
+		return false
+	}
+
+	return boolFlag.IsBoolFlag()
+}
+
+func tryToGetNext(args []string, currentIndex int) int {
+	nextIndex := currentIndex + 1
+	if nextIndex < len(args) {
+		nextArgument := args[nextIndex]
+		nextHasPrefixDash := strings.HasPrefix(nextArgument, "-")
+		if !nextHasPrefixDash {
+			return nextIndex
+		}
+	}
+	return currentIndex
+}
+
+func appendOnlyWhenCountIsOne(alreadySeenUnknownFLags map[string]int, currentFlag string, unknownFlags *[]string) {
+	alreadySeenUnknownFLags[currentFlag]++
+	if alreadySeenUnknownFLags[currentFlag] == 1 {
+		*unknownFlags = append(*unknownFlags, currentFlag)
+	}
 }

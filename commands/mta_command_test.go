@@ -90,6 +90,17 @@ var _ = Describe("MtaCommand", func() {
 			})
 		})
 
+		// with unknown flags and one valid flag - error
+		Context("with unknown flags and one valid flag", func() {
+			It("should print incorrect usage, call cf help, and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"fakeMta", "--nonValidFlag", "--namespace", "-u"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: --nonValidFlag")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
 		// can't connect to backend - error
 		Context("when can't connect to backend", func() {
 			const host = "x"
