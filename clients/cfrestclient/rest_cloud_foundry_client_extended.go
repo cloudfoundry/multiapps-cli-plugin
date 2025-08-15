@@ -11,6 +11,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/jsonry"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 )
@@ -156,10 +157,15 @@ func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, 
 func executeRequest(url, token string, isSslDisabled bool) ([]byte, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Add("Authorization", token)
+
+	// Create transport with TLS configuration
 	httpTransport := http.DefaultTransport.(*http.Transport).Clone()
 	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: isSslDisabled}
-	client := http.DefaultClient
-	client.Transport = httpTransport
+
+	// Wrap with User-Agent transport
+	userAgentTransport := baseclient.NewUserAgentTransport(httpTransport)
+
+	client := &http.Client{Transport: userAgentTransport}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

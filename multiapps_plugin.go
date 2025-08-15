@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 )
 
 // Version is the version of the CLI plugin. It is injected on linking time.
@@ -42,6 +43,7 @@ func (p *MultiappsPlugin) Run(cliConnection plugin.CliConnection, args []string)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	util.SetPluginVersion(Version)
 	command.Initialize(command.GetPluginCommand().Name, cliConnection)
 	status := command.Execute(args[1:])
 	if status == commands.Failure {

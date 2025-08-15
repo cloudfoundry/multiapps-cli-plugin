@@ -5,6 +5,7 @@ const BaseEnvHelpText = `
 ENVIRONMENT:
    DEBUG=1                                         Enables the logging of HTTP requests in STDOUT and STDERR.
    MULTIAPPS_CONTROLLER_URL=<URL>                  Overrides the default deploy-service.<system-domain> with a custom URL.
+   MULTIAPPS_USER_AGENT_SUFFIX=<STRING>            Appends custom text to User-Agent header. Only alphanumeric, spaces, hyphens, dots, underscores allowed. Max 128 chars, excess truncated.
 `
 const UploadEnvHelpText = BaseEnvHelpText + `
    MULTIAPPS_UPLOAD_CHUNK_SIZE=<POSITIVE_INTEGER>  Configures chunk size (in MB) for MTAR upload.

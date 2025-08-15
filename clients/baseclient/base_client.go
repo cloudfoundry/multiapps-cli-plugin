@@ -30,7 +30,11 @@ func NewHTTPTransport(host, url string, rt http.RoundTripper) *client.Runtime {
 	// TODO: apply the changes made by Boyan here, as after the update of the dependencies the changes are not available
 	transport := client.New(host, url, schemes)
 	transport.Consumers["text/html"] = runtime.TextConsumer()
-	transport.Transport = rt
+
+	// Wrap the RoundTripper with User-Agent support
+	userAgentTransport := NewUserAgentTransport(rt)
+	transport.Transport = userAgentTransport
+
 	jar, _ := cookiejar.New(nil)
 	transport.Jar = jar
 	return transport

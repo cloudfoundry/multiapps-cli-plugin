@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/csrf"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
@@ -26,7 +27,11 @@ func NewCustomTransport(statusCode int) *csrf.Transport {
 		resp.Body = io.NopCloser(buf)
 		return &resp, nil
 	})
-	return &csrf.Transport{Delegate: transport, Csrf: &csrf.CsrfTokenHelper{}}
+
+	// Wrap with User-Agent transport for testing consistency
+	userAgentTransport := baseclient.NewUserAgentTransport(transport)
+
+	return &csrf.Transport{Delegate: userAgentTransport, Csrf: &csrf.CsrfTokenHelper{}}
 }
 
 // NewCustomBearerToken creates a new bearer token to be used for testing
