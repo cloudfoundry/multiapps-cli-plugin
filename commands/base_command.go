@@ -276,7 +276,17 @@ func newTransport(isSslDisabled bool) http.RoundTripper {
 	// Increase tls handshake timeout to cope with slow internet connections. 3 x default value =30s.
 	httpTransport.TLSHandshakeTimeout = 30 * time.Second
 	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: isSslDisabled}
-	return &csrf.Transport{Delegate: httpTransport, Csrf: &csrfx}
+
+	// Wrap with User-Agent transport first
+	userAgentTransport := baseclient.NewUserAgentTransport(httpTransport)
+
+	// Then wrap with CSRF transport
+	return &csrf.Transport{Delegate: userAgentTransport, Csrf: &csrfx}
+}
+
+// NewTransportForTesting creates a transport for testing purposes
+func NewTransportForTesting(isSslDisabled bool) http.RoundTripper {
+	return newTransport(isSslDisabled)
 }
 
 func getNonProtectedMethods() map[string]struct{} {

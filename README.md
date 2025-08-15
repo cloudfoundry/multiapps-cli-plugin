@@ -71,6 +71,7 @@ The configuration of the MultiApps CF plugin is done via env variables. The foll
 For example, with a 100MB MTAR the minimum value for this environment variable would be 2, and for a 400MB MTAR it would be 8. Finally, the minimum value cannot grow over 50, so with a 4GB MTAR, the minimum value would be 50 and not 80.
 * `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=<BOOLEAN>` - By default, MTAR chunks are uploaded in parallel for better performance. In case of a bad internet connection, the option to upload them sequentially will lessen network load.
 * `MULTIAPPS_DISABLE_UPLOAD_PROGRESS_BAR=<BOOLEAN>` - By default, the file upload shows a progress bar. In case of CI/CD systems where console text escaping isn't supported, the bar can be disabled to reduce unnecessary logs.
+* `MULTIAPPS_USER_AGENT_SUFFIX=<STRING>` - Allows customization of the User-Agent header sent with all HTTP requests. The value will be appended to the standard User-Agent string format: "Multiapps-CF-plugin/{version} ({operating system version}) {golang builder version} {custom_value}". Only alphanumeric characters, spaces, hyphens, dots, and underscores are allowed. Maximum length is 128 characters; longer values will be truncated. Dangerous characters (control characters, colons, semicolons) are automatically removed for security. This can be useful for tracking requests from specific environments or CI/CD systems.
 
 # How to contribute
 * [Did you find a bug?](CONTRIBUTING.md#did-you-find-a-bug)
