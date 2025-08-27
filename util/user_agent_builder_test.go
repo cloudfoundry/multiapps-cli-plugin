@@ -3,6 +3,7 @@ package util_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -15,15 +16,18 @@ var _ = Describe("UserAgentBuilder", func() {
 
 	Describe("BuildUserAgent", func() {
 		var originalVersion string
+		var originalCfCliVersion string
 
 		BeforeEach(func() {
-			// Save original version for restoration
+			// Save original versions for restoration
 			originalVersion = util.GetPluginVersion()
+			originalCfCliVersion = util.GetCfCliVersion()
 		})
 
 		AfterEach(func() {
-			// Restore original version and clean up environment
+			// Restore original versions and clean up environment
 			util.SetPluginVersion(originalVersion)
+			util.SetCfCliVersion(originalCfCliVersion)
 			os.Unsetenv("MULTIAPPS_USER_AGENT_SUFFIX")
 		})
 
@@ -70,6 +74,29 @@ var _ = Describe("UserAgentBuilder", func() {
 				Expect(userAgent).To(ContainSubstring(runtime.GOOS))
 				Expect(userAgent).To(ContainSubstring(runtime.GOARCH))
 				Expect(userAgent).To(ContainSubstring(runtime.Version()))
+			})
+		})
+
+		Context("with custom CF CLI version", func() {
+			BeforeEach(func() {
+				util.SetPluginVersion("1.0.0")
+				util.SetCfCliVersion("8.5.0")
+			})
+
+			It("should contain the CF CLI version in parentheses", func() {
+				userAgent := util.BuildUserAgent()
+
+				Expect(userAgent).To(ContainSubstring("(8.5.0)"))
+				Expect(userAgent).To(ContainSubstring("Multiapps-CF-plugin/1.0.0"))
+			})
+
+			It("should have correct format with CF CLI version", func() {
+				userAgent := util.BuildUserAgent()
+
+				// Expected format: "Multiapps-CF-plugin/{version} ({os} {arch}) {go version} ({cf cli version})"
+				expectedPattern := fmt.Sprintf("Multiapps-CF-plugin/1.0.0 \\(%s %s\\) %s \\(8.5.0\\)", runtime.GOOS, runtime.GOARCH, regexp.QuoteMeta(runtime.Version()))
+				matched, _ := regexp.MatchString(expectedPattern, userAgent)
+				Expect(matched).To(BeTrue(), fmt.Sprintf("User agent '%s' should match pattern '%s'", userAgent, expectedPattern))
 			})
 		})
 
@@ -136,7 +163,7 @@ var _ = Describe("UserAgentBuilder", func() {
 				userAgent := util.BuildUserAgent()
 
 				// Should only contain the base user agent without suffix
-				expectedBase := fmt.Sprintf("Multiapps-CF-plugin/1.0.0 (%s %s) %s", runtime.GOOS, runtime.GOARCH, runtime.Version())
+				expectedBase := fmt.Sprintf("Multiapps-CF-plugin/1.0.0 (%s %s) %s (unknown-cf cli version)", runtime.GOOS, runtime.GOARCH, runtime.Version())
 				Expect(userAgent).To(Equal(expectedBase))
 			})
 
@@ -145,7 +172,7 @@ var _ = Describe("UserAgentBuilder", func() {
 				userAgent := util.BuildUserAgent()
 
 				// Should only contain the base user agent without suffix (whitespace gets trimmed to empty)
-				expectedBase := fmt.Sprintf("Multiapps-CF-plugin/1.0.0 (%s %s) %s", runtime.GOOS, runtime.GOARCH, runtime.Version())
+				expectedBase := fmt.Sprintf("Multiapps-CF-plugin/1.0.0 (%s %s) %s (unknown-cf cli version)", runtime.GOOS, runtime.GOARCH, runtime.Version())
 				Expect(userAgent).To(Equal(expectedBase))
 			})
 
@@ -243,6 +270,59 @@ var _ = Describe("UserAgentBuilder", func() {
 			util.SetPluginVersion("0.0.0")
 
 			Expect(util.GetPluginVersion()).To(Equal("0.0.0"))
+		})
+	})
+
+	Describe("SetCfCliVersion", func() {
+		var originalVersion string
+
+		BeforeEach(func() {
+			originalVersion = util.GetCfCliVersion()
+		})
+
+		AfterEach(func() {
+			util.SetCfCliVersion(originalVersion)
+		})
+
+		It("should set the CF CLI version correctly", func() {
+			testVersion := "8.5.0"
+			util.SetCfCliVersion(testVersion)
+
+			Expect(util.GetCfCliVersion()).To(Equal(testVersion))
+		})
+
+		It("should be used in BuildUserAgent", func() {
+			testVersion := "8.5.0"
+			util.SetCfCliVersion(testVersion)
+			util.SetPluginVersion("1.0.0")
+
+			userAgent := util.BuildUserAgent()
+			Expect(userAgent).To(ContainSubstring(fmt.Sprintf("(%s)", testVersion)))
+		})
+	})
+
+	Describe("GetCfCliVersion", func() {
+		var originalVersion string
+
+		BeforeEach(func() {
+			originalVersion = util.GetCfCliVersion()
+		})
+
+		AfterEach(func() {
+			util.SetCfCliVersion(originalVersion)
+		})
+
+		It("should return the current CF CLI version", func() {
+			testVersion := "8.6.0"
+			util.SetCfCliVersion(testVersion)
+
+			Expect(util.GetCfCliVersion()).To(Equal(testVersion))
+		})
+
+		It("should return default CF CLI version initially", func() {
+			util.SetCfCliVersion(util.DefaultCliVersion)
+
+			Expect(util.GetCfCliVersion()).To(Equal(util.DefaultCliVersion))
 		})
 	})
 })
