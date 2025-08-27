@@ -10,13 +10,22 @@ import (
 
 // Limit for MULTIAPPS_USER_AGENT_SUFFIX
 const maxSuffixLength = 128
+const DefaultCliVersion = "unknown-cf cli version"
 
 // pluginVersion stores the version set from the main package
 var pluginVersion string = "0.0.0"
 
+// cfCliVersion stores the version set from the main package
+var cfCliVersion string = DefaultCliVersion
+
 // SetPluginVersion sets the plugin version for use in User-Agent
 func SetPluginVersion(version string) {
 	pluginVersion = version
+}
+
+// SetCfCliVersion sets the cf CLI version for use in User-Agent
+func SetCfCliVersion(version string) {
+	cfCliVersion = version
 }
 
 // GetPluginVersion returns the current plugin version
@@ -24,14 +33,20 @@ func GetPluginVersion() string {
 	return pluginVersion
 }
 
+// GetCfCliVersion returns the current cf CLI version
+func GetCfCliVersion() string {
+	return cfCliVersion
+}
+
 // BuildUserAgent creates a User-Agent string in the format:
 // "Multiapps-CF-plugin/{version} ({operating system version}) {golang builder version} {custom_env_value}"
 func BuildUserAgent() string {
 	osInformation := getOperatingSystemInformation()
 	goVersion := runtime.Version()
+	cfCliVersion := GetCfCliVersion()
 	customValue := getCustomEnvValue()
 
-	userAgent := fmt.Sprintf("Multiapps-CF-plugin/%s (%s) %s", pluginVersion, osInformation, goVersion)
+	userAgent := fmt.Sprintf("Multiapps-CF-plugin/%s (%s) %s (%s)", pluginVersion, osInformation, goVersion, cfCliVersion)
 
 	if customValue != "" {
 		userAgent = fmt.Sprintf("%s %s", userAgent, customValue)

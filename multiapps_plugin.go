@@ -43,6 +43,12 @@ func (p *MultiappsPlugin) Run(cliConnection plugin.CliConnection, args []string)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	versionOutput, err := cliConnection.CliCommandWithoutTerminalOutput("version")
+	if err != nil {
+		log.Traceln(err)
+		versionOutput = []string{util.DefaultCliVersion}
+	}
+	util.SetCfCliVersion(strings.Join(versionOutput, " "))
 	util.SetPluginVersion(Version)
 	command.Initialize(command.GetPluginCommand().Name, cliConnection)
 	status := command.Execute(args[1:])
