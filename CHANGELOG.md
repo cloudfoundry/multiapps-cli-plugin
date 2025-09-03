@@ -1,7 +1,11 @@
+## v3.7.0
+* Improve error message to display the specific unknown flag when a cf deploy flag is misspelled
+* Add User-Agent header to enable end-to-end tracing and insights into plugin usage and customer workflows
+
 ## v3.6.0
 * Added environment configuration in the help of mta commands
 * Version of GO is increased to 1.24
-* Bump dependencies 
+* Bump dependencies
 
 ## v3.5.0
 * New rollback-mta command that will rollback to previously deployed MTA version. Rollback is application specific and aims to revert the productive traffic to previously deployed CF app. Rollback is possible only for blue-green deployments when backup is activated with the option "--backup-previoвus-version".
