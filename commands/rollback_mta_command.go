@@ -45,7 +45,7 @@ func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
 				operationIDOpt:                         "Active deploy operation ID",
 				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
 				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
-				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the MTA, applied on app names, app routes and service names",
+				util.GetShortOption(namespaceOpt):      "Namespace for the MTA, applied on app names, app routes and service names",
 				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
 				util.GetShortOption(noFailOnMissingPermissionsOpt):              "Do not fail on missing permissions for admin operations",
 				util.GetShortOption(abortOnErrorOpt):                            "Auto-abort the process on any errors",
