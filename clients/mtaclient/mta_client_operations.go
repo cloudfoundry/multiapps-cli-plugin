@@ -20,7 +20,7 @@ type MtaClientOperations interface {
 	StartMtaOperation(operation models.Operation) (ResponseHeader, error)
 	UploadMtaFile(file util.NamedReadSeeker, fileSize int64, namespace *string) (*models.FileMetadata, error)
 	StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string) (http.Header, error)
-	GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string) (AsyncUploadJobResult, error)
+	GetAsyncUploadJob(jobId string, namespace *string) (AsyncUploadJobResult, error)
 	GetMtaOperationLogContent(operationID, logID string) (string, error)
 }
 
