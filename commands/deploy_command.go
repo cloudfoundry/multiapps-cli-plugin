@@ -145,7 +145,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
-				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
+				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 			},
 		},
 	}

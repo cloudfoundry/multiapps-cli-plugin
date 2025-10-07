@@ -64,7 +64,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
-				util.GetShortOption(shouldBackupPreviousVersionOpt):             "Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
+				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 			},
 		},
 	}
