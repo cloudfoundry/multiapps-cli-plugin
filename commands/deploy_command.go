@@ -110,7 +110,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
-   (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
+   Deploy a multi-target app archive referenced by a remote URL
    <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
 
 			Options: map[string]string{
@@ -123,11 +123,11 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				moduleOpt:                         "Deploy list of modules which are contained in the deployment descriptor, in the current location",
 				resourceOpt:                       "Deploy list of resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(noStartOpt):   "Do not start apps",
-				util.GetShortOption(namespaceOpt): "(EXPERIMENTAL) Namespace for the MTA, applied on app names, app routes and service names",
-				util.GetShortOption(applyNamespaceAppNamesOpt):                  "(EXPERIMENTAL) Apply namespace to application names: (true, false)",
-				util.GetShortOption(applyNamespaceServiceNamesOpt):              "(EXPERIMENTAL) Apply namespace to service names: (true, false)",
-				util.GetShortOption(applyNamespaceAppRoutesOpt):                 "(EXPERIMENTAL) Apply namespace to application routes: (true, false)",
-				util.GetShortOption(applyNamespaceAsSuffix):                     "(EXPERIMENTAL) Apply namespace as a suffix rather than a prefix: (true, false)",
+				util.GetShortOption(namespaceOpt): "Namespace for the MTA, applied on app names, app routes and service names",
+				util.GetShortOption(applyNamespaceAppNamesOpt):                  "Apply namespace to application names: (true, false)",
+				util.GetShortOption(applyNamespaceServiceNamesOpt):              "Apply namespace to service names: (true, false)",
+				util.GetShortOption(applyNamespaceAppRoutesOpt):                 "Apply namespace to application routes: (true, false)",
+				util.GetShortOption(applyNamespaceAsSuffix):                     "Apply namespace as a suffix rather than a prefix: (true, false)",
 				util.GetShortOption(deleteServicesOpt):                          "Recreate changed services / delete discontinued services",
 				util.GetShortOption(deleteServiceKeysOpt):                       "Delete existing service keys and apply the new ones",
 				util.GetShortOption(deleteServiceBrokersOpt):                    "Delete discontinued service brokers",
@@ -138,14 +138,14 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(allModulesOpt):                              "Deploy all modules which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(allResourcesOpt):                            "Deploy all resources which are contained in the deployment descriptor, in the current location",
 				util.GetShortOption(retriesOpt):                                 "Retry the operation N times in case a non-content error occurs (default 3)",
-				util.GetShortOption(strategyOpt):                                "Specify the deployment strategy when updating an mta (default, blue-green, (EXPERIMENTAL) incremental-blue-green)",
-				util.GetShortOption(skipTestingPhase):                           "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
-				util.GetShortOption(skipIdleStart):                              "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
+				util.GetShortOption(strategyOpt):                                "Specify the deployment strategy when updating an mta (default, blue-green, incremental-blue-green)",
+				util.GetShortOption(skipTestingPhase):                           "(STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Do not require confirmation for deleting the previously deployed MTA app",
+				util.GetShortOption(skipIdleStart):                              "(STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Directly start the new MTA version as 'live', skipping the 'idle' phase of the resources. Do not require further confirmation or testing before deleting the old version",
 				util.GetShortOption(stageTimeoutOpt):                            "Stage app timeout in seconds",
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
-				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(STRATEGY: BLUE-GREEN, (EXPERIMENTAL) INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
+				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 			},
 		},
 	}

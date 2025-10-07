@@ -45,7 +45,7 @@ func (c *MtaCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: "cf mta MTA_ID [--namespace NAMESPACE] [-u URL]" + util.BaseEnvHelpText,
 			Options: map[string]string{
-				util.GetShortOption(namespaceOpt): "(EXPERIMENTAL) namespace of the requested mta, empty by default",
+				util.GetShortOption(namespaceOpt): "namespace of the requested mta, empty by default",
 				deployServiceURLOpt:               "Deploy service URL, by default 'deploy-service.<system-domain>'",
 			},
 		},

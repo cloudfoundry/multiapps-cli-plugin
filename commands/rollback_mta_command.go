@@ -33,7 +33,7 @@ func NewRollbackMtaCommand() *RollbackMtaCommand {
 func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
 	return plugin.Command{
 		Name:     "rollback-mta",
-		HelpText: "Rollback of a multi-target app works only if [--backup-previous-version] flag was used during blue-green deployment and backup applications exists in the space",
+		HelpText: "(EXPERIMENTAL) Rollback of a multi-target app works only if [--backup-previous-version] flag was used during blue-green deployment and backup applications exists in the space",
 		UsageDetails: plugin.Usage{
 			Usage: `Rollback of a multi-target app
    cf rollback-mta MTA_ID [-t TIMEOUT] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
@@ -45,7 +45,7 @@ func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
 				operationIDOpt:                         "Active deploy operation ID",
 				actionOpt:                              "Action to perform on active deploy operation (abort, retry, resume, monitor)",
 				forceOpt:                               "Force deploy without confirmation for aborting conflicting processes",
-				util.GetShortOption(namespaceOpt):      "(EXPERIMENTAL) Namespace for the MTA, applied on app names, app routes and service names",
+				util.GetShortOption(namespaceOpt):      "Namespace for the MTA, applied on app names, app routes and service names",
 				util.GetShortOption(deleteServicesOpt): "Recreate changed services / delete discontinued services",
 				util.GetShortOption(noFailOnMissingPermissionsOpt):              "Do not fail on missing permissions for admin operations",
 				util.GetShortOption(abortOnErrorOpt):                            "Auto-abort the process on any errors",
