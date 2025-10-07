@@ -147,9 +147,9 @@ func (c RetryableMtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, nam
 	return resp.(http.Header), nil
 }
 
-func (c RetryableMtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string) (AsyncUploadJobResult, error) {
+func (c RetryableMtaRestClient) GetAsyncUploadJob(jobId string, namespace *string) (AsyncUploadJobResult, error) {
 	getAsyncUploadJobCb := func() (interface{}, error) {
-		return c.mtaClient.GetAsyncUploadJob(jobId, namespace, appInstanceId)
+		return c.mtaClient.GetAsyncUploadJob(jobId, namespace)
 	}
 	resp, err := baseclient.CallWithRetry(getAsyncUploadJobCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {

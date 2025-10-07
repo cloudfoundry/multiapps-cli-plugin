@@ -362,7 +362,7 @@ func (c MtaRestClient) handle429(headers http.Header) error {
 	return &baseclient.RetryAfterError{Duration: dur}
 }
 
-func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string) (AsyncUploadJobResult, error) {
+func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string) (AsyncUploadJobResult, error) {
 	requestUrl := "https://" + c.dsHost + "/" + restBaseURL + spacesURL + c.spaceGuid + "/files/jobs/" + jobId
 	if namespace != nil && len(*namespace) != 0 {
 		requestUrl += "?namespace=" + *namespace
@@ -379,7 +379,6 @@ func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string, appIns
 	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("x-cf-app-instance", appInstanceId)
 
 	cl := c.client.Transport.(*client.Runtime)
 	httpClient := http.Client{Transport: cl.Transport, Jar: cl.Jar, Timeout: 5 * time.Minute}
