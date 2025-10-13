@@ -1,3 +1,7 @@
+## v3.8.0
+* Remove experimental words from help command
+* Version of GO is increased to 1.25.1
+
 ## v3.7.0
 * Improve error message to display the specific unknown flag when a cf deploy flag is misspelled
 * Add User-Agent header to enable end-to-end tracing and insights into plugin usage and customer workflows
