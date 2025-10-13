@@ -194,7 +194,7 @@ var _ = Describe("DeployCommand", func() {
 				UploadMtaFile(extDescriptorFile, extDescriptor, nil).
 				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(correctMtaUrl)), nil, fileUploadJobId, nil).
 				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(incorrectMtaUrl)), nil, nil, fmt.Errorf("connection refused")).
-				GetAsyncUploadJob(jobId, nil, "", jobResult, nil).
+				GetAsyncUploadJob(jobId, nil, jobResult, nil).
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
