@@ -1,10 +1,11 @@
 package util
 
 import (
-	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cli/plugin"
-	plugin_models "code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
+
+	"code.cloudfoundry.org/cli/v8/cf/terminal"
+	"code.cloudfoundry.org/cli/v8/plugin"
+	plugin_models "code.cloudfoundry.org/cli/v8/plugin/models"
 )
 
 type CloudFoundryContext struct {

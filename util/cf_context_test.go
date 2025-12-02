@@ -3,9 +3,9 @@ package util
 import (
 	"fmt"
 
-	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cli/v8/cf/terminal"
 
-	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	plugin_fakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	. "github.com/onsi/ginkgo"

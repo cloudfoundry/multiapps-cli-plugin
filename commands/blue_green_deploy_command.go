@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/v8/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 )
 

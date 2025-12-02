@@ -1,7 +1,7 @@
 package commands
 
 import (
-	fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	fakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/go-openapi/runtime"
 )

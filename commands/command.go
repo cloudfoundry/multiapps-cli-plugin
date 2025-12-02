@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"code.cloudfoundry.org/cli/plugin"
 	"flag"
+
+	"code.cloudfoundry.org/cli/v8/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 )
 
