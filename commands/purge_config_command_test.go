@@ -1,7 +1,7 @@
 package commands_test
 
 import (
-	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	plugin_fakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"

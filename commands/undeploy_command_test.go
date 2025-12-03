@@ -12,7 +12,7 @@ import (
 	mtaV2fake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient_v2/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 
-	pluginFakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	pluginFakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	utilFakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/util/fakes"

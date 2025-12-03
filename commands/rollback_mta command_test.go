@@ -3,7 +3,7 @@ package commands_test
 import (
 	"fmt"
 
-	pluginFakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	pluginFakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	cliFakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"

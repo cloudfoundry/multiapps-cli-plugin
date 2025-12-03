@@ -1,6 +1,6 @@
 package util
 
-import plugin_models "code.cloudfoundry.org/cli/plugin/models"
+import plugin_models "code.cloudfoundry.org/cli/v8/plugin/models"
 
 type CloudFoundryTarget struct {
 	Org      plugin_models.Organization

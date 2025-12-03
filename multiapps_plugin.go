@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/v8/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/log"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"

@@ -16,7 +16,7 @@ import (
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
 
-	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	plugin_fakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/testutil"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"

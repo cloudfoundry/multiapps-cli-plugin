@@ -2,9 +2,10 @@ package testutil
 
 import (
 	"bytes"
-	io_helpers "code.cloudfoundry.org/cli/cf/util/testhelpers/io"
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 	"strings"
+
+	io_helpers "code.cloudfoundry.org/cli/v8/cf/util/testhelpers/io"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
 )
 
 type OutputCapturer interface {

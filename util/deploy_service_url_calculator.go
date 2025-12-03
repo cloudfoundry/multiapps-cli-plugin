@@ -1,11 +1,12 @@
 package util
 
 import (
-	"code.cloudfoundry.org/cli/plugin"
 	"fmt"
+	"strings"
+
+	"code.cloudfoundry.org/cli/v8/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/configuration"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/ui"
-	"strings"
 )
 
 const deployServiceHost = "deploy-service"

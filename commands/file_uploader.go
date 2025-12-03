@@ -2,14 +2,15 @@ package commands
 
 import (
 	"fmt"
-	"gopkg.in/cheggaaa/pb.v1"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 
-	"code.cloudfoundry.org/cli/cf/terminal"
+	"gopkg.in/cheggaaa/pb.v1"
+
+	"code.cloudfoundry.org/cli/v8/cf/terminal"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"

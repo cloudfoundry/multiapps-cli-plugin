@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/v8/plugin"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/client"
 	"github.com/golang-jwt/jwt/v5"

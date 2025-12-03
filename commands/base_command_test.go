@@ -3,7 +3,7 @@ package commands_test
 import (
 	"net/http"
 
-	plugin_fakes "code.cloudfoundry.org/cli/plugin/pluginfakes"
+	plugin_fakes "code.cloudfoundry.org/cli/v8/plugin/pluginfakes"
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"

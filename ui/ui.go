@@ -6,9 +6,9 @@ import (
 	"os"
 	"runtime"
 
-	"code.cloudfoundry.org/cli/cf/i18n"
-	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cli/cf/trace"
+	"code.cloudfoundry.org/cli/v8/cf/i18n"
+	"code.cloudfoundry.org/cli/v8/cf/terminal"
+	"code.cloudfoundry.org/cli/v8/cf/trace"
 )
 
 var teePrinter *terminal.TeePrinter
