@@ -78,6 +78,7 @@ var _ = Describe("DeployCommand", func() {
 		const testArchive = "mtaArchive.mtar"
 		const mtaArchivePath = testFilesLocation + testArchive
 		const extDescriptorPath = testFilesLocation + "extDescriptor.mtaext"
+		const userProvidedServiceSecurityRelated = "__mta-secure-anatz"
 
 		var name string
 		var cliConnection *plugin_fakes.FakeCliConnection
@@ -105,7 +106,7 @@ var _ = Describe("DeployCommand", func() {
 			}
 		}
 
-		var getOutputLines = func(extDescriptor, processAborted, fromUrl bool) []string {
+		var getOutputLines = func(extDescriptor, processAborted, fromUrl, existentUserProvidedServiceSecurity, createdUserProvidedServiceSecurity bool) []string {
 			var lines []string
 			mtaNameToPrint := mtaArchivePath
 			if fromUrl {
@@ -133,6 +134,14 @@ var _ = Describe("DeployCommand", func() {
 					"Uploading 1 files...",
 					"  "+fullExtDescriptorPath,
 					"OK")
+			}
+			if existentUserProvidedServiceSecurity {
+				lines = append(lines,
+					"Using existing user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
+			}
+			if createdUserProvidedServiceSecurity {
+				lines = append(lines,
+					"Created user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
 			}
 			lines = append(lines,
 				"Test message",
@@ -246,7 +255,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true, false, false))
 			})
 		})
 
@@ -348,7 +357,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
@@ -360,7 +369,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "-e", extDescriptorPath}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(true, false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(true, false, false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
@@ -372,7 +381,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath, "-f", "-delete-services", "-no-start", "-keep-files", "-do-not-fail-on-missing-permissions"}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(true), operation.Parameters)
 			})
@@ -412,7 +421,7 @@ var _ = Describe("DeployCommand", func() {
 				output, status := oc.CaptureOutputAndStatus(func() int {
 					return command.Execute([]string{mtaArchivePath}).ToInt()
 				})
-				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false))
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, false, false, false))
 				// operation := mtaClient.StartMtaOperationArgsForCall(1)
 				// expectProcessParameters(getProcessParameters(false), operation.Parameters)
 			})
@@ -494,5 +503,101 @@ var _ = Describe("DeployCommand", func() {
 				ex.ExpectSuccessWithOutput(status, output, getLinesForAbortingProcess())
 			})
 		})
+
+		Context("with --require-secure-parameters flag and a user-provided service instance which already exists", func() {
+			It("should not create a new user-provided service", func() {
+				os.Setenv("__MTA___fake-variable", "fakeSecret")
+				defer os.Unsetenv("__MTA___fake-variable")
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
+
+				upsName := "__mta-secure-anatz"
+				cliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					if len(args) > 0 && args[0] == "services" {
+						table := fmt.Sprintf("%s  user-provided  fake-plan\nanother-service-instance  managed  fake-plan\n", upsName)
+						return []string{table}, nil
+					}
+					return []string{}, nil
+				}
+
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--require-secure-parameters"}).ToInt()
+				})
+
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true, true, false))
+				Expect(output).To(ContainElement(ContainSubstring("Using existing user-provided service")))
+				Expect(output).To(ContainElement(ContainSubstring(upsName)))
+
+				callCount := mtaClient.StartMtaOperationCallCount()
+				Expect(callCount).To(BeNumerically(">", 0))
+				operation := mtaClient.StartMtaOperationArgsForCall(callCount - 1)
+				Expect(operation.Parameters["isSecurityEnabled"]).To(Equal("true"))
+			})
+		})
+
+		Context("with --require-secure-parameters flag and a user-provided service instance missing", func() {
+			It("should create a new user-provided service using the appropriate cf command", func() {
+				os.Setenv("__MTA___fake-variable", "fakeSecret")
+				defer os.Unsetenv("__MTA___fake-variable")
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
+
+				cliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					if len(args) > 0 && args[0] == "services" {
+						return []string{"another-service-instance managed fake-plan\n"}, nil
+					}
+					return []string{}, nil
+				}
+
+				cliConnection.CliCommandStub = func(args ...string) ([]string, error) {
+					if len(args) > 0 && args[0] == "create-user-provided-service" {
+						return []string{}, nil
+					}
+					return []string{}, nil
+				}
+
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--require-secure-parameters"}).ToInt()
+				})
+
+				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true, false, true))
+				Expect(output).To(ContainElement(ContainSubstring("Created user-provided service")))
+				Expect(output).To(ContainElement(ContainSubstring("__mta-secure-anatz")))
+
+				callCount := mtaClient.StartMtaOperationCallCount()
+				Expect(callCount).To(BeNumerically(">", 0))
+				operation := mtaClient.StartMtaOperationArgsForCall(callCount - 1)
+				Expect(operation.Parameters["isSecurityEnabled"]).To(Equal("true"))
+			})
+		})
+
+		Context("with --require-secure-parameters and `cf services` fails", func() {
+			It("should return an error from the UPS existence check", func() {
+				os.Setenv("__MTA___fake-variable", "fakeSecret")
+				defer os.Unsetenv("__MTA___fake-variable")
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
+
+				cliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+					if len(args) > 0 && args[0] == "services" {
+						return []string{"another-service-instance managed fake-plan\n"}, nil
+					}
+					return []string{}, nil
+				}
+
+				cliConnection.CliCommandStub = func(args ...string) ([]string, error) {
+					if len(args) > 0 && args[0] == "create-user-provided-service" {
+						return nil, fmt.Errorf("error - could not be created")
+					}
+					return []string{}, nil
+				}
+
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--require-secure-parameters"}).ToInt()
+				})
+
+				ex.ExpectFailure(status, output, "")
+				Expect(output).To(ContainElement(ContainSubstring("Could not ensure user-provided service")))
+				Expect(mtaClient.StartMtaOperationCallCount()).To(Equal(0))
+			})
+		})
+
 	})
 })

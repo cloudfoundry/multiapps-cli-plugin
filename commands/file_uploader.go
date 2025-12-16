@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -61,6 +62,23 @@ func (r *progressBarReader) Seek(offset int64, whence int) (int64, error) {
 func (r *progressBarReader) Close() error {
 	//no-op as we close the file part manually
 	return nil
+}
+
+type namedBytesReader struct {
+	r        *bytes.Reader
+	fileName string
+}
+
+func (n *namedBytesReader) Read(p []byte) (int, error) {
+	return n.r.Read(p)
+}
+
+func (n *namedBytesReader) Seek(o int64, w int) (int64, error) {
+	return n.r.Seek(o, w)
+}
+
+func (n *namedBytesReader) Name() string {
+	return n.fileName
 }
 
 // NewFileUploader creates a new file uploader for the specified namespace
@@ -248,4 +266,13 @@ func (f *FileUploader) isFileAlreadyUploaded(newFilePath string, fileInfo os.Fil
 		}
 	}
 	return false
+}
+
+func (f *FileUploader) UploadBytes(filename string, content []byte) (string, error) {
+	nb := &namedBytesReader{r: bytes.NewReader(content), fileName: filename}
+	uploadedFile, err := f.mtaClient.UploadMtaFile(nb, int64(len(content)), &f.namespace)
+	if err != nil {
+		return "", fmt.Errorf("Could not upload in-memory file %s: %w", filename, err)
+	}
+	return uploadedFile.ID, nil
 }
