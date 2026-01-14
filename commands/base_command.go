@@ -36,6 +36,7 @@ const (
 	noRestartSubscribedAppsOpt    = "no-restart-subscribed-apps"
 	noFailOnMissingPermissionsOpt = "do-not-fail-on-missing-permissions"
 	abortOnErrorOpt               = "abort-on-error"
+	dependencyAwareStopOrderOpt   = "dependency-aware-stop-order"
 	retriesOpt                    = "retries"
 	namespaceOpt                  = "namespace"
 )
