@@ -1,3 +1,7 @@
+## v3.9.0
+* Upgrade Cloud Foundry CLI to version 8.17.0
+* Update CodeQL GitHub Action to v4
+
 ## v3.8.0
 * Remove experimental words from help command
 * Version of GO is increased to 1.25.1
