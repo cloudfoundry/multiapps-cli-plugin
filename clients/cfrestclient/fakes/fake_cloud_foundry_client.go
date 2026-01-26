@@ -34,3 +34,7 @@ func (f FakeCloudFoundryClient) GetServiceInstances(mtaId, mtaNamespace, spaceGu
 func (f FakeCloudFoundryClient) GetServiceBindings(serviceName string) ([]models.ServiceBinding, error) {
 	return f.ServiceBindings, f.ServiceBindingsErr
 }
+
+func (f FakeCloudFoundryClient) GetServiceInstanceByName(serviceName, spaceGuid string) (models.CloudFoundryServiceInstance, error) {
+	return f.Services[0], f.ServiceBindingsErr
+}

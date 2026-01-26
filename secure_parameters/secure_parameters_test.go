@@ -44,12 +44,17 @@ func TestCollectFromEnv(t *testing.T) {
 		t.Fatalf("The value of 'fakeJson' key is not correct")
 	}
 
-	if firstJsonValue, ok := jsonValue.ObjectContent["a"].(float64); !ok || firstJsonValue != 1 {
-		t.Fatalf("The first value of the json is not what it should be: %v", jsonValue.ObjectContent["a"])
+	castedValue, ok := jsonValue.JSONContent.(map[string]interface{})
+	if !ok {
+		t.Fatal("fakeJson is not an Object")
 	}
 
-	if jsonValue.ObjectContent["b"] != "secretValueJson" {
-		t.Fatalf("The second value of the json is not what it should be: %v", jsonValue.ObjectContent["b"])
+	if firstJsonValue, ok := castedValue["a"].(float64); !ok || firstJsonValue != 1 {
+		t.Fatalf("The first value of the json is not what it should be: %v", castedValue["a"])
+	}
+
+	if castedValue["b"] != "secretValueJson" {
+		t.Fatalf("The second value of the json is not what it should be: %v", castedValue["b"])
 	}
 
 	certificateValue, ok := resultToTest["fakeCertificate"]
@@ -121,7 +126,7 @@ func TestCollectFromEnvWhenDifferentPrefix(t *testing.T) {
 func TestBuildSecureExtension(t *testing.T) {
 	parameters := map[string]ParameterValue{
 		"password":        {Type: typeString, StringContent: "secretValue"},
-		"fakeJson":        {Type: typeJSON, ObjectContent: map[string]interface{}{"secretParameterFirst": "secretValueOne", "secretParameterSecond": "secretValueTwo"}},
+		"fakeJson":        {Type: typeJSON, JSONContent: map[string]interface{}{"secretParameterFirst": "secretValueOne", "secretParameterSecond": "secretValueTwo"}},
 		"fakeCertificate": {Type: typeMultiline, StringContent: "-----BEGIN CERTIFICATE-----\nMIBgNVBAYTAPXwBc63heW9WrP3qnDEm+UZE4V0Au7OWnOeiobq\n-----END CERTIFICATE-----\n"},
 	}
 

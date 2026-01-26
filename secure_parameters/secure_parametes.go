@@ -3,13 +3,10 @@ package secure_parameters
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
 var nameRegex = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
@@ -25,10 +22,11 @@ const (
 type ParameterValue struct {
 	Type          typeOfValue
 	StringContent string
-	ObjectContent map[string]interface{}
+	JSONContent   interface{}
+	//ObjectContent map[string]interface{}
 }
 
-func nameDuplicated(name, prefix string, result map[string]ParameterValue) error {
+func validateNoDuplicatesExist(name, prefix string, result map[string]ParameterValue) error {
 	_, ok := result[name]
 	if ok {
 		return fmt.Errorf("secure parameter %q defined multiple ways (collision with %s)", name, prefix)
@@ -37,12 +35,22 @@ func nameDuplicated(name, prefix string, result map[string]ParameterValue) error
 	return nil
 }
 
-func CollectFromEnv(prefix string) (map[string]ParameterValue, error) {
-	plainValue := prefix + "___"
-	jsonValue := prefix + "_JSON___"
-	certificateValue := prefix + "_CERT___" //X509value beacuse the certiciates are of type X509 (should be renamed)
+func getValue(parameter *ParameterValue) interface{} {
+	switch parameter.Type {
+	case typeJSON:
+		return parameter.JSONContent
 
-	result := map[string]ParameterValue{}
+	default:
+		return parameter.StringContent
+	}
+}
+
+func CollectFromEnv(prefix string) (map[string]ParameterValue, error) {
+	plainPrefix := prefix + "___"
+	jsonPrefix := prefix + "_JSON___"
+	certPrefix := prefix + "_CERT___"
+
+	result := make(map[string]ParameterValue)
 
 	for _, nameValuePair := range os.Environ() {
 		equalsIndex := strings.IndexByte(nameValuePair, '=')
@@ -55,95 +63,83 @@ func CollectFromEnv(prefix string) (map[string]ParameterValue, error) {
 		var name string
 
 		switch {
-		case strings.HasPrefix(envName, jsonValue):
-			name = strings.TrimPrefix(envName, jsonValue)
+		case strings.HasPrefix(envName, jsonPrefix):
+			name = strings.TrimPrefix(envName, jsonPrefix)
 
-			if !nameRegex.MatchString(name) {
-				return nil, fmt.Errorf("invalid secure parameter name %q", name)
-			}
-
-			err := nameDuplicated(name, "__MTA_JSON", result)
+			err := addJSONValues(name, envValue, result)
 			if err != nil {
 				return nil, err
 			}
+		case strings.HasPrefix(envName, certPrefix):
+			name = strings.TrimPrefix(envName, certPrefix)
 
-			var jsonObject map[string]interface{}
-
-			err2 := json.Unmarshal([]byte(envValue), &jsonObject)
-			if err2 != nil {
-				return nil, fmt.Errorf("invalid JSON for %s: %w", name, err2)
-			}
-			result[name] = ParameterValue{Type: typeJSON, ObjectContent: jsonObject}
-
-		case strings.HasPrefix(envName, certificateValue):
-			name = strings.TrimPrefix(envName, certificateValue)
-
-			if !nameRegex.MatchString(name) {
-				return nil, fmt.Errorf("invalid secure parameter name %q", name)
-			}
-
-			err := nameDuplicated(name, "__MTA_CERT", result)
+			err := addCertificateValues(name, envValue, result)
 			if err != nil {
 				return nil, err
 			}
+		case strings.HasPrefix(envName, plainPrefix):
+			name = strings.TrimPrefix(envName, plainPrefix)
 
-			decoded, err := base64.StdEncoding.DecodeString(envValue)
-			if err != nil {
-				return nil, fmt.Errorf("invalid base64 for %s: %w", name, err)
-			}
-			result[name] = ParameterValue{Type: typeMultiline, StringContent: string(decoded)}
-
-		case strings.HasPrefix(envName, plainValue):
-			name = strings.TrimPrefix(envName, plainValue)
-
-			if !nameRegex.MatchString(name) {
-				return nil, fmt.Errorf("invalid secure parameter name %q", name)
-			}
-
-			err := nameDuplicated(name, "__MTA", result)
+			err := addPlainValues(name, envValue, result)
 			if err != nil {
 				return nil, err
 			}
-
-			result[name] = ParameterValue{Type: typeString, StringContent: envValue}
-
 		default:
 			continue
 		}
 	}
-
 	return result, nil
 }
 
-func BuildSecureExtension(parameters map[string]ParameterValue, mtaID string, schemaVersion string) ([]byte, error) {
-	if len(parameters) == 0 {
-		return nil, errors.New("no secure parameters collected")
+func addJSONValues(name, raw string, result map[string]ParameterValue) error {
+	if !nameRegex.MatchString(name) {
+		return fmt.Errorf("invalid secure parameter name %q", name)
 	}
 
-	if mtaID == "" {
-		return nil, errors.New("mtaID is required for the extension descriptor's field 'extends'")
+	errDuplicated := validateNoDuplicatesExist(name, "__MTA_JSON", result)
+	if errDuplicated != nil {
+		return errDuplicated
+	}
+	var parsed interface{}
+
+	errUnmarshal := json.Unmarshal([]byte(raw), &parsed)
+	if errUnmarshal != nil {
+		return fmt.Errorf("invalid JSON for %s: %w", name, errUnmarshal)
 	}
 
-	if schemaVersion == "" {
-		schemaVersion = "3.3"
+	result[name] = ParameterValue{Type: typeJSON, JSONContent: parsed}
+	return nil
+}
+
+func addCertificateValues(name, raw string, result map[string]ParameterValue) error {
+	if !nameRegex.MatchString(name) {
+		return fmt.Errorf("invalid secure parameter name %q", name)
 	}
 
-	secureExtensionDescriptor := map[string]interface{}{
-		"_schema-version": schemaVersion,
-		"ID":              "__mta.secure",
-		"extends":         mtaID,
-		"parameters":      map[string]interface{}{},
+	err := validateNoDuplicatesExist(name, "__MTA_CERT", result)
+	if err != nil {
+		return err
 	}
 
-	parametersDescriptor := secureExtensionDescriptor["parameters"].(map[string]interface{})
-	for name, currentParameterValue := range parameters {
-		switch currentParameterValue.Type {
-		case typeJSON:
-			parametersDescriptor[name] = currentParameterValue.ObjectContent
-		default:
-			parametersDescriptor[name] = currentParameterValue.StringContent
-		}
+	decoded, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return fmt.Errorf("invalid base64 for %s: %w", name, err)
 	}
 
-	return yaml.Marshal(secureExtensionDescriptor)
+	result[name] = ParameterValue{Type: typeMultiline, StringContent: string(decoded)}
+	return nil
+}
+
+func addPlainValues(name, raw string, result map[string]ParameterValue) error {
+	if !nameRegex.MatchString(name) {
+		return fmt.Errorf("invalid secure parameter name %q", name)
+	}
+
+	err := validateNoDuplicatesExist(name, "__MTA", result)
+	if err != nil {
+		return err
+	}
+
+	result[name] = ParameterValue{Type: typeString, StringContent: raw}
+	return nil
 }

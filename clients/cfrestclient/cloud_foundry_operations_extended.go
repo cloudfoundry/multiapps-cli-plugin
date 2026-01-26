@@ -10,4 +10,5 @@ type CloudFoundryOperationsExtended interface {
 	GetApplicationRoutes(appGuid string) ([]models.ApplicationRoute, error)
 	GetServiceInstances(mtaId, mtaNamespace, spaceGuid string) ([]models.CloudFoundryServiceInstance, error)
 	GetServiceBindings(serviceName string) ([]models.ServiceBinding, error)
+	GetServiceInstanceByName(serviceName, spaceGuid string) (models.CloudFoundryServiceInstance, error)
 }

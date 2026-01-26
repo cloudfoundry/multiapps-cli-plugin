@@ -114,6 +114,27 @@ func (c CloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models
 	return getPaginatedResourcesWithIncluded(getServiceBindingsUrl, token, c.isSslDisabled, buildServiceBinding)
 }
 
+func (c CloudFoundryRestClient) GetServiceInstanceByName(serviceName, spaceGuid string) (models.CloudFoundryServiceInstance, error) {
+	token, err := c.cliConn.AccessToken()
+	if err != nil {
+		return models.CloudFoundryServiceInstance{}, fmt.Errorf("failed to retrieve access token: %s", err)
+	}
+	apiEndpoint, _ := c.cliConn.ApiEndpoint()
+
+	getServicesUrl := fmt.Sprintf("%s/%sservice_instances?names=%s&space_guids=%s",
+		apiEndpoint, cfBaseUrl, serviceName, spaceGuid)
+	services, err := getPaginatedResourcesWithIncluded(getServicesUrl, token, c.isSslDisabled, buildServiceInstance)
+	if err != nil {
+		return models.CloudFoundryServiceInstance{}, err
+	}
+	if len(services) == 0 {
+		return models.CloudFoundryServiceInstance{}, fmt.Errorf("service instance not found")
+	}
+
+	resultService := services[0]
+	return resultService, nil
+}
+
 func getPaginatedResources[T any](url, token string, isSslDisabled bool) ([]T, error) {
 	var result []T
 	for url != "" {

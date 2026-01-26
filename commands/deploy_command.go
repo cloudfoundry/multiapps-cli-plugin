@@ -20,6 +20,8 @@ import (
 	"code.cloudfoundry.org/cli/v8/cf/terminal"
 	"code.cloudfoundry.org/cli/v8/plugin"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/baseclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/resilient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/commands/retrier"
@@ -91,14 +93,21 @@ type DeployCommand struct {
 
 	FileUrlReader      fs.File
 	FileUrlReadTimeout time.Duration
+	CfClient           cfrestclient.CloudFoundryOperationsExtended
 }
 
 // NewDeployCommand creates a new deploy command.
 func NewDeployCommand() *DeployCommand {
 	baseCmd := &BaseCommand{flagsParser: deployCommandLineArgumentsParser{}, flagsValidator: deployCommandFlagsValidator{}}
-	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}, os.Stdin, 30 * time.Second}
+	deployCmd := &DeployCommand{baseCmd, deployProcessParametersSetter(), &deployCommandProcessTypeProvider{}, os.Stdin, 30 * time.Second, nil}
 	baseCmd.Command = deployCmd
 	return deployCmd
+}
+
+func (c *DeployCommand) Initialize(name string, cliConnection plugin.CliConnection) {
+	c.BaseCommand.Initialize(name, cliConnection)
+	delegate := cfrestclient.NewCloudFoundryRestClient(cliConnection)
+	c.CfClient = resilient.NewResilientCloudFoundryClient(delegate, maxRetriesCount, retryIntervalInSeconds)
 }
 
 // GetPluginCommand returns the plugin command details
@@ -114,7 +123,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
-   (EXPERIMENTAL) Deploy a multi-target app archive referenced by a remote URL
+   Deploy a multi-target app archive referenced by a remote URL
    <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
 
 			Options: map[string]string{
@@ -151,7 +160,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
 				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 				util.GetShortOption(dependencyAwareStopOrderOpt):                "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Stop apps in a dependency-aware order during the resume phase of a blue-green deployment",
-				util.GetShortOption(requireSecureParameters):                    "Pass secrets to the deploy service in a secure way",
+				util.GetShortOption(requireSecureParameters):                    "(EXPERIMENTAL) Pass secrets to the deploy service in a secure way",
 			},
 		},
 	}
@@ -280,6 +289,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	sequentialUpload := conf.GetUploadChunksSequentially()
 	disableProgressBar := conf.GetDisableUploadProgressBar()
 	fileUploader := NewFileUploader(mtaClient, namespace, uploadChunkSize, sequentialUpload, disableProgressBar)
+	var yamlBytes []byte
 
 	if isUrl {
 		var fileId string
@@ -330,6 +340,41 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 			return Failure
 		}
 
+		if GetBoolOpt(requireSecureParameters, flags) {
+			// Collect special ENVs: __MTA___<name>, __MTA_JSON___<name>, __MTA_CERT___<name>
+			parameters, err := secure_parameters.CollectFromEnv("__MTA")
+			if err != nil {
+				ui.Failed("Secure parameters error: %s", err)
+				return Failure
+			}
+
+			if len(parameters) == 0 {
+				ui.Failed("No secure parameters found in environment. Set variables like __MTA___<name>, __MTA_JSON___<name>, or __MTA_CERT___<name>.")
+				return Failure
+			}
+
+			userProvidedServiceName := getUpsName(mtaId, namespace)
+
+			isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName, "v1")
+			if err != nil {
+				ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
+				return Failure
+			}
+
+			if isUpsCreated {
+				ui.Say("Created user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+			} else {
+				ui.Say("Using existing user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+			}
+
+			schemaVer := descriptor.SchemaVersion
+			yamlBytes, err = secure_parameters.BuildSecureExtension(parameters, mtaId, schemaVer)
+			if err != nil {
+				ui.Failed("Could not build secure extension: %s", err)
+				return Failure
+			}
+		}
+
 		// Upload the MTA archive file
 		uploadedArchivePartIds, uploadStatus = c.uploadFiles([]string{mtaArchivePath}, fileUploader)
 		if uploadStatus == Failure {
@@ -358,39 +403,6 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	}
 
 	if GetBoolOpt(requireSecureParameters, flags) {
-		// Collect special ENVs: __MTA___<name>, __MTA_JSON___<name>, __MTA_CERT___<name>
-		parameters, err := secure_parameters.CollectFromEnv("__MTA")
-		if err != nil {
-			ui.Failed("Secure parameters error: %s", err)
-			return Failure
-		}
-
-		if len(parameters) == 0 {
-			ui.Failed("No secure parameters found in environment. Set variables like __MTA___<name>, __MTA_JSON___<name>, or __MTA_CERT___<name>.")
-			return Failure
-		}
-
-		userProvidedServiceName := getUpsName(mtaId, namespace)
-
-		isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName, "v1")
-		if err != nil {
-			ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
-			return Failure
-		}
-
-		if isUpsCreated {
-			ui.Say("Created user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
-		} else {
-			ui.Say("Using existing user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
-		}
-
-		schemaVer := ""
-		yamlBytes, err := secure_parameters.BuildSecureExtension(parameters, mtaId, schemaVer)
-		if err != nil {
-			ui.Failed("Could not build secure extension: %s", err)
-			return Failure
-		}
-
 		secureFileID, err := fileUploader.UploadBytes("__mta.secure.mtaext", yamlBytes)
 		if err != nil {
 			ui.Failed("Could not upload secure extension: %s", err)
@@ -474,26 +486,21 @@ func getRandomEncryptionKey() (string, error) {
 }
 
 func (c *DeployCommand) doesUpsExist(userProvidedServiceName string) (bool, error) {
-	servicesOutput, err := c.cliConnection.CliCommandWithoutTerminalOutput("services")
-	if err != nil {
-		return false, fmt.Errorf("Error while checking if the UPS for secure encryption exists: %w", err)
+	space, errSpace := c.cliConnection.GetCurrentSpace()
+	if errSpace != nil {
+		return false, fmt.Errorf("Cannot determine the current space")
 	}
-	stringTable := strings.Join(servicesOutput, "\n")
-	return findServiceName(stringTable, userProvidedServiceName), nil
-}
+	spaceGuid := space.Guid
 
-func findServiceName(servicesOutput, userProvidedServiceName string) bool {
-	userProvidedServiceNameToLower := strings.ToLower(userProvidedServiceName)
-	for _, currentLine := range strings.Split(servicesOutput, "\n") {
-		fields := strings.Fields(currentLine)
-		if len(fields) == 0 {
-			continue
+	_, errServiceInstance := c.CfClient.GetServiceInstanceByName(userProvidedServiceName, spaceGuid)
+	if errServiceInstance != nil {
+		if errServiceInstance.Error() == "service instance not found" {
+			return false, nil
 		}
-		if strings.ToLower(fields[0]) == userProvidedServiceNameToLower {
-			return true
-		}
+		return false, fmt.Errorf("Error while checking if the UPS for secure encryption exists: %w", errServiceInstance)
 	}
-	return false
+
+	return true, nil
 }
 
 func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
