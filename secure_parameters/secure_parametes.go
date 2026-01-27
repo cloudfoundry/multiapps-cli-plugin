@@ -23,7 +23,6 @@ type ParameterValue struct {
 	Type          typeOfValue
 	StringContent string
 	JSONContent   interface{}
-	//ObjectContent map[string]interface{}
 }
 
 func validateNoDuplicatesExist(name, prefix string, result map[string]ParameterValue) error {
