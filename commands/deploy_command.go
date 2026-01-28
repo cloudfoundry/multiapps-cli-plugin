@@ -172,7 +172,6 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
-		processBuilder.Parameter("stopOrderIsDependencyAware", GetStringOpt(dependencyAwareStopOrderOpt, flags))
 
 		var lastSetValue string = ""
 		for i := 0; i < len(os.Args); i++ {
