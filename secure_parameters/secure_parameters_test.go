@@ -90,7 +90,7 @@ func TestCollectFromEnvWhenInvalidJson(t *testing.T) {
 	}
 }
 
-func TestCollectFromEnvWhenDuplciateNames(t *testing.T) {
+func TestCollectFromEnvWhenDuplicateNames(t *testing.T) {
 	setEnv(t, "__MTA_JSON___duplicate", `{"fakeValueName":"value"}`)
 	setEnv(t, "__MTA___duplicate", "randomValue")
 

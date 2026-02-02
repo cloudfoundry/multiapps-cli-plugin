@@ -34,31 +34,32 @@ import (
 )
 
 const (
-	extDescriptorsOpt              = "e"
-	timeoutOpt                     = "t"
-	versionRuleOpt                 = "version-rule"
-	noStartOpt                     = "no-start"
-	deleteServiceKeysOpt           = "delete-service-keys"
-	keepFilesOpt                   = "keep-files"
-	skipOwnershipValidationOpt     = "skip-ownership-validation"
-	moduleOpt                      = "m"
-	resourceOpt                    = "r"
-	allModulesOpt                  = "all-modules"
-	allResourcesOpt                = "all-resources"
-	strategyOpt                    = "strategy"
-	skipTestingPhase               = "skip-testing-phase"
-	skipIdleStart                  = "skip-idle-start"
-	startTimeoutOpt                = "apps-start-timeout"
-	stageTimeoutOpt                = "apps-stage-timeout"
-	uploadTimeoutOpt               = "apps-upload-timeout"
-	taskExecutionTimeoutOpt        = "apps-task-execution-timeout"
-	applyNamespaceAppNamesOpt      = "apply-namespace-app-names"
-	applyNamespaceServiceNamesOpt  = "apply-namespace-service-names"
-	applyNamespaceAppRoutesOpt     = "apply-namespace-app-routes"
-	applyNamespaceAsSuffix         = "apply-namespace-as-suffix"
-	maxNamespaceSize               = 36
-	shouldBackupPreviousVersionOpt = "backup-previous-version"
-	requireSecureParameters        = "require-secure-parameters"
+	extDescriptorsOpt                = "e"
+	timeoutOpt                       = "t"
+	versionRuleOpt                   = "version-rule"
+	noStartOpt                       = "no-start"
+	deleteServiceKeysOpt             = "delete-service-keys"
+	keepFilesOpt                     = "keep-files"
+	skipOwnershipValidationOpt       = "skip-ownership-validation"
+	moduleOpt                        = "m"
+	resourceOpt                      = "r"
+	allModulesOpt                    = "all-modules"
+	allResourcesOpt                  = "all-resources"
+	strategyOpt                      = "strategy"
+	skipTestingPhase                 = "skip-testing-phase"
+	skipIdleStart                    = "skip-idle-start"
+	startTimeoutOpt                  = "apps-start-timeout"
+	stageTimeoutOpt                  = "apps-stage-timeout"
+	uploadTimeoutOpt                 = "apps-upload-timeout"
+	taskExecutionTimeoutOpt          = "apps-task-execution-timeout"
+	applyNamespaceAppNamesOpt        = "apply-namespace-app-names"
+	applyNamespaceServiceNamesOpt    = "apply-namespace-service-names"
+	applyNamespaceAppRoutesOpt       = "apply-namespace-app-routes"
+	applyNamespaceAsSuffix           = "apply-namespace-as-suffix"
+	maxNamespaceSize                 = 36
+	shouldBackupPreviousVersionOpt   = "backup-previous-version"
+	requireSecureParameters          = "require-secure-parameters"
+	disposableUserProvidedServiceOpt = "disposable-user-provided-service"
 )
 
 type listFlag struct {
@@ -118,13 +119,13 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
 
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--require-secure-parameters] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
 
 			Options: map[string]string{
 				extDescriptorsOpt:                 "Extension descriptors",
@@ -161,6 +162,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 				util.GetShortOption(dependencyAwareStopOrderOpt):                "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Stop apps in a dependency-aware order during the resume phase of a blue-green deployment",
 				util.GetShortOption(requireSecureParameters):                    "(EXPERIMENTAL) Pass secrets to the deploy service in a secure way",
+				util.GetShortOption(disposableUserProvidedServiceOpt):           "Deploy when --require-secure-parameters flag is active for disposable UPS to be created and then deleted at the of the operation",
 			},
 		},
 	}
@@ -187,6 +189,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
 		processBuilder.Parameter("isSecurityEnabled", strconv.FormatBool(GetBoolOpt(requireSecureParameters, flags)))
+		processBuilder.Parameter("isDisposableUserProvidedServiceEnabled", strconv.FormatBool(GetBoolOpt(disposableUserProvidedServiceOpt, flags)))
 
 		var lastSetValue string = ""
 		for i := 0; i < len(os.Args); i++ {
@@ -243,6 +246,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Bool(shouldBackupPreviousVersionOpt, false, "")
 	flags.Bool(dependencyAwareStopOrderOpt, false, "")
 	flags.Bool(requireSecureParameters, false, "")
+	flags.Bool(disposableUserProvidedServiceOpt, false, "")
 }
 
 func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
@@ -277,6 +281,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	var uploadedArchivePartIds []string
 	var uploadStatus ExecutionStatus
 	var mtaId string
+	var disposableUserProvidedServiceName string
 
 	// Check SLMP metadata
 	// TODO: ensure session
@@ -353,18 +358,36 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 				return Failure
 			}
 
-			userProvidedServiceName := getUpsName(mtaId, namespace)
+			if GetBoolOpt(disposableUserProvidedServiceOpt, flags) {
+				disposableUserProvidedServiceName, err = getRandomisedUpsName(mtaId, namespace)
+				if err != nil {
+					ui.Failed("Failed to create disposable user-provided service name: %v", err)
+					return Failure
+				}
 
-			isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName, "v1")
-			if err != nil {
-				ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
-				return Failure
-			}
+				isDisposableUpsCreated, _, err := c.createDisposableUps(disposableUserProvidedServiceName)
+				if err != nil {
+					ui.Failed("Could not ensure disposable user-provided service %s: %v", disposableUserProvidedServiceName, err)
+					return Failure
+				}
 
-			if isUpsCreated {
-				ui.Say("Created user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+				if isDisposableUpsCreated {
+					ui.Say("Created disposable user-provided service %s for secure parameters. Will be automatically deleted at the end of the operation!", terminal.EntityNameColor(disposableUserProvidedServiceName))
+				}
 			} else {
-				ui.Say("Using existing user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+				userProvidedServiceName := getUpsName(mtaId, namespace)
+
+				isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName)
+				if err != nil {
+					ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
+					return Failure
+				}
+
+				if isUpsCreated {
+					ui.Say("Created user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+				} else {
+					ui.Say("Using existing user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+				}
 			}
 
 			schemaVer := descriptor.SchemaVersion
@@ -422,6 +445,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	processBuilder.Parameter("appArchiveId", strings.Join(uploadedArchivePartIds, ","))
 	processBuilder.Parameter("mtaExtDescriptorId", strings.Join(uploadedExtDescriptorIDs, ","))
 	processBuilder.Parameter("mtaId", mtaId)
+	processBuilder.Parameter("disposableUserProvidedServiceName", disposableUserProvidedServiceName)
 	setModulesAndResourcesListParameters(modulesList, resourcesList, processBuilder, mtaElementsCalculator)
 	c.setProcessParameters(flags, processBuilder)
 
@@ -437,18 +461,32 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	return executionMonitor.Monitor()
 }
 
-func getUpsName(mtaID, namespace string) string {
+func getUpsName(mtaId, namespace string) string {
 	if strings.TrimSpace(namespace) == "" {
-		return "__mta-secure-" + mtaID
+		return "__mta-secure-" + mtaId
 	}
-	return "__mta-secure-" + mtaID + "-" + namespace
+	return "__mta-secure-" + mtaId + "-" + namespace
 }
 
-func (c *DeployCommand) validateUpsExistsOrElseCreateIt(userProvidedServiceName, keyID string) (upsCreatedByTheCli bool, encryptionKeyResult string, err error) {
+func getRandomisedUpsName(mtaId, namespace string) (disposableUpsName string, err error) {
+	randomisedPart, err := getRandomEncryptionKey()
+	if err != nil {
+		return "", err
+	}
+	resultSuffix := randomisedPart[:7]
+
+	if strings.TrimSpace(namespace) == "" {
+		return "__mta-secure-" + mtaId + "-" + resultSuffix, nil
+	}
+	return "__mta-secure-" + mtaId + "-" + namespace + "-" + resultSuffix, nil
+}
+
+func (c *DeployCommand) validateUpsExistsOrElseCreateIt(userProvidedServiceName string) (upsCreatedByTheCli bool, encryptionKeyResult string, err error) {
 	doesUpsExist, err := c.doesUpsExist(userProvidedServiceName)
 	if err != nil {
 		return false, "", fmt.Errorf("Check if the UPS exists: %w", err)
 	}
+
 	if doesUpsExist {
 		return false, "", nil
 	}
@@ -460,7 +498,27 @@ func (c *DeployCommand) validateUpsExistsOrElseCreateIt(userProvidedServiceName,
 
 	upsCredentials := map[string]string{
 		"encryptionKey": encryptionKey,
-		"keyId":         keyID,
+	}
+
+	jsonBody, err := json.Marshal(upsCredentials)
+	if err != nil {
+		return false, "", fmt.Errorf("Error while creating JSON credentials for UPS service: %w", err)
+	}
+
+	if _, err := c.cliConnection.CliCommand("create-user-provided-service", userProvidedServiceName, "-p", string(jsonBody)); err != nil {
+		return false, "", fmt.Errorf("Command cf cups %s has failed: %w", userProvidedServiceName, err)
+	}
+	return true, encryptionKey, nil
+}
+
+func (c *DeployCommand) createDisposableUps(userProvidedServiceName string) (upsCreatedByTheCli bool, encryptionKeyResult string, err error) {
+	encryptionKey, err := getRandomEncryptionKey()
+	if err != nil {
+		return false, "", fmt.Errorf("Error while generating AES-256 encryption key: %w", err)
+	}
+
+	upsCredentials := map[string]string{
+		"encryptionKey": encryptionKey,
 	}
 	jsonBody, _ := json.Marshal(upsCredentials)
 
