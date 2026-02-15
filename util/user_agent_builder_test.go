@@ -325,4 +325,48 @@ var _ = Describe("UserAgentBuilder", func() {
 			Expect(util.GetCfCliVersion()).To(Equal(util.DefaultCliVersion))
 		})
 	})
+
+	Describe("Build-time user agent suffix", func() {
+		var originalSuffix string
+
+		BeforeEach(func() {
+			originalSuffix = util.GetUserAgentSuffixOption()
+			util.SetPluginVersion("1.0.0")
+		})
+
+		AfterEach(func() {
+			util.SetUserAgentSuffixOption(originalSuffix)
+			os.Unsetenv("MULTIAPPS_USER_AGENT_SUFFIX")
+		})
+
+		It("should use build-time suffix when environment variable is not set", func() {
+			buildTimeSuffix := "build-time-suffix"
+			util.SetUserAgentSuffixOption(buildTimeSuffix)
+			os.Unsetenv("MULTIAPPS_USER_AGENT_SUFFIX")
+
+			userAgent := util.BuildUserAgent()
+			Expect(userAgent).To(ContainSubstring(buildTimeSuffix))
+		})
+
+		It("should prioritize environment variable over build-time suffix", func() {
+			buildTimeSuffix := "build-time"
+			envSuffix := "env-override"
+
+			util.SetUserAgentSuffixOption(buildTimeSuffix)
+			os.Setenv("MULTIAPPS_USER_AGENT_SUFFIX", envSuffix)
+
+			userAgent := util.BuildUserAgent()
+			Expect(userAgent).To(ContainSubstring(envSuffix))
+			Expect(userAgent).ToNot(ContainSubstring(buildTimeSuffix))
+		})
+
+		It("should handle empty build-time suffix", func() {
+			util.SetUserAgentSuffixOption("")
+			os.Unsetenv("MULTIAPPS_USER_AGENT_SUFFIX")
+
+			userAgent := util.BuildUserAgent()
+			expectedBase := fmt.Sprintf("Multiapps-CF-plugin/1.0.0 (%s %s) %s (%s)", runtime.GOOS, runtime.GOARCH, runtime.Version(), util.GetCfCliVersion())
+			Expect(userAgent).To(Equal(expectedBase))
+		})
+	})
 })
