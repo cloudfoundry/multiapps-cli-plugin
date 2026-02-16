@@ -11,4 +11,5 @@ type CloudFoundryOperationsExtended interface {
 	GetServiceInstances(mtaId, mtaNamespace, spaceGuid string) ([]models.CloudFoundryServiceInstance, error)
 	GetServiceBindings(serviceName string) ([]models.ServiceBinding, error)
 	GetServiceInstanceByName(serviceName, spaceGuid string) (models.CloudFoundryServiceInstance, error)
+	CreateUserProvidedServiceInstance(serviceName string, spaceGuid string, credentials map[string]string) (models.CloudFoundryServiceInstance, error)
 }

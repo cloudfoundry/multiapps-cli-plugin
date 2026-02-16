@@ -53,6 +53,12 @@ func (c ResilientCloudFoundryRestClient) GetServiceInstanceByName(serviceName, s
 	}, c.MaxRetriesCount, c.RetryInterval)
 }
 
+func (c ResilientCloudFoundryRestClient) CreateUserProvidedServiceInstance(serviceName string, spaceGuid string, credentials map[string]string) (models.CloudFoundryServiceInstance, error) {
+	return retryOnError(func() (models.CloudFoundryServiceInstance, error) {
+		return c.CloudFoundryRestClient.CreateUserProvidedServiceInstance(serviceName, spaceGuid, credentials)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
 func retryOnError[T any](operation func() (T, error), retries int, retryInterval time.Duration) (T, error) {
 	result, err := operation()
 	for shouldRetry(retries, err) {

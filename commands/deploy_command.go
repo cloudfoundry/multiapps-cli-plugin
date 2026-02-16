@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -298,12 +297,14 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 
 	if isUrl {
 		var fileId string
+		var schemaVersion string
 
 		asyncUploadJobResult := c.uploadFromUrl(mtaArchive, mtaClient, namespace, disableProgressBar)
 		if asyncUploadJobResult.ExecutionStatus == Failure {
 			return Failure
 		}
-		mtaId, fileId = asyncUploadJobResult.MtaId, asyncUploadJobResult.FileId
+		mtaId, fileId, schemaVersion = asyncUploadJobResult.MtaId, asyncUploadJobResult.FileId, asyncUploadJobResult.SchemaVersion
+		ui.Say("-------------------- mtaId: %s, fileId: %s, schemaVersion: %s", mtaId, fileId, schemaVersion)
 		// Check for an ongoing operation for this MTA ID and abort it
 		wasAborted, err := c.CheckOngoingOperation(mtaId, namespace, dsHost, force, cfTarget)
 		if err != nil {
@@ -315,6 +316,14 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		}
 
 		uploadedArchivePartIds = append(uploadedArchivePartIds, fileId)
+
+		if GetBoolOpt(requireSecureParameters, flags) {
+			result := setUpSpecificsForDeploymentUsingSecrerts(flags, c, mtaId, namespace, schemaVersion, &disposableUserProvidedServiceName, &yamlBytes)
+			if result != Success {
+				return Failure
+			}
+		}
+
 		ui.Ok()
 	} else {
 		// Get the full path of the MTA archive
@@ -346,54 +355,8 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		}
 
 		if GetBoolOpt(requireSecureParameters, flags) {
-			// Collect special ENVs: __MTA___<name>, __MTA_JSON___<name>, __MTA_CERT___<name>
-			parameters, err := secure_parameters.CollectFromEnv("__MTA")
-			if err != nil {
-				ui.Failed("Secure parameters error: %s", err)
-				return Failure
-			}
-
-			if len(parameters) == 0 {
-				ui.Failed("No secure parameters found in environment. Set variables like __MTA___<name>, __MTA_JSON___<name>, or __MTA_CERT___<name>.")
-				return Failure
-			}
-
-			if GetBoolOpt(disposableUserProvidedServiceOpt, flags) {
-				disposableUserProvidedServiceName, err = getRandomisedUpsName(mtaId, namespace)
-				if err != nil {
-					ui.Failed("Failed to create disposable user-provided service name: %v", err)
-					return Failure
-				}
-
-				isDisposableUpsCreated, _, err := c.createDisposableUps(disposableUserProvidedServiceName)
-				if err != nil {
-					ui.Failed("Could not ensure disposable user-provided service %s: %v", disposableUserProvidedServiceName, err)
-					return Failure
-				}
-
-				if isDisposableUpsCreated {
-					ui.Say("Created disposable user-provided service %s for secure parameters. Will be automatically deleted at the end of the operation!", terminal.EntityNameColor(disposableUserProvidedServiceName))
-				}
-			} else {
-				userProvidedServiceName := getUpsName(mtaId, namespace)
-
-				isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName)
-				if err != nil {
-					ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
-					return Failure
-				}
-
-				if isUpsCreated {
-					ui.Say("Created user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
-				} else {
-					ui.Say("Using existing user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
-				}
-			}
-
-			schemaVer := descriptor.SchemaVersion
-			yamlBytes, err = secure_parameters.BuildSecureExtension(parameters, mtaId, schemaVer)
-			if err != nil {
-				ui.Failed("Could not build secure extension: %s", err)
+			result := setUpSpecificsForDeploymentUsingSecrerts(flags, c, mtaId, namespace, descriptor.SchemaVersion, &disposableUserProvidedServiceName, &yamlBytes)
+			if result != Success {
 				return Failure
 			}
 		}
@@ -481,6 +444,67 @@ func getRandomisedUpsName(mtaId, namespace string) (disposableUpsName string, er
 	return "__mta-secure-" + mtaId + "-" + namespace + "-" + resultSuffix, nil
 }
 
+func setUpSpecificsForDeploymentUsingSecrerts(flags *flag.FlagSet, c *DeployCommand, mtaId, namespace, schemaVersion string, disposableUserProvidedServiceName *string, yamlBytes *[]byte) ExecutionStatus {
+	// Collect special ENVs: __MTA___<name>, __MTA_JSON___<name>, __MTA_CERT___<name>
+	parameters, err := secure_parameters.CollectFromEnv("__MTA")
+	if err != nil {
+		ui.Failed("Secure parameters error: %s", err)
+		return Failure
+	}
+
+	if len(parameters) == 0 {
+		ui.Failed("No secure parameters found in environment. Set variables like __MTA___<name>, __MTA_JSON___<name>, or __MTA_CERT___<name>.")
+		return Failure
+	}
+
+	if GetBoolOpt(disposableUserProvidedServiceOpt, flags) {
+		disposableUserProvidedServiceNameResult, err := getRandomisedUpsName(mtaId, namespace)
+		if err != nil {
+			ui.Failed("Failed to create disposable user-provided service name: %v", err)
+			return Failure
+		}
+
+		isDisposableUpsCreated, _, err := c.createDisposableUps(disposableUserProvidedServiceNameResult)
+		if err != nil {
+			ui.Failed("Could not ensure disposable user-provided service %s: %v", disposableUserProvidedServiceName, err)
+			return Failure
+		}
+
+		*disposableUserProvidedServiceName = disposableUserProvidedServiceNameResult
+		if isDisposableUpsCreated {
+			ui.Say("Created disposable user-provided service %s for secure parameters. Will be automatically deleted at the end of the operation!", terminal.EntityNameColor(disposableUserProvidedServiceNameResult))
+		}
+	} else {
+		userProvidedServiceName := getUpsName(mtaId, namespace)
+
+		isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName)
+		if err != nil {
+			ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
+			return Failure
+		}
+
+		*disposableUserProvidedServiceName = ""
+		if isUpsCreated {
+			ui.Say("Created user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+		} else {
+			ui.Say("Using existing user-provided service %s for secure parameters.", terminal.EntityNameColor(userProvidedServiceName))
+		}
+	}
+
+	yamlBytesResult, err := secure_parameters.BuildSecureExtension(parameters, mtaId, schemaVersion)
+	if err != nil {
+		ui.Failed("Could not build secure extension: %s", err)
+		return Failure
+	}
+	if len(yamlBytesResult) == 0 {
+		ui.Failed("Secure extension descriptor is empty: %s", err)
+		return Failure
+	}
+	*yamlBytes = yamlBytesResult
+
+	return Success
+}
+
 func (c *DeployCommand) validateUpsExistsOrElseCreateIt(userProvidedServiceName string) (upsCreatedByTheCli bool, encryptionKeyResult string, err error) {
 	doesUpsExist, err := c.doesUpsExist(userProvidedServiceName)
 	if err != nil {
@@ -496,18 +520,24 @@ func (c *DeployCommand) validateUpsExistsOrElseCreateIt(userProvidedServiceName 
 		return false, "", fmt.Errorf("Error while generating AES-256 encryption key: %w", err)
 	}
 
+	space, err := c.cliConnection.GetCurrentSpace()
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to get the current space: %w", err)
+	}
+
+	if space.Guid == "" {
+		return false, "", fmt.Errorf("Failed to get the current space Guid")
+	}
+
 	upsCredentials := map[string]string{
 		"encryptionKey": encryptionKey,
 	}
 
-	jsonBody, err := json.Marshal(upsCredentials)
+	_, err = c.CfClient.CreateUserProvidedServiceInstance(userProvidedServiceName, space.Guid, upsCredentials)
 	if err != nil {
-		return false, "", fmt.Errorf("Error while creating JSON credentials for UPS service: %w", err)
+		return false, "", fmt.Errorf("Failed to create user-provided service %s: %w", userProvidedServiceName, err)
 	}
 
-	if _, err := c.cliConnection.CliCommand("create-user-provided-service", userProvidedServiceName, "-p", string(jsonBody)); err != nil {
-		return false, "", fmt.Errorf("Command cf cups %s has failed: %w", userProvidedServiceName, err)
-	}
 	return true, encryptionKey, nil
 }
 
@@ -517,14 +547,24 @@ func (c *DeployCommand) createDisposableUps(userProvidedServiceName string) (ups
 		return false, "", fmt.Errorf("Error while generating AES-256 encryption key: %w", err)
 	}
 
+	space, err := c.cliConnection.GetCurrentSpace()
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to get the current space: %w", err)
+	}
+
+	if space.Guid == "" {
+		return false, "", fmt.Errorf("Failed to get the current space Guid")
+	}
+
 	upsCredentials := map[string]string{
 		"encryptionKey": encryptionKey,
 	}
-	jsonBody, _ := json.Marshal(upsCredentials)
 
-	if _, err := c.cliConnection.CliCommand("create-user-provided-service", userProvidedServiceName, "-p", string(jsonBody)); err != nil {
-		return false, "", fmt.Errorf("Command cf cups %s has failed: %w", userProvidedServiceName, err)
+	_, err = c.CfClient.CreateUserProvidedServiceInstance(userProvidedServiceName, space.Guid, upsCredentials)
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to create user-provided service %s: %w", userProvidedServiceName, err)
 	}
+
 	return true, encryptionKey, nil
 }
 
@@ -591,6 +631,7 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 		return UploadFromUrlStatus{
 			FileId:          "",
 			MtaId:           "",
+			SchemaVersion:   "",
 			ClientActions:   make([]string, 0),
 			ExecutionStatus: Failure,
 		}
@@ -620,6 +661,7 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 			return UploadFromUrlStatus{
 				FileId:          "",
 				MtaId:           "",
+				SchemaVersion:   "",
 				ClientActions:   jobResult.ClientActions,
 				ExecutionStatus: Failure,
 			}
@@ -630,6 +672,7 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 			return UploadFromUrlStatus{
 				FileId:          "",
 				MtaId:           "",
+				SchemaVersion:   "",
 				ClientActions:   jobResult.ClientActions,
 				ExecutionStatus: Failure,
 			}
@@ -652,6 +695,7 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 				return UploadFromUrlStatus{
 					FileId:          "",
 					MtaId:           "",
+					SchemaVersion:   "",
 					ClientActions:   make([]string, 0),
 					ExecutionStatus: Failure,
 				}
@@ -665,6 +709,7 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 	return UploadFromUrlStatus{
 		FileId:          file.ID,
 		MtaId:           jobResult.MtaId,
+		SchemaVersion:   jobResult.SchemaVersion,
 		ClientActions:   jobResult.ClientActions,
 		ExecutionStatus: Success,
 	}

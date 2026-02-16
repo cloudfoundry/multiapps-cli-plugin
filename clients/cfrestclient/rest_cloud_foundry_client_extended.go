@@ -1,6 +1,7 @@
 package cfrestclient
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/tls"
 	"encoding/hex"
@@ -60,7 +61,7 @@ func (c CloudFoundryRestClient) GetAppProcessStatistics(appGuid string) ([]model
 	apiEndpoint, _ := c.cliConn.ApiEndpoint()
 
 	getAppProcessStatsUrl := fmt.Sprintf("%s/%sapps/%s/processes/web/stats", apiEndpoint, cfBaseUrl, appGuid)
-	body, err := executeRequest(getAppProcessStatsUrl, token, c.isSslDisabled)
+	body, err := executeRequest("GET", getAppProcessStatsUrl, token, c.isSslDisabled, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -135,10 +136,61 @@ func (c CloudFoundryRestClient) GetServiceInstanceByName(serviceName, spaceGuid 
 	return resultService, nil
 }
 
+func (c CloudFoundryRestClient) CreateUserProvidedServiceInstance(serviceName string, spaceGuid string, credentials map[string]string) (models.CloudFoundryServiceInstance, error) {
+	token, err := c.cliConn.AccessToken()
+	if err != nil {
+		return models.CloudFoundryServiceInstance{}, fmt.Errorf("failed to retrieve access token: %s", err)
+	}
+
+	apiEndpoint, _ := c.cliConn.ApiEndpoint()
+
+	createServiceURL := fmt.Sprintf("%s/%sservice_instances", apiEndpoint, cfBaseUrl)
+
+	payload := map[string]any{
+		"type": "user-provided",
+		"name": serviceName,
+		"relationships": map[string]any{
+			"space": map[string]any{
+				"data": map[string]any{
+					"guid": spaceGuid,
+				},
+			},
+		},
+	}
+
+	if credentials != nil {
+		payload["credentials"] = credentials
+	}
+
+	jsonBody, err := json.Marshal(payload)
+	if err != nil {
+		return models.CloudFoundryServiceInstance{}, fmt.Errorf("failed to marshal create UPS request: %w", err)
+	}
+
+	body, err := executeRequest(http.MethodPost, createServiceURL, token, c.isSslDisabled, jsonBody)
+	if err != nil {
+		return models.CloudFoundryServiceInstance{}, err
+	}
+
+	response, err := parseBody[models.CloudFoundryUserProvidedServiceInstance](body)
+	if err != nil {
+		return models.CloudFoundryServiceInstance{}, err
+	}
+
+	return models.CloudFoundryServiceInstance{
+		Guid:          response.Guid,
+		Name:          response.Name,
+		Type:          response.Type,
+		LastOperation: response.LastOperation,
+		SpaceGuid:     response.SpaceGuid,
+		Metadata:      response.Metadata,
+	}, nil
+}
+
 func getPaginatedResources[T any](url, token string, isSslDisabled bool) ([]T, error) {
 	var result []T
 	for url != "" {
-		body, err := executeRequest(url, token, isSslDisabled)
+		body, err := executeRequest("GET", url, token, isSslDisabled, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +210,7 @@ func getPaginatedResources[T any](url, token string, isSslDisabled bool) ([]T, e
 func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, isSslDisabled bool, auxiliaryContentHandler func(T, Auxiliary) T) ([]T, error) {
 	var result []T
 	for url != "" {
-		body, err := executeRequest(url, token, isSslDisabled)
+		body, err := executeRequest("GET", url, token, isSslDisabled, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -175,9 +227,22 @@ func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, 
 	return result, nil
 }
 
-func executeRequest(url, token string, isSslDisabled bool) ([]byte, error) {
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Add("Authorization", token)
+func executeRequest(methodType, url, token string, isSslDisabled bool, body []byte) ([]byte, error) {
+	var reader io.Reader
+
+	if body != nil {
+		reader = bytes.NewReader(body)
+	}
+	request, err := http.NewRequest(methodType, url, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Add("Authorization", token)
+	request.Header.Set("Accept", "application/json")
+	if body != nil {
+		request.Header.Set("Content-Type", "application/json")
+	}
 
 	// Create transport with TLS configuration
 	httpTransport := http.DefaultTransport.(*http.Transport).Clone()
@@ -187,7 +252,7 @@ func executeRequest(url, token string, isSslDisabled bool) ([]byte, error) {
 	userAgentTransport := baseclient.NewUserAgentTransport(httpTransport)
 
 	client := &http.Client{Transport: userAgentTransport}
-	resp, err := client.Do(req)
+	resp, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
