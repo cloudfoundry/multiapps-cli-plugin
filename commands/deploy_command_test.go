@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	cli_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/cli/fakes"
+	cf_client_fakes "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient/fakes"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
 	mtafake "github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient/fakes"
@@ -112,41 +114,62 @@ var _ = Describe("DeployCommand", func() {
 			if fromUrl {
 				mtaNameToPrint = "from url"
 			}
+
 			lines = append(lines,
-				"Deploying multi-target app archive "+mtaNameToPrint+" in org "+org+" / space "+space+" as "+user+"...")
-			lines = append(lines, "")
+				"Deploying multi-target app archive "+mtaNameToPrint+" in org "+org+" / space "+space+" as "+user+"...",
+				"",
+			)
+
 			if processAborted {
 				lines = append(lines,
 					"Executing action \"abort\" on operation test-process-id...",
 					"OK",
 				)
 			}
-			if fromUrl {
-				lines = append(lines, "OK")
-			} else {
+
+			if !fromUrl {
+				if existentUserProvidedServiceSecurity {
+					lines = append(lines,
+						"Using existing user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
+				}
+
+				if createdUserProvidedServiceSecurity {
+					lines = append(lines,
+						"Created user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
+				}
+
 				lines = append(lines,
 					"Uploading 1 files...",
 					"  "+fullMtaArchivePath,
-					"OK")
+					"OK",
+				)
+			} else {
+				if existentUserProvidedServiceSecurity {
+					lines = append(lines,
+						"Using existing user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
+				}
+
+				if createdUserProvidedServiceSecurity {
+					lines = append(lines,
+						"Created user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
+				}
+				lines = append(lines, "OK")
 			}
+
 			if extDescriptor {
 				lines = append(lines,
 					"Uploading 1 files...",
 					"  "+fullExtDescriptorPath,
-					"OK")
+					"OK",
+				)
 			}
-			if existentUserProvidedServiceSecurity {
-				lines = append(lines,
-					"Using existing user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
-			}
-			if createdUserProvidedServiceSecurity {
-				lines = append(lines,
-					"Created user-provided service "+userProvidedServiceSecurityRelated+" for secure parameters.")
-			}
+
 			lines = append(lines,
 				"Test message",
 				"Process finished.",
-				"Use \"cf dmol -i 1000\" to download the logs of the process.")
+				"Use \"cf dmol -i 1000\" to download the logs of the process.",
+			)
+
 			return lines
 		}
 
@@ -180,6 +203,7 @@ var _ = Describe("DeployCommand", func() {
 
 		BeforeEach(func() {
 			ui.DisableTerminalOutput(true)
+			command = commands.NewDeployCommand()
 			name = command.GetPluginCommand().Name
 			cliConnection = cli_fakes.NewFakeCliConnectionBuilder().
 				CurrentOrg("test-org-guid", org, nil).
@@ -194,8 +218,9 @@ var _ = Describe("DeployCommand", func() {
 			jobId := "one"
 			fileUploadJobId.Add("Location", jobId)
 			jobResult := mtaclient.AsyncUploadJobResult{
-				File:  mtaArchive,
-				MtaId: "anatz",
+				File:          mtaArchive,
+				MtaId:         "anatz",
+				SchemaVersion: "3.1.0",
 			}
 			mtaClient = mtafake.NewFakeMtaClientBuilder().
 				GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
@@ -209,7 +234,6 @@ var _ = Describe("DeployCommand", func() {
 				GetMtaOperationLogContent("1000", testutil.LogID, testutil.LogContent, nil).
 				GetMtaOperations(nil, nil, nil, []*models.Operation{&testutil.OperationResult}, nil).Build()
 			testClientFactory = commands.NewTestClientFactory(mtaClient, nil, nil)
-			command = commands.NewDeployCommand()
 			testTokenFactory := commands.NewTestTokenFactory(cliConnection)
 			deployServiceURLCalculator := util_fakes.NewDeployServiceURLFakeCalculator("deploy-service.test.ondemand.com")
 			command.InitializeAll(name, cliConnection, testutil.NewCustomTransport(200), testClientFactory, testTokenFactory, deployServiceURLCalculator)
@@ -511,12 +535,12 @@ var _ = Describe("DeployCommand", func() {
 				command.FileUrlReader = newMockFileReader(correctMtaUrl)
 
 				upsName := "__mta-secure-anatz"
-				cliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-					if len(args) > 0 && args[0] == "services" {
-						table := fmt.Sprintf("%s  user-provided  fake-plan\nanother-service-instance  managed  fake-plan\n", upsName)
-						return []string{table}, nil
-					}
-					return []string{}, nil
+				command.CfClient = &cf_client_fakes.FakeCloudFoundryClient{
+					Services: []models.CloudFoundryServiceInstance{{
+						Guid: "ups-guid",
+						Name: upsName},
+					},
+					ServiceBindingsErr: nil,
 				}
 
 				output, status := oc.CaptureOutputAndStatus(func() int {
@@ -540,18 +564,14 @@ var _ = Describe("DeployCommand", func() {
 				defer os.Unsetenv("__MTA___fake-variable")
 				command.FileUrlReader = newMockFileReader(correctMtaUrl)
 
-				cliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-					if len(args) > 0 && args[0] == "services" {
-						return []string{"another-service-instance managed fake-plan\n"}, nil
-					}
-					return []string{}, nil
-				}
-
-				cliConnection.CliCommandStub = func(args ...string) ([]string, error) {
-					if len(args) > 0 && args[0] == "create-user-provided-service" {
-						return []string{}, nil
-					}
-					return []string{}, nil
+				upsName := "__mta-secure-anatz"
+				command.CfClient = &cf_client_fakes.FakeCloudFoundryClient{
+					Services: []models.CloudFoundryServiceInstance{{
+						Guid: "ups-guid",
+						Name: upsName},
+					},
+					ServiceBindingsErr: errors.New("service instance not found"),
+					ServicesErr:        nil,
 				}
 
 				output, status := oc.CaptureOutputAndStatus(func() int {
@@ -575,18 +595,10 @@ var _ = Describe("DeployCommand", func() {
 				defer os.Unsetenv("__MTA___fake-variable")
 				command.FileUrlReader = newMockFileReader(correctMtaUrl)
 
-				cliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-					if len(args) > 0 && args[0] == "services" {
-						return []string{"another-service-instance managed fake-plan\n"}, nil
-					}
-					return []string{}, nil
-				}
-
-				cliConnection.CliCommandStub = func(args ...string) ([]string, error) {
-					if len(args) > 0 && args[0] == "create-user-provided-service" {
-						return nil, fmt.Errorf("error - could not be created")
-					}
-					return []string{}, nil
+				command.CfClient = &cf_client_fakes.FakeCloudFoundryClient{
+					Services:           []models.CloudFoundryServiceInstance{{Name: "fakeName"}},
+					ServiceBindingsErr: errors.New("error with cf api"),
+					ServicesErr:        nil,
 				}
 
 				output, status := oc.CaptureOutputAndStatus(func() int {

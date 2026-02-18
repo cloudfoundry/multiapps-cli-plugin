@@ -61,7 +61,7 @@ func (c CloudFoundryRestClient) GetAppProcessStatistics(appGuid string) ([]model
 	apiEndpoint, _ := c.cliConn.ApiEndpoint()
 
 	getAppProcessStatsUrl := fmt.Sprintf("%s/%sapps/%s/processes/web/stats", apiEndpoint, cfBaseUrl, appGuid)
-	body, err := executeRequest("GET", getAppProcessStatsUrl, token, c.isSslDisabled, nil)
+	body, err := executeRequest(http.MethodGet, getAppProcessStatsUrl, token, c.isSslDisabled, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (c CloudFoundryRestClient) CreateUserProvidedServiceInstance(serviceName st
 func getPaginatedResources[T any](url, token string, isSslDisabled bool) ([]T, error) {
 	var result []T
 	for url != "" {
-		body, err := executeRequest("GET", url, token, isSslDisabled, nil)
+		body, err := executeRequest(http.MethodGet, url, token, isSslDisabled, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +210,7 @@ func getPaginatedResources[T any](url, token string, isSslDisabled bool) ([]T, e
 func getPaginatedResourcesWithIncluded[T any, Auxiliary any](url, token string, isSslDisabled bool, auxiliaryContentHandler func(T, Auxiliary) T) ([]T, error) {
 	var result []T
 	for url != "" {
-		body, err := executeRequest("GET", url, token, isSslDisabled, nil)
+		body, err := executeRequest(http.MethodGet, url, token, isSslDisabled, nil)
 		if err != nil {
 			return nil, err
 		}

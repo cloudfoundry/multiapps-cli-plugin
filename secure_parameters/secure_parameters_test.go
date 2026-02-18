@@ -26,7 +26,19 @@ func TestCollectFromEnv(t *testing.T) {
 		t.Fatalf("Collecting environment variables has failed: %s", err.Error())
 	}
 
-	parameterValue, ok := resultToTest["fakePassword"]
+	testNormalVariable(t, &resultToTest)
+
+	testJsonVariable(t, &resultToTest)
+
+	testCertificateVariable(t, &resultToTest, testCertificate)
+
+	if _, exists := resultToTest["other"]; exists {
+		t.Fatalf("Unexpected value and environment variable")
+	}
+}
+
+func testNormalVariable(t *testing.T, resultToTest *map[string]ParameterValue) {
+	parameterValue, ok := (*resultToTest)["fakePassword"]
 	if !ok {
 		t.Fatalf("Missing key 'fakePassword' in map")
 	}
@@ -34,8 +46,10 @@ func TestCollectFromEnv(t *testing.T) {
 	if parameterValue.Type != typeString || parameterValue.StringContent != "secretValue" {
 		t.Fatalf("The value of 'fakePassword' key is not correct")
 	}
+}
 
-	jsonValue, ok := resultToTest["fakeJson"]
+func testJsonVariable(t *testing.T, resultToTest *map[string]ParameterValue) {
+	jsonValue, ok := (*resultToTest)["fakeJson"]
 	if !ok {
 		t.Fatalf("Missing key 'fakeJson' in map")
 	}
@@ -56,8 +70,10 @@ func TestCollectFromEnv(t *testing.T) {
 	if castedValue["b"] != "secretValueJson" {
 		t.Fatalf("The second value of the json is not what it should be: %v", castedValue["b"])
 	}
+}
 
-	certificateValue, ok := resultToTest["fakeCertificate"]
+func testCertificateVariable(t *testing.T, resultToTest *map[string]ParameterValue, testCertificate string) {
+	certificateValue, ok := (*resultToTest)["fakeCertificate"]
 
 	if !ok {
 		t.Fatalf("The value of the certificate is not present")
@@ -65,10 +81,6 @@ func TestCollectFromEnv(t *testing.T) {
 
 	if certificateValue.Type != typeMultiline || certificateValue.StringContent != testCertificate {
 		t.Fatalf("The value of the certificate is not what it should be: %v", certificateValue)
-	}
-
-	if _, exists := resultToTest["other"]; exists {
-		t.Fatalf("Unexpected value and environment variable")
 	}
 }
 
@@ -133,7 +145,7 @@ func TestBuildSecureExtension(t *testing.T) {
 	yamlResult, err := BuildSecureExtension(parameters, "test-mta", "")
 
 	if err != nil {
-		t.Fatalf("Error while building the secure extension descriotor: %s", err.Error())
+		t.Fatalf("Error while building the secure extension descriptor: %s", err.Error())
 	}
 
 	var unmarshaledBack map[string]interface{}

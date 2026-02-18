@@ -304,7 +304,6 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 			return Failure
 		}
 		mtaId, fileId, schemaVersion = asyncUploadJobResult.MtaId, asyncUploadJobResult.FileId, asyncUploadJobResult.SchemaVersion
-		ui.Say("-------------------- mtaId: %s, fileId: %s, schemaVersion: %s", mtaId, fileId, schemaVersion)
 		// Check for an ongoing operation for this MTA ID and abort it
 		wasAborted, err := c.CheckOngoingOperation(mtaId, namespace, dsHost, force, cfTarget)
 		if err != nil {
@@ -318,7 +317,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		uploadedArchivePartIds = append(uploadedArchivePartIds, fileId)
 
 		if GetBoolOpt(requireSecureParameters, flags) {
-			result := setUpSpecificsForDeploymentUsingSecrerts(flags, c, mtaId, namespace, schemaVersion, &disposableUserProvidedServiceName, &yamlBytes)
+			result := setUpSpecificsForDeploymentUsingSecrets(flags, c, mtaId, namespace, schemaVersion, &disposableUserProvidedServiceName, &yamlBytes)
 			if result != Success {
 				return Failure
 			}
@@ -355,7 +354,7 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		}
 
 		if GetBoolOpt(requireSecureParameters, flags) {
-			result := setUpSpecificsForDeploymentUsingSecrerts(flags, c, mtaId, namespace, descriptor.SchemaVersion, &disposableUserProvidedServiceName, &yamlBytes)
+			result := setUpSpecificsForDeploymentUsingSecrets(flags, c, mtaId, namespace, descriptor.SchemaVersion, &disposableUserProvidedServiceName, &yamlBytes)
 			if result != Success {
 				return Failure
 			}
@@ -444,7 +443,7 @@ func getRandomisedUpsName(mtaId, namespace string) (disposableUpsName string, er
 	return "__mta-secure-" + mtaId + "-" + namespace + "-" + resultSuffix, nil
 }
 
-func setUpSpecificsForDeploymentUsingSecrerts(flags *flag.FlagSet, c *DeployCommand, mtaId, namespace, schemaVersion string, disposableUserProvidedServiceName *string, yamlBytes *[]byte) ExecutionStatus {
+func setUpSpecificsForDeploymentUsingSecrets(flags *flag.FlagSet, c *DeployCommand, mtaId, namespace, schemaVersion string, disposableUserProvidedServiceName *string, yamlBytes *[]byte) ExecutionStatus {
 	// Collect special ENVs: __MTA___<name>, __MTA_JSON___<name>, __MTA_CERT___<name>
 	parameters, err := secure_parameters.CollectFromEnv("__MTA")
 	if err != nil {

@@ -34,7 +34,7 @@ type LastOperation struct {
 type ServicePlan struct {
 	Guid         string `json:"guid"`
 	Name         string `json:"name"`
-	OfferingGuid string `jsonry:"rela	tionships.service_offering.data.guid,omitempty"`
+	OfferingGuid string `jsonry:"relationships.service_offering.data.guid,omitempty"`
 }
 
 type ServiceOffering struct {
