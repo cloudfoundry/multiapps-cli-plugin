@@ -2,7 +2,6 @@ package commands
 
 import (
 	"bufio"
-	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"flag"
@@ -423,26 +422,6 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	return executionMonitor.Monitor()
 }
 
-func getUpsName(mtaId, namespace string) string {
-	if strings.TrimSpace(namespace) == "" {
-		return "__mta-secure-" + mtaId
-	}
-	return "__mta-secure-" + mtaId + "-" + namespace
-}
-
-func getRandomisedUpsName(mtaId, namespace string) (disposableUpsName string, err error) {
-	randomisedPart, err := getRandomEncryptionKey()
-	if err != nil {
-		return "", err
-	}
-	resultSuffix := randomisedPart[:7]
-
-	if strings.TrimSpace(namespace) == "" {
-		return "__mta-secure-" + mtaId + "-" + resultSuffix, nil
-	}
-	return "__mta-secure-" + mtaId + "-" + namespace + "-" + resultSuffix, nil
-}
-
 func setUpSpecificsForDeploymentUsingSecrets(flags *flag.FlagSet, c *DeployCommand, mtaId, namespace, schemaVersion string, disposableUserProvidedServiceName *string, yamlBytes *[]byte) ExecutionStatus {
 	// Collect special ENVs: __MTA___<name>, __MTA_JSON___<name>, __MTA_CERT___<name>
 	parameters, err := secure_parameters.CollectFromEnv("__MTA")
@@ -457,13 +436,13 @@ func setUpSpecificsForDeploymentUsingSecrets(flags *flag.FlagSet, c *DeployComma
 	}
 
 	if GetBoolOpt(disposableUserProvidedServiceOpt, flags) {
-		disposableUserProvidedServiceNameResult, err := getRandomisedUpsName(mtaId, namespace)
+		disposableUserProvidedServiceNameResult, err := secure_parameters.GetRandomisedUpsName(mtaId, namespace)
 		if err != nil {
 			ui.Failed("Failed to create disposable user-provided service name: %v", err)
 			return Failure
 		}
 
-		isDisposableUpsCreated, _, err := c.createDisposableUps(disposableUserProvidedServiceNameResult)
+		isDisposableUpsCreated, _, err := secure_parameters.CreateDisposableUps(disposableUserProvidedServiceNameResult, c.cliConnection, c.CfClient)
 		if err != nil {
 			ui.Failed("Could not ensure disposable user-provided service %s: %v", disposableUserProvidedServiceName, err)
 			return Failure
@@ -474,9 +453,9 @@ func setUpSpecificsForDeploymentUsingSecrets(flags *flag.FlagSet, c *DeployComma
 			ui.Say("Created disposable user-provided service %s for secure parameters. Will be automatically deleted at the end of the operation!", terminal.EntityNameColor(disposableUserProvidedServiceNameResult))
 		}
 	} else {
-		userProvidedServiceName := getUpsName(mtaId, namespace)
+		userProvidedServiceName := secure_parameters.GetUpsName(mtaId, namespace)
 
-		isUpsCreated, _, err := c.validateUpsExistsOrElseCreateIt(userProvidedServiceName)
+		isUpsCreated, _, err := secure_parameters.ValidateUpsExistsOrElseCreateIt(userProvidedServiceName, c.cliConnection, c.CfClient)
 		if err != nil {
 			ui.Failed("Could not ensure user-provided service %s: %v", userProvidedServiceName, err)
 			return Failure
@@ -502,102 +481,6 @@ func setUpSpecificsForDeploymentUsingSecrets(flags *flag.FlagSet, c *DeployComma
 	*yamlBytes = yamlBytesResult
 
 	return Success
-}
-
-func (c *DeployCommand) validateUpsExistsOrElseCreateIt(userProvidedServiceName string) (upsCreatedByTheCli bool, encryptionKeyResult string, err error) {
-	doesUpsExist, err := c.doesUpsExist(userProvidedServiceName)
-	if err != nil {
-		return false, "", fmt.Errorf("Check if the UPS exists: %w", err)
-	}
-
-	if doesUpsExist {
-		return false, "", nil
-	}
-
-	encryptionKey, err := getRandomEncryptionKey()
-	if err != nil {
-		return false, "", fmt.Errorf("Error while generating AES-256 encryption key: %w", err)
-	}
-
-	space, err := c.cliConnection.GetCurrentSpace()
-	if err != nil {
-		return false, "", fmt.Errorf("Failed to get the current space: %w", err)
-	}
-
-	if space.Guid == "" {
-		return false, "", fmt.Errorf("Failed to get the current space Guid")
-	}
-
-	upsCredentials := map[string]string{
-		"encryptionKey": encryptionKey,
-	}
-
-	_, err = c.CfClient.CreateUserProvidedServiceInstance(userProvidedServiceName, space.Guid, upsCredentials)
-	if err != nil {
-		return false, "", fmt.Errorf("Failed to create user-provided service %s: %w", userProvidedServiceName, err)
-	}
-
-	return true, encryptionKey, nil
-}
-
-func (c *DeployCommand) createDisposableUps(userProvidedServiceName string) (upsCreatedByTheCli bool, encryptionKeyResult string, err error) {
-	encryptionKey, err := getRandomEncryptionKey()
-	if err != nil {
-		return false, "", fmt.Errorf("Error while generating AES-256 encryption key: %w", err)
-	}
-
-	space, err := c.cliConnection.GetCurrentSpace()
-	if err != nil {
-		return false, "", fmt.Errorf("Failed to get the current space: %w", err)
-	}
-
-	if space.Guid == "" {
-		return false, "", fmt.Errorf("Failed to get the current space Guid")
-	}
-
-	upsCredentials := map[string]string{
-		"encryptionKey": encryptionKey,
-	}
-
-	_, err = c.CfClient.CreateUserProvidedServiceInstance(userProvidedServiceName, space.Guid, upsCredentials)
-	if err != nil {
-		return false, "", fmt.Errorf("Failed to create user-provided service %s: %w", userProvidedServiceName, err)
-	}
-
-	return true, encryptionKey, nil
-}
-
-func getRandomEncryptionKey() (string, error) {
-	const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-
-	encryptionKeyBytes := make([]byte, 32)
-	if _, err := rand.Read(encryptionKeyBytes); err != nil {
-		return "", err
-	}
-
-	for i := range encryptionKeyBytes {
-		encryptionKeyBytes[i] = alphabet[int(encryptionKeyBytes[i]&63)]
-	}
-
-	return string(encryptionKeyBytes), nil
-}
-
-func (c *DeployCommand) doesUpsExist(userProvidedServiceName string) (bool, error) {
-	space, errSpace := c.cliConnection.GetCurrentSpace()
-	if errSpace != nil {
-		return false, fmt.Errorf("Cannot determine the current space")
-	}
-	spaceGuid := space.Guid
-
-	_, errServiceInstance := c.CfClient.GetServiceInstanceByName(userProvidedServiceName, spaceGuid)
-	if errServiceInstance != nil {
-		if errServiceInstance.Error() == "service instance not found" {
-			return false, nil
-		}
-		return false, fmt.Errorf("Error while checking if the UPS for secure encryption exists: %w", errServiceInstance)
-	}
-
-	return true, nil
 }
 
 func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
