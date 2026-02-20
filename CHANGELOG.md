@@ -1,3 +1,6 @@
+## v3.10.0
+* Add dependency aware stop order flag (experimental)
+
 ## v3.9.0
 * Upgrade Cloud Foundry CLI to version 8.17.0
 * Update CodeQL GitHub Action to v4
