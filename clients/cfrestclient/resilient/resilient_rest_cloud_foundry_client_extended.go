@@ -1,9 +1,10 @@
 package resilient
 
 import (
+	"time"
+
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/cfrestclient"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
-	"time"
 )
 
 type ResilientCloudFoundryRestClient struct {
@@ -43,6 +44,18 @@ func (c ResilientCloudFoundryRestClient) GetServiceInstances(mtaId, mtaNamespace
 func (c ResilientCloudFoundryRestClient) GetServiceBindings(serviceName string) ([]models.ServiceBinding, error) {
 	return retryOnError(func() ([]models.ServiceBinding, error) {
 		return c.CloudFoundryRestClient.GetServiceBindings(serviceName)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) GetServiceInstanceByName(serviceName, spaceGuid string) (models.CloudFoundryServiceInstance, error) {
+	return retryOnError(func() (models.CloudFoundryServiceInstance, error) {
+		return c.CloudFoundryRestClient.GetServiceInstanceByName(serviceName, spaceGuid)
+	}, c.MaxRetriesCount, c.RetryInterval)
+}
+
+func (c ResilientCloudFoundryRestClient) CreateUserProvidedServiceInstance(serviceName string, spaceGuid string, credentials map[string]string) (models.CloudFoundryServiceInstance, error) {
+	return retryOnError(func() (models.CloudFoundryServiceInstance, error) {
+		return c.CloudFoundryRestClient.CreateUserProvidedServiceInstance(serviceName, spaceGuid, credentials)
 	}, c.MaxRetriesCount, c.RetryInterval)
 }
 

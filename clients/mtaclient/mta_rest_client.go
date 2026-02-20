@@ -41,6 +41,7 @@ type AsyncUploadJobResult struct {
 	Error          string               `json:"error,omitempty"`
 	File           *models.FileMetadata `json:"file,omitempty"`
 	MtaId          string               `json:"mta_id,omitempty"`
+	SchemaVersion  string               `json:"schema_version,omitempty"`
 	BytesProcessed int64                `json:"bytes_processed,omitempty"`
 	ClientActions  []string             `json:"client_actions,omitempty"`
 }

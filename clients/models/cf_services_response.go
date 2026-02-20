@@ -14,6 +14,15 @@ type CloudFoundryServiceInstance struct {
 	Offering ServiceOffering `json:"-"`
 }
 
+type CloudFoundryUserProvidedServiceInstance struct {
+	Guid          string        `json:"guid"`
+	Name          string        `json:"name"`
+	Type          string        `json:"type"`
+	LastOperation LastOperation `json:"last_operation,omitempty"`
+	SpaceGuid     string        `jsonry:"relationships.space.data.guid"`
+	Metadata      Metadata      `json:"metadata"`
+}
+
 type LastOperation struct {
 	Type        string `json:"type"`
 	State       string `json:"state"`
