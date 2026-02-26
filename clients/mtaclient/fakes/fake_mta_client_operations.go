@@ -1,9 +1,10 @@
 package fakes
 
 import (
-	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 	"net/http"
 	"sync"
+
+	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/util"
 
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/models"
 	"github.com/cloudfoundry-incubator/multiapps-cli-plugin/clients/mtaclient"
@@ -706,10 +707,10 @@ func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrlReturnsOnCall(f
 	fake.startUploadMtaArchiveFromUrlMutex.Unlock()
 }
 
-func (fake *FakeMtaClientOperations) GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string) (mtaclient.AsyncUploadJobResult, error) {
+func (fake *FakeMtaClientOperations) GetAsyncUploadJob(jobId string, namespace *string) (mtaclient.AsyncUploadJobResult, error) {
 	fake.getAsyncUploadJobMutex.Lock()
 	result, specificReturn := fake.getAsyncUploadJobReturnsOnCall[jobId]
-	fake.recordInvocation("GetAsyncUploadJob", []interface{}{jobId, namespace, appInstanceId})
+	fake.recordInvocation("GetAsyncUploadJob", []interface{}{jobId, namespace})
 	fake.getAsyncUploadJobMutex.Unlock()
 	if specificReturn {
 		return result.result, result.err
@@ -717,7 +718,7 @@ func (fake *FakeMtaClientOperations) GetAsyncUploadJob(jobId string, namespace *
 	return fake.getAsyncUploadJobReturns.result1, fake.startUploadMtaArchiveFromUrlReturns.result2
 }
 
-func (fake *FakeMtaClientOperations) GetAsyncUploadJobReturnsOnCall(jobId string, namespace *string, appInstanceId string, result mtaclient.AsyncUploadJobResult, err error) {
+func (fake *FakeMtaClientOperations) GetAsyncUploadJobReturnsOnCall(jobId string, namespace *string, result mtaclient.AsyncUploadJobResult, err error) {
 	fake.getAsyncUploadJobMutex.Lock()
 	if fake.getAsyncUploadJobReturnsOnCall == nil {
 		fake.getAsyncUploadJobReturnsOnCall = make(map[string]struct {
@@ -729,7 +730,7 @@ func (fake *FakeMtaClientOperations) GetAsyncUploadJobReturnsOnCall(jobId string
 		result mtaclient.AsyncUploadJobResult
 		err    error
 	}{result, err}
-	fake.recordInvocation("GetAsyncUploadJob", []interface{}{jobId, namespace, appInstanceId})
+	fake.recordInvocation("GetAsyncUploadJob", []interface{}{jobId, namespace})
 	fake.getAsyncUploadJobMutex.Unlock()
 }
 

@@ -60,8 +60,8 @@ func (fb *FakeMtaClientBuilder) StartUploadMtaArchiveFromUrl(fileUrl string, nam
 	fb.FakeMtaClient.StartUploadMtaArchiveFromUrlReturnsOnCall(fileUrl, namespace, result, resultError)
 	return fb
 }
-func (fb *FakeMtaClientBuilder) GetAsyncUploadJob(jobId string, namespace *string, appInstanceId string, result mtaclient.AsyncUploadJobResult, resultErr error) *FakeMtaClientBuilder {
-	fb.FakeMtaClient.GetAsyncUploadJobReturnsOnCall(jobId, namespace, appInstanceId, result, resultErr)
+func (fb *FakeMtaClientBuilder) GetAsyncUploadJob(jobId string, namespace *string, result mtaclient.AsyncUploadJobResult, resultErr error) *FakeMtaClientBuilder {
+	fb.FakeMtaClient.GetAsyncUploadJobReturnsOnCall(jobId, namespace, result, resultErr)
 	return fb
 }
 func (fb *FakeMtaClientBuilder) GetMtaOperationLogContent(operationID, logID string, result string, resultError error) *FakeMtaClientBuilder {

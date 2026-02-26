@@ -537,7 +537,7 @@ func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclie
 	var file *models.FileMetadata
 	var jobResult mtaclient.AsyncUploadJobResult
 	for file == nil {
-		jobResult, err = mtaClient.GetAsyncUploadJob(jobId, &namespace, responseHeaders.Get("x-cf-app-instance"))
+		jobResult, err = mtaClient.GetAsyncUploadJob(jobId, &namespace)
 		if err != nil {
 			ui.Failed("Could not upload from url: %s", err)
 			return UploadFromUrlStatus{
