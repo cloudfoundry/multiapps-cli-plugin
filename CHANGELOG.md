@@ -1,3 +1,6 @@
+## v3.11.0
+* Added a secure mechanism for passing sensitive data during multitarget application deployment (experimental)
+
 ## v3.10.0
 * Add dependency aware stop order flag (experimental)
 
