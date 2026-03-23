@@ -1,3 +1,6 @@
+## v3.11.1
+* Fixed failing unit test during build
+
 ## v3.11.0
 * Added a secure mechanism for passing sensitive data during multitarget application deployment (experimental)
 
