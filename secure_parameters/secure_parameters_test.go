@@ -142,7 +142,7 @@ func TestBuildSecureExtension(t *testing.T) {
 		"fakeCertificate": {Type: typeMultiline, StringContent: "-----BEGIN CERTIFICATE-----\nMIBgNVBAYTAPXwBc63heW9WrP3qnDEm+UZE4V0Au7OWnOeiobq\n-----END CERTIFICATE-----\n"},
 	}
 
-	yamlResult, err := BuildSecureExtension(parameters, "test-mta", "")
+	yamlResult, err := BuildSecureExtension(parameters, "test-mta", "3.3")
 
 	if err != nil {
 		t.Fatalf("Error while building the secure extension descriptor: %s", err.Error())
@@ -235,7 +235,7 @@ func TestBuildSecureExtensionWhenNoMtaId(t *testing.T) {
 	}
 
 	_, err := BuildSecureExtension(parameters, "", "")
-	if err == nil || err.Error() != "mtaID is required for the extension descriptor's field 'extends'" {
+	if err == nil || err.Error() != "mtaID is required for the secure extension descriptor's field 'extends'" {
 		t.Fatalf("Expected missing mta id error, but rather got: %v", err)
 	}
 }
