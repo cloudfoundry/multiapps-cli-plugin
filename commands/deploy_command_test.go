@@ -359,6 +359,45 @@ var _ = Describe("DeployCommand", func() {
 			})
 		})
 
+		// service timeout flags with invalid values - error
+		Context("with an invalid services-create-service-timeout value", func() {
+			It("should print incorrect usage and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--services-create-service-timeout", "abc"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Invalid value for services-create-service-timeout: abc")
+			})
+		})
+
+		Context("with an invalid services-bind-service-timeout value", func() {
+			It("should print incorrect usage and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--services-bind-service-timeout", "-1"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Invalid value for services-bind-service-timeout: -1")
+			})
+		})
+
+		Context("with an invalid services-create-service-key-timeout value", func() {
+			It("should print incorrect usage and exit with a non-zero status", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--services-create-service-key-timeout", "999999999"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Invalid value for services-create-service-key-timeout: 999999999")
+			})
+		})
+
+		// service timeout flags with valid values should be accepted as known flags
+		Context("with unknown flags and a valid services-create-service-timeout flag", func() {
+			It("should report only the unknown flags", func() {
+				output, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{mtaArchivePath, "--nonValidFlag", "--services-create-service-timeout", "500", "-notAValidOne"}).ToInt()
+				})
+				ex.ExpectFailure(status, output, "Incorrect usage. Unknown or wrong flags: --nonValidFlag, -notAValidOne")
+				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"help", name}))
+			})
+		})
+
 		// strategy flag set to invalid deployment strategy - error
 		Context("with strategy flag set to an invalid deployment strategy", func() {
 			It("should print the available strategies and exit with a non-zero status", func() {
