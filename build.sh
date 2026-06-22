@@ -49,6 +49,16 @@ function createBuildMetadataFiles() {
 	grep -Pzoa "(?s)## v${version}(.*?)##" CHANGELOG.md | grep -va "##" | tr -s '\n' '\n' > ${folder}/changelog
 }
 
+function createChecksumsForBinaries() {
+    local buildFolder=$1
+    echo "generating SHA-256 checksums..."
+    (
+        cd "${buildFolder}"
+        sha256sum multiapps-plugin.* multiapps-plugin-non-static.* > checksums.txt
+    )
+    echo "checksums were written to ${buildFolder}/checksums.txt"
+}
+
 script_dir="$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")"
 cd "${script_dir}"
 
@@ -89,3 +99,4 @@ buildstatic "$version" darwin arm64 $PLUGIN_NAME_STATIC_APPLE_ARM64
 mkdir -p $BUILD_FOLDER
 createBuildMetadataFiles $version $BUILD_FOLDER
 movePluginsToBuildFolder $BUILD_FOLDER
+createChecksumsForBinaries $BUILD_FOLDER
