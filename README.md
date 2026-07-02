@@ -43,7 +43,7 @@ cf install-plugin <path-to-the-plugin> -f
 ### Verifying the download
 Releases include a `checksums.txt` file containing SHA-256 hashes of every published binary. Verifying the checksum before installing detects accidental corruption and most forms of in-transit modification.
 
-Download `checksums.txt` from the same release as the binary and place both files in the same directory. Then run:
+From the directory containing both files, then run:
 
 Linux:
 ```
