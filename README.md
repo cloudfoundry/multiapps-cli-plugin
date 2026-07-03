@@ -40,6 +40,27 @@ cf install-plugin <path-to-the-plugin> -f
 ```
 :rotating_light: Note: if you are running on an Unix-based system, you need to make the plugin executable before installing it. In order to achieve this, execute the following commad `chmod +x <path-to-the-plugin>`
 
+### Verifying the download
+Releases include a `checksums.txt` file containing SHA-256 hashes of every published binary. Verifying the checksum before installing detects accidental corruption and most forms of in-transit modification.
+
+From the directory containing both files, then run:
+
+Linux:
+```
+sha256sum -c checksums.txt --ignore-missing
+```
+
+macOS:
+```
+shasum -a 256 -c checksums.txt --ignore-missing
+```
+
+Windows (PowerShell):
+```
+#the checksums on Windows must be compared manually against the ones in checksums.txt
+Get-FileHash -Algorithm SHA256 multiapps-plugin.win64.exe
+```
+
 ## Usage
 The MultiApps CF plugin supports the following commands:
 
