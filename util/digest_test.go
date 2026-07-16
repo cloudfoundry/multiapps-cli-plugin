@@ -46,6 +46,17 @@ var _ = Describe("Digest", func() {
 			})
 		})
 
+		Context("with SHA-256 algorithm using hyphenated form", func() {
+			It("should compute the same digest as SHA256", func() {
+				const testFileContent = "test file content"
+				os.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
+				digestHyphen, err := util.ComputeFileChecksum(testFilePath, "SHA-256")
+				testutil.ExpectNoErrorAndResult(err, digestHyphen, "60f5237ed4049f0382661ef009d2bc42e48c3ceb3edb6600f7024e7ab3b838f3")
+				digestPlain, err2 := util.ComputeFileChecksum(testFilePath, "SHA256")
+				testutil.ExpectNoErrorAndResult(err2, digestPlain, digestHyphen)
+			})
+		})
+
 		AfterEach(func() {
 			testFile.Close()
 			os.Remove(testFileName)

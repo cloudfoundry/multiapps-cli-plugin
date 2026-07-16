@@ -16,7 +16,7 @@ import (
 // ComputeFileChecksum computes the checksum of the specified file based on the specified algorithm
 func ComputeFileChecksum(filePath, algorithm string) (string, error) {
 	var hasher hash.Hash
-	switch strings.ToUpper(algorithm) {
+	switch strings.ReplaceAll(strings.ToUpper(algorithm), "-", "") {
 	case "MD5":
 		hasher = md5.New()
 	case "SHA1":
