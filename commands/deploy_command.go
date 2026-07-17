@@ -50,6 +50,9 @@ const (
 	stageTimeoutOpt                  = "apps-stage-timeout"
 	uploadTimeoutOpt                 = "apps-upload-timeout"
 	taskExecutionTimeoutOpt          = "apps-task-execution-timeout"
+	servicesCreateServiceTimeoutOpt  = "services-create-service-timeout"
+	servicesBindServiceTimeoutOpt    = "services-bind-service-timeout"
+	servicesCreateServiceKeyTimeoutOpt = "services-create-service-key-timeout"
 	applyNamespaceAppNamesOpt        = "apply-namespace-app-names"
 	applyNamespaceServiceNamesOpt    = "apply-namespace-service-names"
 	applyNamespaceAppRoutesOpt       = "apply-namespace-app-routes"
@@ -117,13 +120,13 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app archive
 
-   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [--require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT] [--services-create-service-timeout TIMEOUT] [--services-bind-service-timeout TIMEOUT] [--services-create-service-key-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT] [--services-create-service-timeout TIMEOUT] [--services-bind-service-timeout TIMEOUT] [--services-create-service-key-timeout TIMEOUT]` + util.UploadEnvHelpText,
 
 			Options: map[string]string{
 				extDescriptorsOpt:                 "Extension descriptors",
@@ -156,6 +159,9 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(stageTimeoutOpt):                            "Stage app timeout in seconds",
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
+				util.GetShortOption(servicesCreateServiceTimeoutOpt):            "Create service timeout in seconds",
+				util.GetShortOption(servicesBindServiceTimeoutOpt):              "Bind service timeout in seconds",
+				util.GetShortOption(servicesCreateServiceKeyTimeoutOpt):         "Create service key timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
 				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
 				util.GetShortOption(dependencyAwareStopOrderOpt):                "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Stop apps in a dependency-aware order during the resume phase of a blue-green deployment",
@@ -186,6 +192,9 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 		processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
+		processBuilder.Parameter("servicesCreateServiceTimeout", GetStringOpt(servicesCreateServiceTimeoutOpt, flags))
+		processBuilder.Parameter("servicesBindServiceTimeout", GetStringOpt(servicesBindServiceTimeoutOpt, flags))
+		processBuilder.Parameter("servicesCreateServiceKeyTimeout", GetStringOpt(servicesCreateServiceKeyTimeoutOpt, flags))
 		processBuilder.Parameter("isSecurityEnabled", strconv.FormatBool(GetBoolOpt(requireSecureParameters, flags)))
 		processBuilder.Parameter("isDisposableUserProvidedServiceEnabled", strconv.FormatBool(GetBoolOpt(disposableUserProvidedServiceOpt, flags)))
 
@@ -241,6 +250,9 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(stageTimeoutOpt, "", "")
 	flags.String(uploadTimeoutOpt, "", "")
 	flags.String(taskExecutionTimeoutOpt, "", "")
+	flags.String(servicesCreateServiceTimeoutOpt, "", "")
+	flags.String(servicesBindServiceTimeoutOpt, "", "")
+	flags.String(servicesCreateServiceKeyTimeoutOpt, "", "")
 	flags.Bool(shouldBackupPreviousVersionOpt, false, "")
 	flags.Bool(dependencyAwareStopOrderOpt, false, "")
 	flags.Bool(requireSecureParameters, false, "")
@@ -791,7 +803,7 @@ func (deployCommandFlagsValidator) ValidateParsedFlags(flags *flag.FlagSet) erro
 				err = fmt.Errorf("Invalid value for namespace. The namespace cannot be more than %d symbols.", maxNamespaceSize)
 				return
 			}
-		case timeoutOpt, startTimeoutOpt, stageTimeoutOpt, uploadTimeoutOpt, taskExecutionTimeoutOpt:
+		case timeoutOpt, startTimeoutOpt, stageTimeoutOpt, uploadTimeoutOpt, taskExecutionTimeoutOpt, servicesCreateServiceTimeoutOpt, servicesBindServiceTimeoutOpt, servicesCreateServiceKeyTimeoutOpt:
 			if e := ValidateTimeoutOption(f.Name, flags, 259200); e != nil {
 				err = e
 				return
