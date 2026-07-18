@@ -18,6 +18,9 @@ var pluginVersion string = "0.0.0"
 // cfCliVersion stores the version set from the main package
 var cfCliVersion string = DefaultCliVersion
 
+// userAgentSuffixOption stores the default user agent suffix option set from the main package
+var userAgentSuffixOption string = ""
+
 // SetPluginVersion sets the plugin version for use in User-Agent
 func SetPluginVersion(version string) {
 	pluginVersion = version
@@ -28,6 +31,11 @@ func SetCfCliVersion(version string) {
 	cfCliVersion = version
 }
 
+// SetUserAgentSuffixOption sets the default user agent suffix option for use in User-Agent
+func SetUserAgentSuffixOption(suffix string) {
+	userAgentSuffixOption = suffix
+}
+
 // GetPluginVersion returns the current plugin version
 func GetPluginVersion() string {
 	return pluginVersion
@@ -36,6 +44,11 @@ func GetPluginVersion() string {
 // GetCfCliVersion returns the current cf CLI version
 func GetCfCliVersion() string {
 	return cfCliVersion
+}
+
+// GetUserAgentSuffixOption returns the current user agent suffix option
+func GetUserAgentSuffixOption() string {
+	return userAgentSuffixOption
 }
 
 // BuildUserAgent creates a User-Agent string in the format:
@@ -61,8 +74,13 @@ func getOperatingSystemInformation() string {
 }
 
 // getCustomEnvValue reads value from custom environment variable with validation
+// Falls back to build-time value if environment variable is not set
 func getCustomEnvValue() string {
 	value := os.Getenv("MULTIAPPS_USER_AGENT_SUFFIX")
+	if value == "" {
+		// Use build-time value as fallback
+		value = userAgentSuffixOption
+	}
 	if value == "" {
 		return ""
 	}
