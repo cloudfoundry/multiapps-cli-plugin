@@ -46,6 +46,15 @@ var _ = Describe("Digest", func() {
 			})
 		})
 
+		Context("with SHA-256 algorithm name (hyphenated, as returned by deploy service)", func() {
+			It("should compute the same digest as SHA256", func() {
+				const testFileContent = "test file content"
+				os.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
+				digest, err := util.ComputeFileChecksum(testFilePath, "SHA-256")
+				testutil.ExpectNoErrorAndResult(err, digest, "60f5237ed4049f0382661ef009d2bc42e48c3ceb3edb6600f7024e7ab3b838f3")
+			})
+		})
+
 		AfterEach(func() {
 			testFile.Close()
 			os.Remove(testFileName)
