@@ -46,6 +46,15 @@ var _ = Describe("Digest", func() {
 			})
 		})
 
+		Context("with SHA-384 algorithm name (as returned by deploy service for FIPS+NCS)", func() {
+			It("should compute the SHA-384 digest of the file", func() {
+				const testFileContent = "test file content"
+				os.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
+				digest, err := util.ComputeFileChecksum(testFilePath, "SHA-384")
+				testutil.ExpectNoErrorAndResult(err, digest, "4b87814537ab46771af4f37f259d6321f8c36b9e0d9ed1eda10005031cf7de752b9937a9cfe02744a3fc9785c3106317")
+			})
+		})
+
 		AfterEach(func() {
 			testFile.Close()
 			os.Remove(testFileName)

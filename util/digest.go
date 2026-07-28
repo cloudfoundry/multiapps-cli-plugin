@@ -23,6 +23,8 @@ func ComputeFileChecksum(filePath, algorithm string) (string, error) {
 		hasher = sha1.New()
 	case "SHA256":
 		hasher = sha256.New()
+	case "SHA384", "SHA-384":
+		hasher = sha512.New384()
 	case "SHA512":
 		hasher = sha512.New()
 	default:
