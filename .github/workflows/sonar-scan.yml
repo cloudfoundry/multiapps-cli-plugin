@@ -1,0 +1,42 @@
+name: Multiapps CLI Plugin Sonar Scan
+
+on:
+  push:
+   branches: [ "master" ]
+  pull_request:
+   branches: [ "master" ]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        # Full history so SonarCloud can compute new-code and blame data.
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@be3c94b385c4f180051c996d336f57a34c397495 # v3
+      with:
+        go-version: '1.25.4'
+
+    - name: Build and Test with Coverage
+      run: |
+        go build -v ./...
+        go test -coverprofile=coverage.out ./...
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.1
+      with:
+        args: --output.json.path=golangci-report.json
+      continue-on-error: true
+
+    - name: Sonar Scan
+      uses: SonarSource/sonarqube-scan-action@aa494459d7c39c106cc77b166de8b4250a32bb97 # v5.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

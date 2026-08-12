@@ -1,0 +1,16 @@
+# golangci-lint configuration for multiapps-cli-plugin
+# Runs a standard set of Go linters; JSON output is uploaded to SonarCloud.
+run:
+  timeout: 5m
+
+issues:
+  exclude-dirs:
+    - test_resources
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
