@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/crypto/sha3"
 )
 
 // ComputeFileChecksum computes the checksum of the specified file based on the specified algorithm
@@ -27,6 +29,10 @@ func ComputeFileChecksum(filePath, algorithm string) (string, error) {
 		hasher = sha512.New384()
 	case "SHA512":
 		hasher = sha512.New()
+	case "SHA3-256":
+		hasher = sha3.New256()
+	case "SHA3-512":
+		hasher = sha3.New512()
 	default:
 		return "", fmt.Errorf("Unsupported digest algorithm %q", algorithm)
 	}

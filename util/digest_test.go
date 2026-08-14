@@ -55,6 +55,24 @@ var _ = Describe("Digest", func() {
 			})
 		})
 
+		Context("with SHA3-256 algorithm", func() {
+			It("should compute the SHA3-256 digest of the file", func() {
+				const testFileContent = "test file content"
+				os.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
+				digest, err := util.ComputeFileChecksum(testFilePath, "SHA3-256")
+				testutil.ExpectNoErrorAndResult(err, digest, "0de0da51c6d2c645c7822739d886b15894c0baa51e668415b683b3d028a12758")
+			})
+		})
+
+		Context("with SHA3-512 algorithm", func() {
+			It("should compute the SHA3-512 digest of the file", func() {
+				const testFileContent = "test file content"
+				os.WriteFile(testFile.Name(), []byte(testFileContent), 0644)
+				digest, err := util.ComputeFileChecksum(testFilePath, "SHA3-512")
+				testutil.ExpectNoErrorAndResult(err, digest, "fa9fc2b12fcb7ca5e1758dfb907d139d9f803676a8659de0b0527e77adf4b332631a22306bad174e46ce47a4e5b6e4fd2ccdc58cefa51b233c0e5ce6651330f8")
+			})
+		})
+
 		AfterEach(func() {
 			testFile.Close()
 			os.Remove(testFileName)
