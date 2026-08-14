@@ -21,13 +21,13 @@ func ComputeFileChecksum(filePath, algorithm string) (string, error) {
 	switch strings.ToUpper(algorithm) {
 	case "MD5":
 		hasher = md5.New()
-	case "SHA1":
+	case "SHA1", "SHA-1":
 		hasher = sha1.New()
-	case "SHA256":
+	case "SHA256", "SHA-256":
 		hasher = sha256.New()
 	case "SHA384", "SHA-384":
 		hasher = sha512.New384()
-	case "SHA512":
+	case "SHA512", "SHA-512":
 		hasher = sha512.New()
 	case "SHA3-256":
 		hasher = sha3.New256()
