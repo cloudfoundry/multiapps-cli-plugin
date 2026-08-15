@@ -17,6 +17,9 @@ import (
 // Version is the version of the CLI plugin. It is injected on linking time.
 var Version string = "0.0.0"
 
+// MultiappsUserAgentSuffixOption is the default user agent suffix option. It is injected on linking time.
+var MultiappsUserAgentSuffixOption string = ""
+
 // MultiappsPlugin represents a cf CLI plugin for executing operations on MTAs
 type MultiappsPlugin struct{}
 
@@ -50,6 +53,7 @@ func (p *MultiappsPlugin) Run(cliConnection plugin.CliConnection, args []string)
 	}
 	util.SetCfCliVersion(strings.Join(versionOutput, " "))
 	util.SetPluginVersion(Version)
+	util.SetUserAgentSuffixOption(MultiappsUserAgentSuffixOption)
 	command.Initialize(command.GetPluginCommand().Name, cliConnection)
 	status := command.Execute(args[1:])
 	if status == commands.Failure {
