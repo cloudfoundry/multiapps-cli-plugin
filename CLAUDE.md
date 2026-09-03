@@ -11,9 +11,38 @@ against the `multiapps-controller` backend and streams the results back to the t
 This is an **OPEN SOURCE** repository. Never introduce proprietary logic, credentials,
 or internal company context into this codebase.
 
+## Contributing Rules
+
+- **Every commit and PR must reference a JIRA item.** No commit or PR should be merged without
+  a backlog reference in its description.
+- **At least one commit in the change must contain a real JIRA key in the form
+  `LMCROSSITXSADEPLOY-1234`** (the `LMCROSSITXSADEPLOY-<number>` format), pointing to an actual
+  Jira item — not a placeholder.
+
+## What Claude Code MUST NOT Do Without Explicit Confirmation
+
+Claude Code must **NOT** perform any of the following actions unless the user has explicitly
+confirmed that specific action in the current conversation. Do not infer permission from an
+earlier, unrelated approval — ask, then wait.
+
+- **Do NOT push** to any remote (no `git push`, no branch/tag pushes, no opening PRs) without
+  explicit confirmation.
+- **Do NOT cut, tag, or trigger a release** — releases are handled by the maintainers' dedicated
+  process.
+- **Do NOT update version files** — `cfg/VERSION` is injected at build time via `-ldflags`; leave
+  it (and any other version markers) untouched unless explicitly told to change it.
+- **Do NOT bump, publish, or otherwise mutate the project version** or any similar
+  project-state-changing action (release automation, changelog/version tagging, dependency
+  version bumps) without explicit confirmation.
+- **Do NOT hand-edit generated clients** under `clients/mtaclient/`, `clients/mtaclient_v2/`, or
+  the specs in `clients/swagger/` — regenerate them instead.
+
+When in doubt about whether an action falls into the above, treat it as requiring confirmation
+and ask first.
+
 ## Tech Stack
 
-- **Go** / go modules (`github.com/cloudfoundry-incubator/multiapps-cli-plugin`)
+- **Go** / go modules — repo lives at `github.com/cloudfoundry/multiapps-cli-plugin` (the `go.mod` module path is still the legacy `github.com/cloudfoundry-incubator/multiapps-cli-plugin`)
 - **CF CLI plugin SDK** (`code.cloudfoundry.org/cli/v8/plugin`)
 - **go-openapi** generated REST clients — do not hand-edit files under `clients/mtaclient/` or `clients/mtaclient_v2/`
 - **Ginkgo v1 + Gomega** for tests — suites bootstrap via `go test` (`RunSpecs` in `*_suite_test.go`)
@@ -25,6 +54,7 @@ or internal company context into this codebase.
 | `multiapps_plugin.go` | Plugin entry point — `Commands` slice, `Run()`, `GetMetadata()` |
 | `commands/` | One file per CF command; all embed `*BaseCommand` |
 | `commands/fakes/` | Fakes for command-level interfaces |
+| `clients/baseclient/` | Shared client plumbing — token factory, user-agent transport, client errors |
 | `clients/mtaclient/` | go-openapi generated MTA REST client (API v1) |
 | `clients/mtaclient_v2/` | go-openapi generated MTA REST client (API v2) |
 | `clients/mtaclient/fakes/` | Fake v1 client builder for tests |
@@ -33,6 +63,7 @@ or internal company context into this codebase.
 | `clients/cfrestclient/` | CF-specific REST client (space/org resolution) |
 | `clients/csrf/` | CSRF token handling |
 | `clients/models/` | Shared model types |
+| `clients/swagger/` | OpenAPI/Swagger specs (`mta_rest.yaml`, `rest.yaml`) the clients are generated from |
 | `configuration/properties/` | One file per env-var-backed config property |
 | `secure_parameters/` | Handling of sensitive deploy parameters |
 | `util/` | CF target resolution, URL calculator, file splitter, user-agent |
@@ -70,29 +101,35 @@ or internal company context into this codebase.
    - Initialize with `command.InitializeAll(...)` — not `command.Initialize(...)`
    - See `commands/mtas_command_test.go` as the canonical simple example
 
-4. **Run tests:**
+Then build, test, and verify as described below.
+
+### Build, Test & Verify (Any Change)
+
+These steps apply to any change, not just new commands:
+
+1. **Run tests:**
    ```bash
    go test ./commands/...
    # or all packages:
    go test ./...
    ```
 
-5. **Format:**
+2. **Format:**
    ```bash
    gofmt -w cli clients commands testutil ui util
    ```
 
-6. **Build:**
+3. **Build:**
    ```bash
    go build -ldflags "-X main.Version=$(cat cfg/VERSION)" -o multiapps-plugin .
    ```
 
-7. **Install into CF CLI:**
+4. **Install into CF CLI:**
    ```bash
    cf install-plugin ./multiapps-plugin -f
    ```
 
-8. **Verify manually** by running `cf <your-command>` against a CF environment with a running multiapps-controller.
+5. **Verify manually** against a CF environment with a running multiapps-controller (e.g. run the affected `cf <command>`).
 
 ### Full Cross-Platform Release Build
 
@@ -102,22 +139,20 @@ or internal company context into this codebase.
 
 Produces static and non-static binaries for all platforms + `checksums.txt` in `build/`.
 
-## File Upload
+## Key Implementation Details
 
-MTAR archives are split into chunks before upload:
+A few behaviors are non-obvious from the package layout — check the referenced files before touching them:
 
-- Default chunk size: **45 MB** — controlled by `MULTIAPPS_UPLOAD_CHUNK_SIZE`
-- Maximum **50 chunks** (`MaxFileChunkCount` in `util/file_splitter.go`) — minimum chunk size is enforced as `ceil(mtar_size_mb / 50)`
-- Chunks upload **in parallel** by default — set `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=true` to serialize
-
-## Controller URL Resolution
-
-Resolved in this priority order (`util/deploy_service_url_calculator.go`):
-
-1. `-u` flag on the command line
-2. `MULTIAPPS_CONTROLLER_URL` environment variable
-3. Auto-derived: strips the CF API host up to the first `.` and prepends `deploy-service.`
-   (e.g. `https://api.cf.example.com` → `deploy-service.cf.example.com`)
+- **File upload** (`util/file_splitter.go`) — MTAR archives are split into at most **50 chunks**
+  (`MaxFileChunkCount`); default chunk size **45 MB** (`MULTIAPPS_UPLOAD_CHUNK_SIZE`), uploaded in
+  parallel unless `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=true`.
+- **Controller URL resolution** (`util/deploy_service_url_calculator.go`) — resolved in order:
+  `-u` flag → `MULTIAPPS_CONTROLLER_URL` → auto-derived from the CF API host
+  (`https://api.cf.example.com` → `deploy-service.cf.example.com`).
+- **REST API contract** — client targets `/api/v1/spaces/{spaceGuid}/` (full operation set) and
+  `/api/v2/...` (MTA listing with namespace filtering). REST model or endpoint changes in
+  `multiapps-controller` require regenerating the Go clients; breaking changes need a new version
+  path (`/api/v3/`) coordinated across both repos.
 
 ## Environment Variables
 
@@ -143,11 +178,3 @@ Resolved in this priority order (`util/deploy_service_url_calculator.go`):
 | `cf download-mta-op-logs` | `download_mta_op_logs_command.go` | `dmol` |
 | `cf purge-mta-config` | `purge_config_command.go` | |
 | `cf rollback-mta` | `rollback_mta_command.go` | |
-
-## REST API Contract
-
-- **v1** `/api/v1/spaces/{spaceGuid}/` — full operation set
-- **v2** `/api/v2/spaces/{spaceGuid}/` — MTA listing with namespace filtering
-
-REST model or endpoint changes in `multiapps-controller` require regenerating the Go clients.
-Breaking changes require a new API version path (`/api/v3/`) with coordinated updates in both repos.
