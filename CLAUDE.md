@@ -59,13 +59,15 @@ and ask first.
 | `clients/mtaclient_v2/` | go-openapi generated MTA REST client (API v2) |
 | `clients/mtaclient/fakes/` | Fake v1 client builder for tests |
 | `clients/mtaclient_v2/fakes/` | Fake v2 client builder for tests |
-| `clients/restclient/` | Lower-level REST client (file upload, operations polling) |
+| `clients/restclient/` | Lower-level REST client for `purge-configuration`; also defines the CSRF base-path constants |
 | `clients/cfrestclient/` | CF-specific REST client (space/org resolution) |
 | `clients/csrf/` | CSRF token handling |
 | `clients/models/` | Shared model types |
 | `clients/swagger/` | OpenAPI/Swagger specs (`mta_rest.yaml`, `rest.yaml`) the clients are generated from |
+| `configuration/` | `Snapshot` accessors that read the env-var config (`GetUploadChunkSizeInMB`, `GetBackendURL`, …) |
 | `configuration/properties/` | One file per env-var-backed config property |
 | `secure_parameters/` | Handling of sensitive deploy parameters |
+| `log/` | Debug logging + `Exiter` abstraction (`Debug`, `Fatal`, `Exit`) |
 | `util/` | CF target resolution, URL calculator, file splitter, user-agent |
 | `ui/` | Terminal output helpers |
 | `testutil/` | Shared test helpers (output capturer, table formatter, fake transport) |
@@ -143,9 +145,10 @@ Produces static and non-static binaries for all platforms + `checksums.txt` in `
 
 A few behaviors are non-obvious from the package layout — check the referenced files before touching them:
 
-- **File upload** (`util/file_splitter.go`) — MTAR archives are split into at most **50 chunks**
-  (`MaxFileChunkCount`); default chunk size **45 MB** (`MULTIAPPS_UPLOAD_CHUNK_SIZE`), uploaded in
-  parallel unless `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=true`.
+- **File upload** — `commands/file_uploader.go` (`FileUploader`) performs the actual upload to the
+  controller, delegating chunking to `util/file_splitter.go`: MTAR archives are split into at most
+  **50 chunks** (`MaxFileChunkCount`); default chunk size **45 MB** (`MULTIAPPS_UPLOAD_CHUNK_SIZE`),
+  uploaded in parallel unless `MULTIAPPS_UPLOAD_CHUNKS_SEQUENTIALLY=true`.
 - **Controller URL resolution** (`util/deploy_service_url_calculator.go`) — resolved in order:
   `-u` flag → `MULTIAPPS_CONTROLLER_URL` → auto-derived from the CF API host
   (`https://api.cf.example.com` → `deploy-service.cf.example.com`).
