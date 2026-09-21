@@ -49,9 +49,10 @@ func BuildErrorResponse(response runtime.ClientResponse, consumer runtime.Consum
 
 // ErrorResponse handles error cases
 type ErrorResponse struct {
-	Code    int
-	Status  string
-	Payload string
+	Code       int
+	Status     string
+	Payload    string
+	RetryAfter string
 }
 
 func (e *ErrorResponse) Error() string {
@@ -59,6 +60,7 @@ func (e *ErrorResponse) Error() string {
 }
 
 func (e *ErrorResponse) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+	e.RetryAfter = response.GetHeader("Retry-After")
 	buf := new(bytes.Buffer)
 	_, err := buf.ReadFrom(response.Body())
 	if err != nil {

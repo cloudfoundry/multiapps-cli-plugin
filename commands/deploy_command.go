@@ -415,6 +415,11 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 	// Create the new process
 	responseHeader, err := mtaClient.StartMtaOperation(*operation)
 	if err != nil {
+		var retryErr *baseclient.RetryAfterError
+		if errors.As(err, &retryErr) {
+			ui.Failed(rateLimitMessage(retryErr.Duration))
+			return Failure
+		}
 		ui.Failed("Could not create operation: %s", baseclient.NewClientError(err))
 		return Failure
 	}
@@ -509,7 +514,12 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclient.MtaClientOperations, namespace string, progressBar *pb.ProgressBar) UploadFromUrlStatus {
 	responseHeaders, err := mtaClient.StartUploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
 	if err != nil {
-		ui.Failed("Could not upload from url: %s", err)
+		var retryErr *baseclient.RetryAfterError
+		if errors.As(err, &retryErr) {
+			ui.Failed(rateLimitMessage(retryErr.Duration))
+		} else {
+			ui.Failed("Could not upload from url: %s", err)
+		}
 		return UploadFromUrlStatus{
 			FileId:          "",
 			MtaId:           "",
@@ -831,4 +841,16 @@ func ValidateBooleanFlag(flagName string, flags *flag.FlagSet) error {
 	}
 
 	return nil
+}
+
+// rateLimitMessage builds the terminal message shown when the deploy service rejects a
+// request with HTTP 429. The backend sends Retry-After: 0 for active-operation-cap
+// rejections (a slot frees when another operation finishes, not on a timer), so only
+// include a concrete wait time when the server gave a positive one.
+func rateLimitMessage(retryAfter time.Duration) string {
+	base := "The deploy service is rate-limiting operations for your user or space. Please try again"
+	if retryAfter > 0 {
+		return fmt.Sprintf("%s in %s.", base, retryAfter)
+	}
+	return base + " later."
 }

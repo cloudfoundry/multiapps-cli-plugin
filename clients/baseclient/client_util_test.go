@@ -1,6 +1,7 @@
 package baseclient
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -64,6 +65,14 @@ var _ = Describe("ClientUtil", func() {
 				Expect(result).To(Equal(true))
 			})
 		})
+
+		Context("when the backend rate-limits the request (RetryAfterError)", func() {
+			It("Retry operation call shouldn't be made", func() {
+				err := RetryAfterError{Duration: 5 * time.Second}
+				result := shouldRetry(&err)
+				Expect(result).To(Equal(false))
+			})
+		})
 	})
 })
 
@@ -90,6 +99,20 @@ var _ = Describe("ClientUtil", func() {
 				result, err := CallWithRetry(mockCallback, 4, time.Duration(0))
 				Expect(err).To(HaveOccurred())
 				Expect(result).To(Equal(result))
+			})
+		})
+		Context("when the callback returns a rate-limit error (RetryAfterError)", func() {
+			It("Should stop after the first attempt without retrying", func() {
+				attempts := 0
+				mockCallback := func() (interface{}, error) {
+					attempts++
+					return testStruct{}, &RetryAfterError{Duration: 5 * time.Second}
+				}
+				_, err := CallWithRetry(mockCallback, 4, time.Duration(0))
+				Expect(err).To(HaveOccurred())
+				var retryErr *RetryAfterError
+				Expect(errors.As(err, &retryErr)).To(BeTrue())
+				Expect(attempts).To(Equal(1))
 			})
 		})
 	})
