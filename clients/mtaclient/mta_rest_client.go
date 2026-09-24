@@ -195,7 +195,7 @@ func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHe
 	}
 	resp, err := c.client.Operations.StartMtaOperation(params, token)
 	if err != nil {
-		if retryErr := asRetryAfterError(err); retryErr != nil {
+		if retryErr := convertToRetryAfterError(err); retryErr != nil {
 			return ResponseHeader{}, retryErr
 		}
 		return ResponseHeader{}, baseclient.NewClientError(err)
@@ -361,13 +361,7 @@ func (c MtaRestClient) handle429(headers http.Header) error {
 	return &baseclient.RetryAfterError{Duration: parseRetryAfter(headers.Get("Retry-After"))}
 }
 
-// asRetryAfterError converts a backend HTTP 429 into a *baseclient.RetryAfterError so
-// the retry layer honors the server's Retry-After hint. The generated response reader
-// routes non-2xx statuses through baseclient.BuildErrorResponse, which yields a
-// *baseclient.ErrorResponse carrying the status code and the captured Retry-After
-// header (the 429 body is empty, so the header is all we can rely on). Returns nil for
-// any non-429 error.
-func asRetryAfterError(err error) *baseclient.RetryAfterError {
+func convertToRetryAfterError(err error) *baseclient.RetryAfterError {
 	var errResp *baseclient.ErrorResponse
 	if errors.As(err, &errResp) && errResp.Code == http.StatusTooManyRequests {
 		return &baseclient.RetryAfterError{Duration: parseRetryAfter(errResp.RetryAfter)}
@@ -375,9 +369,6 @@ func asRetryAfterError(err error) *baseclient.RetryAfterError {
 	return nil
 }
 
-// parseRetryAfter interprets the Retry-After header as a number of seconds, falling
-// back to defaultRetryAfter when the header is absent or not a valid duration. The
-// backend sends an integer number of seconds (not an HTTP-date).
 func parseRetryAfter(retryAfter string) time.Duration {
 	if len(retryAfter) == 0 {
 		return defaultRetryAfter

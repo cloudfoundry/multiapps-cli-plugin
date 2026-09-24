@@ -24,9 +24,9 @@ var _ = Describe("MtaRestClient", func() {
 
 				_, err := client.StartMtaOperation(models.Operation{})
 
-				Ω(err).Should(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 				var retryErr *baseclient.RetryAfterError
-				Ω(errors.As(err, &retryErr)).Should(BeTrue())
+				Expect(errors.As(err, &retryErr)).Should(BeTrue())
 			})
 
 			It("should carry the server's Retry-After header value", func() {
@@ -34,10 +34,10 @@ var _ = Describe("MtaRestClient", func() {
 
 				_, err := client.StartMtaOperation(models.Operation{})
 
-				Ω(err).Should(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 				var retryErr *baseclient.RetryAfterError
-				Ω(errors.As(err, &retryErr)).Should(BeTrue())
-				Ω(retryErr.Duration).Should(Equal(7 * time.Second))
+				Expect(errors.As(err, &retryErr)).Should(BeTrue())
+				Expect(retryErr.Duration).Should(Equal(7 * time.Second))
 			})
 
 			It("should fall back to the default when Retry-After is absent", func() {
@@ -45,10 +45,10 @@ var _ = Describe("MtaRestClient", func() {
 
 				_, err := client.StartMtaOperation(models.Operation{})
 
-				Ω(err).Should(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 				var retryErr *baseclient.RetryAfterError
-				Ω(errors.As(err, &retryErr)).Should(BeTrue())
-				Ω(retryErr.Duration).Should(Equal(3 * time.Second))
+				Expect(errors.As(err, &retryErr)).Should(BeTrue())
+				Expect(retryErr.Duration).Should(Equal(3 * time.Second))
 			})
 		})
 
@@ -58,11 +58,11 @@ var _ = Describe("MtaRestClient", func() {
 
 				_, err := client.StartMtaOperation(models.Operation{})
 
-				Ω(err).Should(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 				var retryErr *baseclient.RetryAfterError
-				Ω(errors.As(err, &retryErr)).Should(BeFalse())
+				Expect(errors.As(err, &retryErr)).Should(BeFalse())
 				var clientErr *baseclient.ClientError
-				Ω(errors.As(err, &clientErr)).Should(BeTrue())
+				Expect(errors.As(err, &clientErr)).Should(BeTrue())
 			})
 		})
 	})
