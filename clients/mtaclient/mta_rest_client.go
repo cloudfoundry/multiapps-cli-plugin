@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -27,6 +28,8 @@ const spacesURL string = "spaces/"
 const restBaseURL string = "api/v1/"
 
 const couldNotGetAsyncJobError = "could not get async file upload job"
+
+const defaultRetryAfter = 3 * time.Second
 
 type MtaRestClient struct {
 	baseclient.BaseClient
@@ -192,6 +195,9 @@ func (c MtaRestClient) StartMtaOperation(operation models.Operation) (ResponseHe
 	}
 	resp, err := c.client.Operations.StartMtaOperation(params, token)
 	if err != nil {
+		if retryErr := convertToRetryAfterError(err); retryErr != nil {
+			return ResponseHeader{}, retryErr
+		}
 		return ResponseHeader{}, baseclient.NewClientError(err)
 	}
 	return ResponseHeader{Location: resp.Location}, nil
@@ -352,15 +358,26 @@ func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *s
 }
 
 func (c MtaRestClient) handle429(headers http.Header) error {
-	retryAfter := headers.Get("Retry-After")
+	return &baseclient.RetryAfterError{Duration: parseRetryAfter(headers.Get("Retry-After"))}
+}
+
+func convertToRetryAfterError(err error) *baseclient.RetryAfterError {
+	var errResp *baseclient.ErrorResponse
+	if errors.As(err, &errResp) && errResp.Code == http.StatusTooManyRequests {
+		return &baseclient.RetryAfterError{Duration: parseRetryAfter(errResp.RetryAfter)}
+	}
+	return nil
+}
+
+func parseRetryAfter(retryAfter string) time.Duration {
 	if len(retryAfter) == 0 {
-		retryAfter = "3"
+		return defaultRetryAfter
 	}
 	dur, err := time.ParseDuration(retryAfter + "s")
 	if err != nil {
-		return &baseclient.RetryAfterError{Duration: 3 * time.Second}
+		return defaultRetryAfter
 	}
-	return &baseclient.RetryAfterError{Duration: dur}
+	return dur
 }
 
 func (c MtaRestClient) GetAsyncUploadJob(jobId string, namespace *string) (AsyncUploadJobResult, error) {

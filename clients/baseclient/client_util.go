@@ -13,12 +13,6 @@ func CallWithRetry(callback func() (interface{}, error), maxRetriesCount int, re
 		if !shouldRetry(err) {
 			return resp, err
 		}
-		retryErr, ok := err.(*RetryAfterError)
-		if ok {
-			ui.Warn("Retryable error occurred. Retrying after %s", retryErr.Duration)
-			time.Sleep(retryErr.Duration)
-			continue
-		}
 		ui.Warn("Error occurred: %s. Retrying after: %s.", err.Error(), retryInterval)
 		time.Sleep(retryInterval)
 	}
@@ -27,6 +21,11 @@ func CallWithRetry(callback func() (interface{}, error), maxRetriesCount int, re
 
 func shouldRetry(err error) bool {
 	if err == nil {
+		return false
+	}
+	// A rate-limit (HTTP 429) response is not retried: the operation stops
+	// immediately so the caller can surface the server's Retry-After hint.
+	if _, ok := err.(*RetryAfterError); ok {
 		return false
 	}
 	ae, ok := err.(*ClientError)
