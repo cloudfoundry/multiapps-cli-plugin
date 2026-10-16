@@ -58,7 +58,13 @@ const (
 	shouldBackupPreviousVersionOpt   = "backup-previous-version"
 	requireSecureParameters          = "require-secure-parameters"
 	disposableUserProvidedServiceOpt = "disposable-user-provided-service"
+	urlTokenOpt                      = "url-token"
 )
+
+// urlTokenEnv is the environment variable fallback for the deploy-from-URL bearer token. Preferring
+// an env var keeps the secret out of shell history and the process list; the --url-token flag
+// overrides it when both are set.
+const urlTokenEnv = "MULTIAPPS_URL_TOKEN"
 
 type listFlag struct {
 	elements []string
@@ -123,7 +129,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
    cf deploy -i OPERATION_ID -a ACTION [-u URL]
 
    Deploy a multi-target app archive referenced by a remote URL
-   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--disposable-user-provided-service] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
+   <write MTA archive URL to STDOUT> | cf deploy [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u MTA_CONTROLLER_URL] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--strategy STRATEGY] [--skip-testing-phase] [--skip-idle-start] [require-secure-parameters] [--disposable-user-provided-service] [--url-token TOKEN] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]` + util.UploadEnvHelpText,
 
 			Options: map[string]string{
 				extDescriptorsOpt:                 "Extension descriptors",
@@ -161,6 +167,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(dependencyAwareStopOrderOpt):                "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Stop apps in a dependency-aware order during the resume phase of a blue-green deployment",
 				util.GetShortOption(requireSecureParameters):                    "(EXPERIMENTAL) Pass secrets to the deploy service in a secure way",
 				util.GetShortOption(disposableUserProvidedServiceOpt):           "Deploy when --require-secure-parameters flag is active for disposable UPS to be created and then deleted at the of the operation",
+				util.GetShortOption(urlTokenOpt):                                "(URL DEPLOY) Bearer token used to authenticate the fetch of the MTA archive from the remote URL (e.g. a GitHub token). Falls back to the MULTIAPPS_URL_TOKEN environment variable, which is preferred so the token does not appear in shell history",
 			},
 		},
 	}
@@ -217,6 +224,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Bool(deleteServicesOpt, false, "")
 	flags.Bool(noStartOpt, false, "")
 	flags.String(namespaceOpt, "", "")
+	flags.String(urlTokenOpt, "", "")
 	flags.String(applyNamespaceAppNamesOpt, "", "")
 	flags.String(applyNamespaceServiceNamesOpt, "", "")
 	flags.String(applyNamespaceAppRoutesOpt, "", "")
@@ -298,7 +306,8 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		var fileId string
 		var schemaVersion string
 
-		asyncUploadJobResult := c.uploadFromUrl(mtaArchive, mtaClient, namespace, disableProgressBar)
+		urlToken := resolveUrlToken(GetStringOpt(urlTokenOpt, flags))
+		asyncUploadJobResult := c.uploadFromUrl(mtaArchive, urlToken, mtaClient, namespace, disableProgressBar)
 		if asyncUploadJobResult.ExecutionStatus == Failure {
 			return Failure
 		}
@@ -498,12 +507,22 @@ func parseMtaArchiveArgument(rawMtaArchive interface{}) (bool, string) {
 	return false, ""
 }
 
-func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientOperations, namespace string,
+// resolveUrlToken returns the deploy-from-URL bearer token, preferring the --url-token flag value and
+// falling back to the MULTIAPPS_URL_TOKEN environment variable. Returns "" when neither is set, in
+// which case no credentials are sent and the fetch behaves as before.
+func resolveUrlToken(flagValue string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+	return os.Getenv(urlTokenEnv)
+}
+
+func (c *DeployCommand) uploadFromUrl(url string, token string, mtaClient mtaclient.MtaClientOperations, namespace string,
 	disableProgressBar bool) UploadFromUrlStatus {
 	encodedFileUrl := base64.URLEncoding.EncodeToString([]byte(url))
 	uploadStatus, _ := retrier.Execute[UploadFromUrlStatus](3, func() (UploadFromUrlStatus, error) {
 		progressBar := c.tryFetchMtarSize(url, disableProgressBar)
-		uploadFromUrlStatus := c.doUploadFromUrl(encodedFileUrl, mtaClient, namespace, progressBar)
+		uploadFromUrlStatus := c.doUploadFromUrl(encodedFileUrl, token, mtaClient, namespace, progressBar)
 		return uploadFromUrlStatus, nil
 	}, func(result UploadFromUrlStatus, err error) bool {
 		return shouldRetryUpload(result)
@@ -511,8 +530,8 @@ func (c *DeployCommand) uploadFromUrl(url string, mtaClient mtaclient.MtaClientO
 	return uploadStatus
 }
 
-func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, mtaClient mtaclient.MtaClientOperations, namespace string, progressBar *pb.ProgressBar) UploadFromUrlStatus {
-	responseHeaders, err := mtaClient.StartUploadMtaArchiveFromUrl(encodedFileUrl, &namespace)
+func (c *DeployCommand) doUploadFromUrl(encodedFileUrl string, token string, mtaClient mtaclient.MtaClientOperations, namespace string, progressBar *pb.ProgressBar) UploadFromUrlStatus {
+	responseHeaders, err := mtaClient.StartUploadMtaArchiveFromUrl(encodedFileUrl, token, &namespace)
 	if err != nil {
 		var retryErr *baseclient.RetryAfterError
 		if errors.As(err, &retryErr) {
