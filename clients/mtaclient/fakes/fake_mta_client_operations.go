@@ -680,10 +680,10 @@ func (fake *FakeMtaClientOperations) UploadMtaFileReturnsOnCall(i int, result1 *
 	}{result1, result2}
 }
 
-func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string) (http.Header, error) {
+func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrl(fileUrl string, token string, namespace *string) (http.Header, error) {
 	fake.startUploadMtaArchiveFromUrlMutex.Lock()
 	result, specificReturn := fake.startUploadMtaArchiveFromUrlReturnsOnCall[fileUrl]
-	fake.recordInvocation("StartUploadMtaArchiveFromUrl", []interface{}{fileUrl, namespace})
+	fake.recordInvocation("StartUploadMtaArchiveFromUrl", []interface{}{fileUrl, token, namespace})
 	fake.startUploadMtaArchiveFromUrlMutex.Unlock()
 	if specificReturn {
 		return result.headers, result.err
@@ -691,7 +691,7 @@ func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrl(fileUrl string
 	return fake.startUploadMtaArchiveFromUrlReturns.result1, fake.startUploadMtaArchiveFromUrlReturns.result2
 }
 
-func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrlReturnsOnCall(fileUrl string, namespace *string, headers http.Header, err error) {
+func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrlReturnsOnCall(fileUrl string, token string, namespace *string, headers http.Header, err error) {
 	fake.startUploadMtaArchiveFromUrlMutex.Lock()
 	if fake.startUploadMtaArchiveFromUrlReturnsOnCall == nil {
 		fake.startUploadMtaArchiveFromUrlReturnsOnCall = make(map[string]struct {
@@ -703,7 +703,7 @@ func (fake *FakeMtaClientOperations) StartUploadMtaArchiveFromUrlReturnsOnCall(f
 		headers http.Header
 		err     error
 	}{headers, err}
-	fake.recordInvocation("StartUploadMtaArchiveFromUrl", []interface{}{fileUrl, namespace})
+	fake.recordInvocation("StartUploadMtaArchiveFromUrl", []interface{}{fileUrl, token, namespace})
 	fake.startUploadMtaArchiveFromUrlMutex.Unlock()
 }
 
