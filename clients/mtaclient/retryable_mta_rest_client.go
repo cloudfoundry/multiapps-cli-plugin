@@ -136,9 +136,9 @@ func (c RetryableMtaRestClient) UploadMtaFile(file util.NamedReadSeeker, fileSiz
 	return resp.(*models.FileMetadata), nil
 }
 
-func (c RetryableMtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string) (http.Header, error) {
+func (c RetryableMtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, token string, namespace *string) (http.Header, error) {
 	uploadMtaArchiveFromUrlCb := func() (interface{}, error) {
-		return c.mtaClient.StartUploadMtaArchiveFromUrl(fileUrl, namespace)
+		return c.mtaClient.StartUploadMtaArchiveFromUrl(fileUrl, token, namespace)
 	}
 	resp, err := baseclient.CallWithRetry(uploadMtaArchiveFromUrlCb, c.MaxRetriesCount, c.RetryInterval)
 	if err != nil {

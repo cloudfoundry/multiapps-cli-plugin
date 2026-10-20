@@ -49,6 +49,19 @@ type AsyncUploadJobResult struct {
 	ClientActions  []string             `json:"client_actions,omitempty"`
 }
 
+// startUploadFromUrlBody is the JSON request body for POST /files/async. Credentials is optional and
+// omitted entirely when no token is supplied, so existing credential-less callers are unaffected.
+type startUploadFromUrlBody struct {
+	FileUrl     string                         `json:"file_url"`
+	Credentials *startUploadFromUrlCredentials `json:"credentials,omitempty"`
+}
+
+// startUploadFromUrlCredentials carries the bearer token used to authenticate the controller's
+// outbound fetch of the mtar from the remote URL (e.g. a GitHub token). It is never persisted.
+type startUploadFromUrlCredentials struct {
+	Token string `json:"token,omitempty"`
+}
+
 func NewMtaClient(host, spaceID string, rt http.RoundTripper, tokenFactory baseclient.TokenFactory) MtaClientOperations {
 	restURL := restBaseURL + spacesURL + spaceID
 	t := baseclient.NewHTTPTransport(host, restURL, rt)
@@ -310,15 +323,16 @@ func escapeQuotes(s string) string {
 	return strings.NewReplacer("\\", "\\\\", `"`, "\\\"").Replace(s)
 }
 
-func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string) (http.Header, error) {
+func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, token string, namespace *string) (http.Header, error) {
 	requestUrl := "https://" + c.dsHost + "/" + restBaseURL + spacesURL + c.spaceGuid + "/files/async"
 	if namespace != nil && len(*namespace) != 0 {
 		requestUrl += "?namespace=" + *namespace
 	}
 
-	body := struct {
-		FileUrl string `json:"file_url"`
-	}{fileUrl}
+	body := startUploadFromUrlBody{FileUrl: fileUrl}
+	if token != "" {
+		body.Credentials = &startUploadFromUrlCredentials{Token: token}
+	}
 
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
@@ -330,12 +344,12 @@ func (c MtaRestClient) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *s
 		return nil, fmt.Errorf("could not create start async file upload request: %v", err)
 	}
 
-	token, err := c.TokenFactory.NewRawToken()
+	authToken, err := c.TokenFactory.NewRawToken()
 	if err != nil {
 		return nil, fmt.Errorf("could not get authentication token: %v", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	cl := c.client.Transport.(*client.Runtime)
