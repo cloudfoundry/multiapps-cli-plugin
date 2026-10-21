@@ -1,3 +1,10 @@
+## v3.12.0
+* Update GO to version 1.27.2
+* Update Cloud Foundry CLI to version 8.19.1
+* Add release checksums for our different builds
+* Change rate-limit behaivior
+* Extend Digest Upload Algorithm to support SHA-256 and more
+
 ## v3.11.1
 * Fixed failing unit test during build
 
