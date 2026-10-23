@@ -14,15 +14,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         # Full history so SonarCloud can compute new-code and blame data.
         fetch-depth: 0
 
     - name: Set up Go
-      uses: actions/setup-go@be3c94b385c4f180051c996d336f57a34c397495 # v3
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
-        go-version: '1.25.4'
+        go-version: '1.27.2'
 
     - name: Build and Test with Coverage
       run: |
@@ -30,13 +30,13 @@ jobs:
         go test -coverprofile=coverage.out ./...
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.1
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
       with:
-        args: --output.json.path=golangci-report.json
+        args: --output.checkstyle.path=golangci-report.xml
       continue-on-error: true
 
     - name: Sonar Scan
-      uses: SonarSource/sonarqube-scan-action@aa494459d7c39c106cc77b166de8b4250a32bb97 # v5.1.0
+      uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
