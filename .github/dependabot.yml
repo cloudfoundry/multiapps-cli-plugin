@@ -1,11 +1,17 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "gomod"
+    directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "cron"
+      # 1st and 3rd Wednesday of every month (biweekly approximation):
+      # days 1-7 guarantee the 1st Wednesday, days 15-21 guarantee the 3rd Wednesday
+      cronjob: "0 0 1-7,15-21 * 3"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "cron"
+      # 1st and 3rd Wednesday of every month (biweekly approximation):
+      # days 1-7 guarantee the 1st Wednesday, days 15-21 guarantee the 3rd Wednesday
+      cronjob: "0 0 1-7,15-21 * 3"
