@@ -111,19 +111,27 @@ func buildDot(d *mtadDescriptor) string {
 		resourceNames[r.Name] = true
 	}
 
-	dot := "digraph mta {\n  rankdir=LR;\n"
+	dot := "digraph mta {\n"
+	dot += "  rankdir=LR;\n"
+	dot += "  node [fontname=\"Helvetica\" fontsize=11];\n"
+	dot += "  edge [fontname=\"Helvetica\" fontsize=10];\n"
 	for _, m := range d.Modules {
-		dot += fmt.Sprintf("  %q [shape=box];\n", m.Name)
+		dot += fmt.Sprintf("  %q [shape=box style=\"rounded,filled\" fillcolor=\"#DCE9F7\" color=\"#4A7AB5\"];\n", m.Name)
 	}
+	dot += "  { rank=same;"
 	for _, r := range d.Resources {
-		dot += fmt.Sprintf("  %q [shape=cylinder];\n", r.Name)
+		dot += fmt.Sprintf(" %q", r.Name)
+	}
+	dot += " }\n"
+	for _, r := range d.Resources {
+		dot += fmt.Sprintf("  %q [shape=cylinder style=filled fillcolor=\"#EDEDED\" color=\"#8A8A8A\"];\n", r.Name)
 	}
 	for _, m := range d.Modules {
 		for _, req := range m.Requires {
 			if provider, ok := providedDepToModule[req.Name]; ok {
-				dot += fmt.Sprintf("  %q -> %q [label=\"provides\"];\n", provider, m.Name)
+				dot += fmt.Sprintf("  %q -> %q [label=\"provides %s\" color=\"#4A7AB5\" fontcolor=\"#4A7AB5\"];\n", provider, m.Name, req.Name)
 			} else if resourceNames[req.Name] {
-				dot += fmt.Sprintf("  %q -> %q [label=\"requires-resource\"];\n", m.Name, req.Name)
+				dot += fmt.Sprintf("  %q -> %q [label=\"requires\" style=dashed color=\"#8A8A8A\" fontcolor=\"#8A8A8A\"];\n", m.Name, req.Name)
 			}
 		}
 	}
