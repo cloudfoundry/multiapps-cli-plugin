@@ -53,6 +53,24 @@ type Operation struct {
 
 	// user
 	User string `json:"user,omitempty"`
+
+	// dry run result
+	DryRunResult *DryRunResult `json:"dryRunResult,omitempty"`
+
+	// deployment outputs (e.g. app URLs)
+	Outputs map[string]string `json:"outputs,omitempty"`
+}
+
+// DryRunResult holds the predicted changes from a dry-run deploy
+type DryRunResult struct {
+	AppsToCreate    []string `json:"appsToCreate"`
+	AppsToUpdate    []string `json:"appsToUpdate"`
+	AppsToDelete    []string `json:"appsToDelete"`
+	ServicesToCreate []string `json:"servicesToCreate"`
+	ServicesToUpdate []string `json:"servicesToUpdate"`
+	ServicesToDelete []string `json:"servicesToDelete"`
+	RoutesToCreate  []string `json:"routesToCreate"`
+	RoutesToDelete  []string `json:"routesToDelete"`
 }
 
 /* polymorph Operation acquiredLock false */
