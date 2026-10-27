@@ -58,6 +58,7 @@ const (
 	shouldBackupPreviousVersionOpt   = "backup-previous-version"
 	requireSecureParameters          = "require-secure-parameters"
 	disposableUserProvidedServiceOpt = "disposable-user-provided-service"
+	dryRunOpt                        = "dry-run"
 )
 
 type listFlag struct {
@@ -161,6 +162,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(dependencyAwareStopOrderOpt):                "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Stop apps in a dependency-aware order during the resume phase of a blue-green deployment",
 				util.GetShortOption(requireSecureParameters):                    "(EXPERIMENTAL) Pass secrets to the deploy service in a secure way",
 				util.GetShortOption(disposableUserProvidedServiceOpt):           "Deploy when --require-secure-parameters flag is active for disposable UPS to be created and then deleted at the of the operation",
+				util.GetShortOption(dryRunOpt):                                   "Simulate deployment and show predicted changes without applying them",
 			},
 		},
 	}
@@ -188,6 +190,7 @@ func deployProcessParametersSetter() ProcessParametersSetter {
 		processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
 		processBuilder.Parameter("isSecurityEnabled", strconv.FormatBool(GetBoolOpt(requireSecureParameters, flags)))
 		processBuilder.Parameter("isDisposableUserProvidedServiceEnabled", strconv.FormatBool(GetBoolOpt(disposableUserProvidedServiceOpt, flags)))
+		processBuilder.Parameter("dryRun", strconv.FormatBool(GetBoolOpt(dryRunOpt, flags)))
 
 		var lastSetValue string = ""
 		for i := 0; i < len(os.Args); i++ {
@@ -245,6 +248,7 @@ func (c *DeployCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.Bool(dependencyAwareStopOrderOpt, false, "")
 	flags.Bool(requireSecureParameters, false, "")
 	flags.Bool(disposableUserProvidedServiceOpt, false, "")
+	flags.Bool(dryRunOpt, false, "")
 }
 
 func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
@@ -424,7 +428,15 @@ func (c *DeployCommand) executeInternal(positionalArgs []string, dsHost string, 
 		return Failure
 	}
 	executionMonitor := NewExecutionMonitorFromLocationHeader(c.name, responseHeader.Location.String(), retries, []*models.Message{}, mtaClient)
-	return executionMonitor.Monitor()
+	status := executionMonitor.Monitor()
+	if GetBoolOpt(dryRunOpt, flags) {
+		op, err := mtaClient.GetMtaOperation(executionMonitor.operationID, "")
+		if err == nil && op.DryRunResult != nil {
+			printDryRunResult(op)
+			return Success
+		}
+	}
+	return status
 }
 
 func setUpSpecificsForDeploymentUsingSecrets(flags *flag.FlagSet, c *DeployCommand, mtaId, namespace, schemaVersion string, disposableUserProvidedServiceName *string, yamlBytes *[]byte) ExecutionStatus {
@@ -853,4 +865,53 @@ func rateLimitMessage(retryAfter time.Duration) string {
 		return fmt.Sprintf("%s in %s.", base, retryAfter)
 	}
 	return base + " later."
+}
+
+func printDryRunResult(op *models.Operation) {
+	dr := op.DryRunResult
+	ui.Say("\n%s", terminal.WarningColor("Dry run — no changes were applied."))
+	ui.Say("")
+
+	type section struct {
+		label  string
+		prefix string
+		color  func(string) string
+		items  []string
+	}
+
+	sections := []section{
+		{"Apps to create",    "+ ", terminal.SuccessColor, dr.AppsToCreate},
+		{"Apps to update",    "~ ", terminal.WarningColor,  dr.AppsToUpdate},
+		{"Apps to delete",    "- ", terminal.FailureColor,  dr.AppsToDelete},
+		{"Services to create", "+ ", terminal.SuccessColor, dr.ServicesToCreate},
+		{"Services to update", "~ ", terminal.WarningColor,  dr.ServicesToUpdate},
+		{"Services to delete", "- ", terminal.FailureColor,  dr.ServicesToDelete},
+		{"Routes to create",  "+ ", terminal.SuccessColor, dr.RoutesToCreate},
+		{"Routes to delete",  "- ", terminal.FailureColor,  dr.RoutesToDelete},
+	}
+
+	anyChange := false
+	for _, s := range sections {
+		if len(s.items) == 0 {
+			continue
+		}
+		anyChange = true
+		ui.Say("  %s:", terminal.HeaderColor(s.label))
+		for _, item := range s.items {
+			ui.Say("    %s", s.color(s.prefix+item))
+		}
+	}
+
+	if !anyChange {
+		ui.Say("  No changes detected.")
+	}
+
+	if len(op.Outputs) > 0 {
+		ui.Say("")
+		ui.Say("  %s:", terminal.HeaderColor("Deployment outputs"))
+		for k, v := range op.Outputs {
+			ui.Say("    %s: %s", k, terminal.EntityNameColor(v))
+		}
+	}
+	ui.Say("")
 }
