@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/swag v0.19.15
 	github.com/go-openapi/validate v0.20.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.44.0
 	github.com/pborman/uuid v1.2.0
 	golang.org/x/crypto v0.58.0
