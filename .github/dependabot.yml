@@ -3,15 +3,9 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "cron"
-      # 1st and 3rd Wednesday of every month (biweekly approximation):
-      # days 1-7 guarantee the 1st Wednesday, days 15-21 guarantee the 3rd Wednesday
-      cronjob: "0 0 1-7,15-21 * 3"
+      interval: "monthly"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "cron"
-      # 1st and 3rd Wednesday of every month (biweekly approximation):
-      # days 1-7 guarantee the 1st Wednesday, days 15-21 guarantee the 3rd Wednesday
-      cronjob: "0 0 1-7,15-21 * 3"
+      interval: "monthly"
