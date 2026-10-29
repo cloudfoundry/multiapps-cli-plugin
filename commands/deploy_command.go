@@ -66,6 +66,10 @@ const (
 // overrides it when both are set.
 const urlTokenEnv = "MULTIAPPS_URL_TOKEN"
 
+// urlTokenOptDescription is the help text for the --url-token flag. It is shared between the deploy
+// and bg-deploy commands so the two cannot drift.
+const urlTokenOptDescription = "Bearer token used to authenticate the fetch of the MTA archive when deploying from a remote URL (e.g. a GitHub token). Falls back to the " + urlTokenEnv + " environment variable, which is preferred so the token does not appear in shell history"
+
 type listFlag struct {
 	elements []string
 }
@@ -167,7 +171,7 @@ func (c *DeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(dependencyAwareStopOrderOpt):                "(EXPERIMENTAL) (STRATEGY: BLUE-GREEN, INCREMENTAL-BLUE-GREEN) Stop apps in a dependency-aware order during the resume phase of a blue-green deployment",
 				util.GetShortOption(requireSecureParameters):                    "(EXPERIMENTAL) Pass secrets to the deploy service in a secure way",
 				util.GetShortOption(disposableUserProvidedServiceOpt):           "Deploy when --require-secure-parameters flag is active for disposable UPS to be created and then deleted at the of the operation",
-				util.GetShortOption(urlTokenOpt):                                "(URL DEPLOY) Bearer token used to authenticate the fetch of the MTA archive from the remote URL (e.g. a GitHub token). Falls back to the MULTIAPPS_URL_TOKEN environment variable, which is preferred so the token does not appear in shell history",
+				util.GetShortOption(urlTokenOpt):                                urlTokenOptDescription,
 			},
 		},
 	}
