@@ -33,7 +33,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 		HelpText: "Deploy a multi-target app using blue-green deployment",
 		UsageDetails: plugin.Usage{
 			Usage: `Deploy a multi-target app using blue-green deployment
-   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf bg-deploy MTA [-e EXT_DESCRIPTOR[,...]] [-t TIMEOUT] [--version-rule VERSION_RULE] [-u URL] [-f] [--retries RETRIES] [--no-start] [--namespace NAMESPACE] [--apply-namespace-app-names true/false] [--apply-namespace-service-names true/false] [--apply-namespace-app-routes true/false] [--apply-namespace-as-suffix true/false ] [--delete-services] [--delete-service-keys] [--delete-service-brokers] [--keep-files] [--no-restart-subscribed-apps] [--no-confirm] [--skip-idle-start] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--url-token TOKEN] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf deploy -i OPERATION_ID -a ACTION [-u URL] ` + util.UploadEnvHelpText,
@@ -65,6 +65,7 @@ func (c *BlueGreenDeployCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
 				util.GetShortOption(shouldBackupPreviousVersionOpt):             "(EXPERIMENTAL) Backup previous version of applications, use new cli command \"rollback-mta\" to rollback to the previous version",
+				util.GetShortOption(urlTokenOpt):                                urlTokenOptDescription,
 			},
 		},
 	}
