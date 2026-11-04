@@ -36,7 +36,7 @@ func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
 		HelpText: "(EXPERIMENTAL) Rollback of a multi-target app works only if [--backup-previous-version] flag was used during blue-green deployment and backup applications exists in the space",
 		UsageDetails: plugin.Usage{
 			Usage: `Rollback of a multi-target app
-   cf rollback-mta MTA_ID [-t TIMEOUT] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT]
+   cf rollback-mta MTA_ID [-t TIMEOUT] [-f] [--retries RETRIES] [--namespace NAMESPACE] [--do-not-fail-on-missing-permissions] [--abort-on-error] [--apps-start-timeout TIMEOUT] [--apps-stage-timeout TIMEOUT] [--apps-upload-timeout TIMEOUT] [--apps-task-execution-timeout TIMEOUT] [--services-create-service-timeout TIMEOUT] [--services-bind-service-timeout TIMEOUT] [--services-create-service-key-timeout TIMEOUT]
 
    Perform action on an active deploy operation
    cf rollback-mta -i OPERATION_ID -a ACTION [-u URL]` + util.BaseEnvHelpText,
@@ -54,6 +54,9 @@ func (c *RollbackMtaCommand) GetPluginCommand() plugin.Command {
 				util.GetShortOption(stageTimeoutOpt):                            "Stage app timeout in seconds",
 				util.GetShortOption(uploadTimeoutOpt):                           "Upload app timeout in seconds",
 				util.GetShortOption(taskExecutionTimeoutOpt):                    "Task execution timeout in seconds",
+				util.GetShortOption(servicesCreateServiceTimeoutOpt):            "Create service timeout in seconds",
+				util.GetShortOption(servicesBindServiceTimeoutOpt):              "Bind service timeout in seconds",
+				util.GetShortOption(servicesCreateServiceKeyTimeoutOpt):         "Create service key timeout in seconds",
 				util.CombineFullAndShortParameters(startTimeoutOpt, timeoutOpt): "Start app timeout in seconds",
 			},
 		},
@@ -74,6 +77,9 @@ func (c *RollbackMtaCommand) defineCommandOptions(flags *flag.FlagSet) {
 	flags.String(stageTimeoutOpt, "", "")
 	flags.String(uploadTimeoutOpt, "", "")
 	flags.String(taskExecutionTimeoutOpt, "", "")
+	flags.String(servicesCreateServiceTimeoutOpt, "", "")
+	flags.String(servicesBindServiceTimeoutOpt, "", "")
+	flags.String(servicesCreateServiceKeyTimeoutOpt, "", "")
 }
 
 func (c *RollbackMtaCommand) executeInternal(positionalArgs []string, dsHost string, flags *flag.FlagSet, cfTarget util.CloudFoundryTarget) ExecutionStatus {
@@ -143,6 +149,9 @@ func (c *RollbackMtaCommand) executeInternal(positionalArgs []string, dsHost str
 	processBuilder.Parameter("appsStageTimeout", GetStringOpt(stageTimeoutOpt, flags))
 	processBuilder.Parameter("appsUploadTimeout", GetStringOpt(uploadTimeoutOpt, flags))
 	processBuilder.Parameter("appsTaskExecutionTimeout", GetStringOpt(taskExecutionTimeoutOpt, flags))
+	processBuilder.Parameter("servicesCreateServiceTimeout", GetStringOpt(servicesCreateServiceTimeoutOpt, flags))
+	processBuilder.Parameter("servicesBindServiceTimeout", GetStringOpt(servicesBindServiceTimeoutOpt, flags))
+	processBuilder.Parameter("servicesCreateServiceKeyTimeout", GetStringOpt(servicesCreateServiceKeyTimeoutOpt, flags))
 	operation := processBuilder.Build()
 
 	// Create the new process
