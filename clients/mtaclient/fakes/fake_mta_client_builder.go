@@ -56,8 +56,8 @@ func (fb *FakeMtaClientBuilder) UploadMtaFile(file *os.File, result *models.File
 	fb.FakeMtaClient.UploadMtaFileReturns(result, resultError)
 	return fb
 }
-func (fb *FakeMtaClientBuilder) StartUploadMtaArchiveFromUrl(fileUrl string, namespace *string, result http.Header, resultError error) *FakeMtaClientBuilder {
-	fb.FakeMtaClient.StartUploadMtaArchiveFromUrlReturnsOnCall(fileUrl, namespace, result, resultError)
+func (fb *FakeMtaClientBuilder) StartUploadMtaArchiveFromUrl(fileUrl string, token string, namespace *string, result http.Header, resultError error) *FakeMtaClientBuilder {
+	fb.FakeMtaClient.StartUploadMtaArchiveFromUrlReturnsOnCall(fileUrl, token, namespace, result, resultError)
 	return fb
 }
 func (fb *FakeMtaClientBuilder) GetAsyncUploadJob(jobId string, namespace *string, result mtaclient.AsyncUploadJobResult, resultErr error) *FakeMtaClientBuilder {

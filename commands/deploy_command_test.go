@@ -70,6 +70,17 @@ func (f *mockFile) Close() error {
 	return nil
 }
 
+// lastUploadFromUrlToken returns the token argument of the most recent StartUploadMtaArchiveFromUrl
+// invocation recorded by the fake client. The recorded args are {fileUrl, token, namespace}.
+func lastUploadFromUrlToken(fake *mtafake.FakeMtaClientOperations) string {
+	calls := fake.Invocations()["StartUploadMtaArchiveFromUrl"]
+	if len(calls) == 0 {
+		return ""
+	}
+	lastCall := calls[len(calls)-1]
+	return lastCall[1].(string)
+}
+
 var _ = Describe("DeployCommand", func() {
 	Describe("Execute", func() {
 		const org = "test-org"
@@ -226,8 +237,8 @@ var _ = Describe("DeployCommand", func() {
 				GetMtaFiles([]*models.FileMetadata{&testutil.SimpleFile}, nil).
 				UploadMtaFile(mtaArchiveFile, mtaArchive, nil).
 				UploadMtaFile(extDescriptorFile, extDescriptor, nil).
-				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(correctMtaUrl)), nil, fileUploadJobId, nil).
-				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(incorrectMtaUrl)), nil, nil, fmt.Errorf("connection refused")).
+				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(correctMtaUrl)), "", nil, fileUploadJobId, nil).
+				StartUploadMtaArchiveFromUrl(base64.URLEncoding.EncodeToString([]byte(incorrectMtaUrl)), "", nil, nil, fmt.Errorf("connection refused")).
 				GetAsyncUploadJob(jobId, nil, jobResult, nil).
 				StartMtaOperation(testutil.OperationResult, mtaclient.ResponseHeader{Location: "operations/1000?embed=messages"}, nil).
 				GetMtaOperation("1000", "messages", &testutil.OperationResult, nil).
@@ -280,6 +291,43 @@ var _ = Describe("DeployCommand", func() {
 					return command.Execute([]string{}).ToInt()
 				})
 				ex.ExpectSuccessWithOutput(status, output, getOutputLines(false, false, true, false, false))
+			})
+		})
+
+		Context("with a correct URL argument and a --url-token flag", func() {
+			It("should pass the token through to the upload-from-URL client call", func() {
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
+				_, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--url-token", "ghp_flag_token"}).ToInt()
+				})
+				Expect(status).To(Equal(0))
+				Expect(lastUploadFromUrlToken(mtaClient)).To(Equal("ghp_flag_token"))
+			})
+		})
+
+		Context("with a correct URL argument and the MULTIAPPS_URL_TOKEN env var", func() {
+			It("should fall back to the env var when no flag is given", func() {
+				os.Setenv("MULTIAPPS_URL_TOKEN", "ghp_env_token")
+				defer os.Unsetenv("MULTIAPPS_URL_TOKEN")
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
+				_, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{}).ToInt()
+				})
+				Expect(status).To(Equal(0))
+				Expect(lastUploadFromUrlToken(mtaClient)).To(Equal("ghp_env_token"))
+			})
+		})
+
+		Context("with both a --url-token flag and the MULTIAPPS_URL_TOKEN env var", func() {
+			It("should prefer the flag over the env var", func() {
+				os.Setenv("MULTIAPPS_URL_TOKEN", "ghp_env_token")
+				defer os.Unsetenv("MULTIAPPS_URL_TOKEN")
+				command.FileUrlReader = newMockFileReader(correctMtaUrl)
+				_, status := oc.CaptureOutputAndStatus(func() int {
+					return command.Execute([]string{"--url-token", "ghp_flag_token"}).ToInt()
+				})
+				Expect(status).To(Equal(0))
+				Expect(lastUploadFromUrlToken(mtaClient)).To(Equal("ghp_flag_token"))
 			})
 		})
 
