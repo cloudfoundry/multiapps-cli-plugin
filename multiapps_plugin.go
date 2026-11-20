@@ -31,6 +31,7 @@ var Commands = []commands.Command{
 	commands.NewMtaOperationsCommand(),
 	commands.NewPurgeConfigCommand(),
 	commands.NewRollbackMtaCommand(),
+	commands.NewMtaGraphCommand(),
 }
 
 // Run runs this plugin
